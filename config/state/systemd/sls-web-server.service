@@ -20,7 +20,7 @@
 
 [Unit]
 Description=sls Private Web Server
-Documentation=https://github.com/steveknipmeyer/web-server
+Documentation=https://github.com/steveknipmeyer/sls-web-server
 After=network.target openclaw.service
 Wants=openclaw.service
 
@@ -28,7 +28,7 @@ Wants=openclaw.service
 Type=simple
 User=openclaw
 Group=openclaw
-WorkingDirectory=/home/openclaw/.openclaw/projects/web-server
+WorkingDirectory=/home/openclaw/.openclaw/projects/sls-web-server
 ExecStart=/usr/bin/node server.js
 Restart=on-failure
 RestartSec=5s
