@@ -1,6 +1,6 @@
 # OpenClaw Environment Snapshot
 
-**Generated:** 2026-04-12T17:22:19Z
+**Generated:** 2026-04-12T17:28:00Z
 **OpenClaw Version:** 2026.4.2
 **Host:** sls (DigitalOcean Droplet, NYC1, 2vCPU/4GB)
 **Tailscale URL:** https://sls.tail1cd974.ts.net
@@ -84,7 +84,7 @@ chown -R openclaw:openclaw /home/openclaw/extras
 ```
 
 ### SSH Key Setup (sls machine key)
-The openclaw user accesses GitHub via a machine-level SSH key ()
+The openclaw user accesses GitHub via a machine-level SSH key (`id_ed25519_sls`)
 registered as an account SSH key on GitHub (not a repo-level deploy key).
 This gives sls access to all repos the account can access.
 On a fresh deployment:

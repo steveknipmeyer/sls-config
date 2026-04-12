@@ -598,7 +598,7 @@ chown -R openclaw:openclaw /home/openclaw/extras
 \`\`\`
 
 ### SSH Key Setup (sls machine key)
-The openclaw user accesses GitHub via a machine-level SSH key (`id_ed25519_sls`)
+The openclaw user accesses GitHub via a machine-level SSH key (\`id_ed25519_sls\`)
 registered as an account SSH key on GitHub (not a repo-level deploy key).
 This gives sls access to all repos the account can access.
 On a fresh deployment:
