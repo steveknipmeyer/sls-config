@@ -1,7 +1,7 @@
 {
   "meta": {
-    "lastTouchedVersion": "2026.4.2",
-    "lastTouchedAt": "2026-04-09T17:48:52.628Z"
+    "lastTouchedVersion": "2026.4.11",
+    "lastTouchedAt": "2026-04-12T19:47:36.847Z"
   },
   "agents": {
     "defaults": {
@@ -64,5 +64,18 @@
   "hooks": {
     "enabled": true,
     "token": "REDACTED"
+  },
+  "plugins": {
+    "entries": {
+      "anthropic": {
+        "enabled": true
+      }
+    }
+  },
+  "wizard": {
+    "lastRunAt": "2026-04-12T19:47:36.659Z",
+    "lastRunVersion": "2026.4.11",
+    "lastRunCommand": "doctor",
+    "lastRunMode": "local"
   }
 }
