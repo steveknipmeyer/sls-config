@@ -1,0 +1,68 @@
+{
+  "meta": {
+    "lastTouchedVersion": "2026.4.2",
+    "lastTouchedAt": "2026-04-09T17:48:52.628Z"
+  },
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "anthropic/claude-sonnet-4-6"
+      },
+      "memorySearch": {
+        "enabled": false
+      },
+      "heartbeat": {
+        "every": "1h",
+        "model": "anthropic/claude-haiku-4-5-20251001",
+        "lightContext": true,
+        "isolatedSession": true
+      },
+      "sandbox": {
+        "mode": "all",
+        "workspaceAccess": "rw",
+        "docker": {
+          "image": "openclaw-sandbox-common:bookworm-slim",
+          "network": "bridge"
+        }
+      }
+    }
+  },
+  "tools": {
+    "exec": {
+      "host": "sandbox",
+      "security": "full",
+      "ask": "off"
+    }
+  },
+  "commands": {
+    "native": "auto",
+    "nativeSkills": "auto",
+    "restart": true,
+    "ownerDisplay": "raw"
+  },
+  "gateway": {
+    "mode": "local",
+    "controlUi": {
+      "allowedOrigins": [
+        "https://sls.tail1cd974.ts.net"
+      ],
+      "dangerouslyDisableDeviceAuth": false
+    },
+    "auth": {
+      "token": "REDACTED"
+    },
+    "trustedProxies": [
+      "127.0.0.1"
+    ],
+    "tailscale": {
+      "mode": "serve"
+    },
+    "remote": {
+      "token": "REDACTED"
+    }
+  },
+  "hooks": {
+    "enabled": true,
+    "token": "REDACTED"
+  }
+}

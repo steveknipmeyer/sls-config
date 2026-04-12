@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# =============================================================================
+# openclaw -- root guard stub
+# Location: /usr/local/bin/openclaw
+#
+# Prevents accidental openclaw CLI usage as root, which writes to
+# /root/.openclaw/openclaw.json -- a file the gateway never reads.
+#
+# The gateway runs as the openclaw user and reads exclusively from:
+#   /home/openclaw/.openclaw/openclaw.json
+#
+# Running openclaw CLI as root writes to the wrong file AND destroys
+# any symlink at /root/.openclaw/openclaw.json (atomic write behavior).
+#
+# All openclaw CLI commands must be run as the openclaw user:
+#   sudo -u openclaw openclaw <command>
+#
+# Safe to run as root (bypass this stub by calling the real binary):
+#   /usr/bin/openclaw --version
+#   sudo npm install -g openclaw@latest
+#   sudo systemctl restart openclaw
+# =============================================================================
+
+# Passthrough for non-root users -- stub only applies to root
+if [[ "$EUID" -ne 0 ]]; then
+    exec /usr/bin/openclaw "$@"
+fi
+
+# Allow --version passthrough -- read-only, harmless
+if [[ "$1" == "--version" || "$1" == "-v" ]]; then
+    exec /usr/bin/openclaw "$@"
+fi
+
+SUGGESTED="sudo -u openclaw openclaw $*"
+
+printf "\n" >&2
+printf "  +---------------------------------------------------------------+\n" >&2
+printf "  | WARNING: openclaw CLI blocked - running as root               |\n" >&2
+printf "  |                                                               |\n" >&2
+printf "  | Gateway reads: /home/openclaw/.openclaw/openclaw.json         |\n" >&2
+printf "  | Root writes:   /root/.openclaw/openclaw.json (WRONG)          |\n" >&2
+printf "  | Atomic writes destroy any symlink at that path.               |\n" >&2
+printf "  |                                                               |\n" >&2
+printf "  | Run instead:                                                  |\n" >&2
+printf "  |   %-60s|\n" "$SUGGESTED" >&2
+printf "  |                                                               |\n" >&2
+printf "  | Bypass (read-only): /usr/bin/openclaw --version               |\n" >&2
+printf "  | See: MAINTENANCE.md                                           |\n" >&2
+printf "  +---------------------------------------------------------------+\n" >&2
+printf "\n" >&2
+exit 1

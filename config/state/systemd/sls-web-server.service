@@ -1,0 +1,47 @@
+# =============================================================================
+# sls-web-server.service — sls Private Web Server
+# =============================================================================
+#
+# Manages the Express web server that serves agent-generated content
+# via Tailscale at https://sls.tail1cd974.ts.net:3001
+#
+# Install:
+#   sudo cp sls-web-server.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable sls-web-server
+#   sudo systemctl start sls-web-server
+#
+# Manage:
+#   sudo systemctl status sls-web-server
+#   sudo systemctl restart sls-web-server
+#   sudo journalctl -u sls-web-server -f
+#
+# =============================================================================
+
+[Unit]
+Description=sls Private Web Server
+Documentation=https://github.com/steveknipmeyer/web-server
+After=network.target openclaw.service
+Wants=openclaw.service
+
+[Service]
+Type=simple
+User=openclaw
+Group=openclaw
+WorkingDirectory=/home/openclaw/.openclaw/projects/web-server
+ExecStart=/usr/bin/node server.js
+Restart=on-failure
+RestartSec=5s
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=sls-web-server
+
+# Environment
+Environment=NODE_ENV=production
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

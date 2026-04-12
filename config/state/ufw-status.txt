@@ -1,0 +1,10 @@
+Status: active
+Logging: on (low)
+Default: deny (incoming), allow (outgoing), deny (routed)
+New profiles: skip
+
+To                         Action      From
+--                         ------      ----
+22/tcp on tailscale0       ALLOW IN    Anywhere                  
+22/tcp (v6) on tailscale0  ALLOW IN    Anywhere (v6)             
+
