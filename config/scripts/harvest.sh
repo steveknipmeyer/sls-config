@@ -352,7 +352,14 @@ harvest_file "/home/openclaw/.openclaw/openclaw.json" "${STATE_DIR}/home/opencla
 jq '
     .gateway.auth.token = "REDACTED" |
     .gateway.remote.token = "REDACTED" |
-    .hooks.token = "REDACTED"
+    .hooks.token = "REDACTED" |
+    if .skills.entries then
+        .skills.entries |= with_entries(
+            if .value.env then
+                .value.env |= with_entries(.value = "REDACTED")
+            else . end
+        )
+    else . end
 ' "${STATE_DIR}/home/openclaw/dot-openclaw/openclaw.json" > /tmp/openclaw.json.redacted \
 && mv /tmp/openclaw.json.redacted "${STATE_DIR}/home/openclaw/dot-openclaw/openclaw.json"
 log "  → Redacted secrets in openclaw.json (jq)"

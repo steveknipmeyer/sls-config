@@ -1,7 +1,7 @@
 {
   "meta": {
     "lastTouchedVersion": "2026.4.11",
-    "lastTouchedAt": "2026-04-13T18:27:11.257Z"
+    "lastTouchedAt": "2026-04-13T19:19:33.997Z"
   },
   "agents": {
     "defaults": {
@@ -86,7 +86,7 @@
     "entries": {
       "sls-inbox": {
         "env": {
-          "HIMALAYA_PASSWORD": "?pQ4fPqC6tG$!DTjm!xj!J3aY#mHRLK!"
+          "HIMALAYA_PASSWORD": "REDACTED"
         }
       }
     }
