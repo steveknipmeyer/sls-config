@@ -1,0 +1,8 @@
+FROM openclaw-sandbox-common:bookworm-slim
+USER root
+RUN curl -sLo /tmp/himalaya.tgz \
+  "https://github.com/pimalaya/himalaya/releases/latest/download/himalaya.x86_64-linux.tgz" \
+  && tar -xz -C /usr/local/bin/ -f /tmp/himalaya.tgz \
+  && chmod +x /usr/local/bin/himalaya \
+  && rm /tmp/himalaya.tgz
+USER sandbox
