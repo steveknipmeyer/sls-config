@@ -1,7 +1,7 @@
 {
   "meta": {
     "lastTouchedVersion": "2026.4.11",
-    "lastTouchedAt": "2026-04-12T19:47:36.847Z"
+    "lastTouchedAt": "2026-04-13T18:27:11.257Z"
   },
   "agents": {
     "defaults": {
@@ -21,8 +21,9 @@
         "mode": "all",
         "workspaceAccess": "rw",
         "docker": {
-          "image": "openclaw-sandbox-common:bookworm-slim",
-          "network": "bridge"
+          "image": "openclaw-sandbox-sls:bookworm-slim",
+          "network": "bridge",
+          "binds": []
         }
       }
     }
@@ -32,6 +33,9 @@
       "host": "sandbox",
       "security": "full",
       "ask": "off"
+    },
+    "elevated": {
+      "enabled": true
     }
   },
   "commands": {
@@ -77,5 +81,14 @@
     "lastRunVersion": "2026.4.11",
     "lastRunCommand": "doctor",
     "lastRunMode": "local"
+  },
+  "skills": {
+    "entries": {
+      "sls-inbox": {
+        "env": {
+          "HIMALAYA_PASSWORD": "?pQ4fPqC6tG$!DTjm!xj!J3aY#mHRLK!"
+        }
+      }
+    }
   }
 }
