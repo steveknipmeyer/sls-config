@@ -359,6 +359,16 @@ jq '
                 .value.env |= with_entries(.value = "REDACTED")
             else . end
         )
+    else . end |
+    if .agents.defaults.sandbox.docker.env then
+        .agents.defaults.sandbox.docker.env |= with_entries(.value = "REDACTED")
+    else . end |
+    if .agents.list then
+        .agents.list |= map(
+            if .sandbox.docker.env then
+                .sandbox.docker.env |= with_entries(.value = "REDACTED")
+            else . end
+        )
     else . end
 ' "${STATE_DIR}/home/openclaw/dot-openclaw/openclaw.json" > /tmp/openclaw.json.redacted \
 && mv /tmp/openclaw.json.redacted "${STATE_DIR}/home/openclaw/dot-openclaw/openclaw.json"
