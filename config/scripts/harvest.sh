@@ -152,6 +152,9 @@ redact_secrets() {
         sed -i -E "s|(${pattern}[A-Z_]*)=(['\"]?)([^'\" ]+)(['\"]?)|\1=\2REDACTED\4|g" "$file"
     done
 
+    # Tailscale pre-auth keys: --authkey=tskey-auth-... (lowercase, flag-style)
+    sed -i -E "s|(--authkey=)[^ ]+|\1REDACTED|g" "$file"
+
     log "  → Redacted secrets in $(basename "$file")"
 }
 
@@ -231,6 +234,7 @@ harvest_file "/opt/restart-openclaw.sh" "${STATE_DIR}/opt/restart-openclaw.sh"
 # Origin: Created during setup (Mar 29).
 # ---
 harvest_file "/opt/tailscale-reauth.sh" "${STATE_DIR}/opt/tailscale-reauth.sh"
+redact_secrets "${STATE_DIR}/opt/tailscale-reauth.sh"
 
 # ---
 # rotate-openclaw-gateway.sh — rotates the OpenClaw gateway auth token.
@@ -906,8 +910,10 @@ rm -f /tmp/harvest-actual.txt /tmp/harvest-expected.txt
 # Scans all harvested files for patterns that match known secret formats.
 # Catches redaction failures before they can be committed to git.
 #
-# Pattern: 64 lowercase hex characters — the output of `openssl rand -hex 32`
-# Used for: gateway auth token, gateway remote token, hooks token.
+# Patterns:
+#   - 64 lowercase hex characters — the output of `openssl rand -hex 32`
+#     Used for: gateway auth token, gateway remote token, hooks token.
+#   - tskey- prefix — Tailscale pre-auth keys
 #
 # This is a last-resort safety net. If this fires, redaction has failed and
 # you must NOT commit until the file is corrected.
@@ -916,7 +922,7 @@ rm -f /tmp/harvest-actual.txt /tmp/harvest-expected.txt
 log ""
 log "=== Scanning for unredacted secrets ==="
 
-SECRET_PATTERN='[0-9a-f]{64}'
+SECRET_PATTERN='[0-9a-f]{64}|tskey-'
 SECRETS_FOUND=0
 
 while IFS= read -r file; do
