@@ -1,0 +1,17 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+*.swp
+*.swo
+
+# Secrets — never commit unredacted snapshots
+# harvest.sh redacts these before writing to config/state/
+# If any of these appear unredacted, stop and rotate immediately
+config/state/opt/openclaw.env
+config/state/home/openclaw/dot-openclaw/gateway-token.txt
+
+# Docker build cache
+.dockerignore
