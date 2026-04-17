@@ -15,11 +15,11 @@
 #   Run as root:
 #   sudo bash /opt/rotate-openclaw-gateway.sh
 #
-# NOTE ON openclaw.json SYMLINK:
-#   /root/.openclaw/openclaw.json and /home/openclaw/.openclaw/openclaw.json
-#   are the SAME FILE via symlink. Do NOT copy one to the other — it is
-#   unnecessary and may break the symlink. The original version of this script
-#   (generated Mar 29) incorrectly included a cp command; that has been removed.
+# NOTE ON openclaw.json:
+#   The ONLY openclaw.json that matters is /home/openclaw/.openclaw/openclaw.json.
+#   /root/.openclaw/ should NOT exist. If it does, root ran an openclaw config
+#   command and recreated it — investigate, correct under the openclaw user, and
+#   delete it: sudo rm -rf /root/.openclaw/
 #
 # AFTER ROTATION:
 #   - Existing paired devices maintain their sessions (verified Apr 3, 2026)
@@ -53,8 +53,7 @@ else
 fi
 
 # Update openclaw.json via openclaw CLI
-# This updates the runtime config file at ~/.openclaw/openclaw.json
-# (same file as /root/.openclaw/openclaw.json via symlink)
+# This updates the runtime config file at /home/openclaw/.openclaw/openclaw.json
 su - openclaw -c "openclaw config set gateway.auth.token '${NEW_TOKEN}'"
 echo "✓ Updated gateway.auth.token in openclaw.json"
 
@@ -75,6 +74,6 @@ echo ""
 echo "NEXT STEPS:"
 echo "  1. Verify devices still connected: openclaw devices list"
 echo "  2. Run harvest to capture updated state:"
-echo "     sudo bash /home/openclaw/.openclaw/workspace/extras/scripts/harvest.sh"
+echo "     sudo bash /home/openclaw/.openclaw/projects/sls-config/config/scripts/harvest.sh"
 echo "  3. Commit the harvest snapshot"
 echo "============================================"

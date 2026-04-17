@@ -1,6 +1,6 @@
 REPOSITORY                TAG             IMAGE ID       CREATED       SIZE
-openclaw-sandbox-sls      bookworm-slim   0a6d88ff800a   4 hours ago   1.91GB
-openclaw-sandbox-common   bookworm-slim   c1671b74821b   10 days ago   1.88GB
-<none>                    <none>          b53ff5799696   10 days ago   74.8MB
+openclaw-sandbox-sls      bookworm-slim   0a6d88ff800a   3 days ago    1.91GB
+openclaw-sandbox-common   bookworm-slim   c1671b74821b   13 days ago   1.88GB
+<none>                    <none>          b53ff5799696   13 days ago   74.8MB
 debian                    bookworm-slim   d6b3fe87704b   4 weeks ago   74.8MB
 openclaw-sandbox          bookworm-slim   d6b3fe87704b   4 weeks ago   74.8MB
