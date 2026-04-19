@@ -19,6 +19,7 @@
       },
       "sandbox": {
         "mode": "all",
+        "scope": "session",
         "workspaceAccess": "rw",
         "docker": {
           "image": "openclaw-sandbox-sls:bookworm-slim",
