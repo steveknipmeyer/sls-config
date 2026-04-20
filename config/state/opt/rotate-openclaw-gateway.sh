@@ -63,6 +63,14 @@ chmod 600 /home/openclaw/.openclaw/gateway-token.txt
 chown openclaw:openclaw /home/openclaw/.openclaw/gateway-token.txt
 echo "✓ Updated ~/.openclaw/gateway-token.txt"
 
+# Record rotation date for sls-openclaw-system age monitoring
+STATE_DIR="/home/openclaw/.openclaw/workspaces/ada/state/openclaw"
+mkdir -p "${STATE_DIR}"
+printf '{\n  "last_rotated": "%s",\n  "method": "rotate-openclaw-gateway.sh"\n}\n' \
+    "$(date -u +%Y-%m-%d)" > "${STATE_DIR}/gateway-token.json"
+chown -R openclaw:openclaw "${STATE_DIR}"
+echo "✓ Updated state/openclaw/gateway-token.json (rotation date recorded)"
+
 # Restart the gateway service to pick up the new token
 systemctl restart openclaw
 echo "✓ Gateway restarted"
