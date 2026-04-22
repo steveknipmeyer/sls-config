@@ -26,7 +26,8 @@
           "network": "bridge",
           "binds": [],
           "env": {
-            "HIMALAYA_PASSWORD": "REDACTED"
+            "HIMALAYA_PASSWORD": "REDACTED",
+            "ANTHROPIC_ADMIN_KEY": "REDACTED"
           }
         }
       }
@@ -71,7 +72,10 @@
   },
   "hooks": {
     "enabled": true,
-    "token": "REDACTED"
+    "token": "REDACTED",
+    "allowedAgentIds": [
+      "main"
+    ]
   },
   "plugins": {
     "entries": {

@@ -2890,6 +2890,9 @@
                         "supportsStore": {
                           "type": "boolean"
                         },
+                        "supportsPromptCacheKey": {
+                          "type": "boolean"
+                        },
                         "supportsDeveloperRole": {
                           "type": "boolean"
                         },
@@ -3320,6 +3323,19 @@
               "title": "Bootstrap Total Max Chars",
               "description": "Max total characters across all injected workspace bootstrap files (default: 150000)."
             },
+            "experimental": {
+              "type": "object",
+              "properties": {
+                "localModelLean": {
+                  "type": "boolean",
+                  "title": "Enable Lean Local Model Mode (Experimental)",
+                  "description": "Experimental local-model prompt trim. When enabled, OpenClaw drops heavyweight default tools like browser, cron, and message for weaker or smaller local-model backends."
+                }
+              },
+              "additionalProperties": false,
+              "title": "Experimental Agent Flags",
+              "description": "Experimental agent-default flags. Keep these off unless you are intentionally testing a preview surface."
+            },
             "bootstrapPromptTruncationWarning": {
               "anyOf": [
                 {
@@ -3340,6 +3356,100 @@
             },
             "userTimezone": {
               "type": "string"
+            },
+            "startupContext": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "title": "Enable Startup Context",
+                  "description": "Enable the startup-context prelude for bare session resets (default: true). Disable this to fall back to prompt-only behavior with no runtime-loaded daily memory."
+                },
+                "applyOn": {
+                  "type": "array",
+                  "items": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "const": "new"
+                      },
+                      {
+                        "type": "string",
+                        "const": "reset"
+                      }
+                    ]
+                  },
+                  "title": "Startup Context Apply On",
+                  "description": "Chooses which bare reset commands get startup context: include \"new\", \"reset\", or both (default: [\"new\",\"reset\"])."
+                },
+                "dailyMemoryDays": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 14,
+                  "title": "Startup Context Daily Memory Days",
+                  "description": "Number of dated memory files to load counting backward from today in the configured user timezone (default: 2 for today + yesterday)."
+                },
+                "maxFileBytes": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 65536,
+                  "title": "Startup Context Max File Bytes",
+                  "description": "Maximum bytes allowed per daily memory file when building startup context (default: 16384). Files over this boundary-safe read limit are skipped."
+                },
+                "maxFileChars": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 10000,
+                  "title": "Startup Context Max File Chars",
+                  "description": "Maximum characters retained from each loaded daily memory file in the startup prelude (default: 1200)."
+                },
+                "maxTotalChars": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 50000,
+                  "title": "Startup Context Max Total Chars",
+                  "description": "Maximum total characters retained across all loaded daily memory files in the startup prelude (default: 2800). Additional files are truncated from the prelude once this cap is reached."
+                }
+              },
+              "additionalProperties": false,
+              "title": "Startup Context",
+              "description": "Runtime-owned first-turn prelude for bare \"/new\" and \"/reset\". Use this to control whether recent daily memory files are preloaded into the first prompt instead of asking the model to decide what to read."
+            },
+            "contextLimits": {
+              "type": "object",
+              "properties": {
+                "memoryGetMaxChars": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 250000,
+                  "title": "Default memory_get Max Chars",
+                  "description": "Default max characters returned by memory_get before truncation metadata and continuation notice are added. Increase to approximate older larger excerpts, but keep it bounded."
+                },
+                "memoryGetDefaultLines": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 5000,
+                  "title": "Default memory_get Line Window",
+                  "description": "Default memory_get line window used when requests omit lines. This controls how many source lines are selected before the max-char cap is applied."
+                },
+                "toolResultMaxChars": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 250000,
+                  "title": "Default Tool Result Max Chars",
+                  "description": "Default max characters kept for a single live tool result before truncation. This affects both persisted live tool-result writes and overflow-recovery truncation heuristics."
+                },
+                "postCompactionMaxChars": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 50000,
+                  "title": "Default Post-compaction Max Chars",
+                  "description": "Default max characters retained from AGENTS.md during post-compaction context refresh injection. Lower this to make compaction recovery cheaper, or raise it for agents that depend on longer startup guidance."
+                }
+              },
+              "additionalProperties": false,
+              "title": "Default Context Limits",
+              "description": "Focused per-agent-context budget defaults for selected high-volume excerpts and injected prompt blocks. Use this to tune bounded read/injection sizes without reopening any unbounded call paths."
             },
             "timeFormat": {
               "anyOf": [
@@ -3788,7 +3898,7 @@
                 "provider": {
                   "type": "string",
                   "title": "Memory Search Provider",
-                  "description": "Selects the embedding backend used to build/query memory vectors: \"openai\", \"gemini\", \"voyage\", \"mistral\", \"bedrock\", \"ollama\", or \"local\". Keep your most reliable provider here and configure fallback for resilience."
+                  "description": "Selects the embedding backend used to build/query memory vectors: \"openai\", \"gemini\", \"voyage\", \"mistral\", \"bedrock\", \"lmstudio\", \"ollama\", or \"local\". Keep your most reliable provider here and configure fallback for resilience."
                 },
                 "remote": {
                   "type": "object",
@@ -3932,7 +4042,7 @@
                 "fallback": {
                   "type": "string",
                   "title": "Memory Search Fallback",
-                  "description": "Backup provider used when primary embeddings fail: \"openai\", \"gemini\", \"voyage\", \"mistral\", \"ollama\", \"local\", or \"none\". Set a real fallback for production reliability; use \"none\" only if you prefer explicit failures."
+                  "description": "Backup provider used when primary embeddings fail: \"openai\", \"gemini\", \"voyage\", \"mistral\", \"bedrock\", \"lmstudio\", \"ollama\", \"local\", or \"none\". Set a real fallback for production reliability; use \"none\" only if you prefer explicit failures."
                 },
                 "model": {
                   "type": "string",
@@ -6055,6 +6165,57 @@
                 },
                 "additionalProperties": false
               },
+              "skillsLimits": {
+                "type": "object",
+                "properties": {
+                  "maxSkillsPromptChars": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991,
+                    "title": "Agent Skills Prompt Max Chars",
+                    "description": "Per-agent override for the skills prompt character budget. This extends the existing skills.limits.maxSkillsPromptChars path instead of routing the same budget through contextLimits."
+                  }
+                },
+                "additionalProperties": false,
+                "title": "Agent Skills Limits",
+                "description": "Optional per-agent overrides for skills subsystem budgets. Use this when an agent needs a different skills prompt budget without introducing a second generic context-limits path."
+              },
+              "contextLimits": {
+                "type": "object",
+                "properties": {
+                  "memoryGetMaxChars": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 250000,
+                    "title": "Agent memory_get Max Chars",
+                    "description": "Per-agent override for the default memory_get max character budget."
+                  },
+                  "memoryGetDefaultLines": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 5000,
+                    "title": "Agent memory_get Line Window",
+                    "description": "Per-agent override for the default memory_get line window when lines is omitted."
+                  },
+                  "toolResultMaxChars": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 250000,
+                    "title": "Agent Tool Result Max Chars",
+                    "description": "Per-agent override for the live tool-result max character budget."
+                  },
+                  "postCompactionMaxChars": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 50000,
+                    "title": "Agent Post-compaction Max Chars",
+                    "description": "Per-agent override for the post-compaction AGENTS.md excerpt budget."
+                  }
+                },
+                "additionalProperties": false,
+                "title": "Agent Context Limits",
+                "description": "Optional per-agent overrides for the focused context budget knobs. Omitted fields inherit agents.defaults.contextLimits."
+              },
               "heartbeat": {
                 "type": "object",
                 "properties": {
@@ -7091,6 +7252,11 @@
                         "maximum": 9007199254740991
                       },
                       "warningThreshold": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "unknownToolThreshold": {
                         "type": "integer",
                         "exclusiveMinimum": 0,
                         "maximum": 9007199254740991
@@ -18313,6 +18479,13 @@
               "title": "Tool-loop Warning Threshold",
               "description": "Warning threshold for repetitive patterns when detector is enabled (default: 10)."
             },
+            "unknownToolThreshold": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991,
+              "title": "Unknown-tool Loop Threshold",
+              "description": "Block repeated calls to the same unavailable tool after this many misses (default: 10)."
+            },
             "criticalThreshold": {
               "type": "integer",
               "exclusiveMinimum": 0,
@@ -21856,6 +22029,35 @@
               },
               "additionalProperties": false
             },
+            "catchup": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                },
+                "maxAgeMinutes": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "perRunLimit": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "firstRunLookbackMinutes": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "maxFailureRetries": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                }
+              },
+              "additionalProperties": false
+            },
             "blockStreaming": {
               "type": "boolean"
             },
@@ -22158,6 +22360,35 @@
                     "properties": {
                       "dangerouslyAllowPrivateNetwork": {
                         "type": "boolean"
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  "catchup": {
+                    "type": "object",
+                    "properties": {
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "maxAgeMinutes": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "perRunLimit": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "firstRunLookbackMinutes": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "maxFailureRetries": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
                       }
                     },
                     "additionalProperties": false
@@ -40906,6 +41137,9 @@
                     "model": {
                       "type": "string"
                     },
+                    "modelFallback": {
+                      "type": "string"
+                    },
                     "modelFallbackPolicy": {
                       "type": "string",
                       "enum": [
@@ -41003,6 +41237,21 @@
                       "type": "integer",
                       "minimum": 1000,
                       "maximum": 120000
+                    },
+                    "qmd": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "searchMode": {
+                          "type": "string",
+                          "enum": [
+                            "inherit",
+                            "search",
+                            "vsearch",
+                            "query"
+                          ]
+                        }
+                      }
                     }
                   }
                 }
@@ -43813,6 +44062,61 @@
               },
               "additionalProperties": false
             },
+            "lmstudio": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "title": "Plugin Enabled",
+                  "description": "Per-plugin enablement override for a specific entry, applied on top of global plugin policy (restart required). Use this to stage plugin rollout gradually across environments."
+                },
+                "hooks": {
+                  "type": "object",
+                  "properties": {
+                    "allowPromptInjection": {
+                      "type": "boolean",
+                      "title": "Allow Prompt Injection Hooks",
+                      "description": "Controls whether this plugin may mutate prompts through typed hooks. Set false to block `before_prompt_build` and ignore prompt-mutating fields from legacy `before_agent_start`, while preserving legacy `modelOverride` and `providerOverride` behavior."
+                    }
+                  },
+                  "additionalProperties": false,
+                  "title": "Plugin Hook Policy",
+                  "description": "Per-plugin typed hook policy controls for core-enforced safety gates. Use this to constrain high-impact hook categories without disabling the entire plugin."
+                },
+                "subagent": {
+                  "type": "object",
+                  "properties": {
+                    "allowModelOverride": {
+                      "type": "boolean",
+                      "title": "Allow Plugin Subagent Model Override",
+                      "description": "Explicitly allows this plugin to request provider/model overrides in background subagent runs. Keep false unless the plugin is trusted to steer model selection."
+                    },
+                    "allowedModels": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "title": "Plugin Subagent Allowed Models",
+                      "description": "Allowed override targets for trusted plugin subagent runs as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
+                    }
+                  },
+                  "additionalProperties": false,
+                  "title": "Plugin Subagent Policy",
+                  "description": "Per-plugin subagent runtime controls for model override trust and allowlists. Keep this unset unless a plugin must explicitly steer subagent model selection."
+                },
+                "config": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": false,
+                  "title": "Plugin Config",
+                  "description": "Plugin-defined configuration payload interpreted by that plugin's own schema and validation rules. Use only documented fields from the plugin to prevent ignored or invalid settings.",
+                  "properties": {}
+                }
+              },
+              "additionalProperties": false
+            },
             "lobster": {
               "type": "object",
               "properties": {
@@ -44241,6 +44545,12 @@
                       "type": "number",
                       "minimum": 100,
                       "maximum": 10000
+                    },
+                    "storageOptions": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      }
                     }
                   },
                   "required": [
