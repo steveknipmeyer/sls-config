@@ -119,8 +119,7 @@ fi
 # OpenClaw Completion
 source "/home/openclaw/.openclaw/completions/openclaw.bash"
 
-# OpenClaw startup optimization
-export NODE_COMPILE_CACHE=/var/tmp/openclaw-compile-cache
+# OpenClaw — exports live in ~/.profile (needed in non-interactive login shells).
+# mkdir stays here: the cache dir must exist before Node uses it, and .profile
+# is not the right place for side-effect commands.
 mkdir -p /var/tmp/openclaw-compile-cache
-export OPENCLAW_NO_RESPAWN=1
-export PATH="$HOME/.npm-global/bin:$PATH"

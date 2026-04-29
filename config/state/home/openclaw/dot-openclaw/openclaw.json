@@ -27,7 +27,9 @@
           "binds": [],
           "env": {
             "HIMALAYA_PASSWORD": "REDACTED",
-            "ANTHROPIC_ADMIN_KEY": "REDACTED"
+            "ANTHROPIC_API_KEY": "REDACTED",
+            "ANTHROPIC_ADMIN_KEY": "REDACTED",
+            "GEMINI_API_TOKEN": "REDACTED"
           }
         }
       }
@@ -89,10 +91,5 @@
     "lastRunVersion": "2026.4.11",
     "lastRunCommand": "doctor",
     "lastRunMode": "local"
-  },
-  "skills": {
-    "entries": {
-      "sls-inbox": {}
-    }
   }
 }

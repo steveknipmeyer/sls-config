@@ -691,7 +691,7 @@ sudo crontab -e
 Expected entries:
 \`\`\`
 # sls-system: run audit scripts as root, write JSON for Ada's 3:45 AM cron
-40 3 * * * mkdir -p /home/openclaw/.openclaw/workspaces/ada/working/sls-system && bash /home/openclaw/.openclaw/workspaces/ada/.agents/skills/sls-system/scripts/security-audit.sh > /home/openclaw/.openclaw/workspaces/ada/working/sls-system/security.json 2>&1 && bash /home/openclaw/.openclaw/workspaces/ada/.agents/skills/sls-system/scripts/system-health.sh > /home/openclaw/.openclaw/workspaces/ada/working/sls-system/health.json 2>&1
+40 3 * * * mkdir -p /home/openclaw/.openclaw/workspace/working/sls-system && bash /home/openclaw/.openclaw/workspace/.agents/skills/sls-system/scripts/security-audit.sh > /home/openclaw/.openclaw/workspace/working/sls-system/security.json 2>&1 && bash /home/openclaw/.openclaw/workspace/.agents/skills/sls-system/scripts/system-health.sh > /home/openclaw/.openclaw/workspace/working/sls-system/health.json 2>&1
 \`\`\`
 
 ### Caddy (Disabled)
@@ -816,20 +816,20 @@ systemctl start docker
 Note: Installing docker-buildx-plugin here also satisfies the buildx requirement
 for building the sandbox common image.
 
-### ada Workspace Git Remote
+### Ada Workspace Git Remote
 The git remote for the Ada workspace repo is NOT explicitly captured but is implied
 by \`home/openclaw/.ssh/config\`. To verify or restore on a fresh deployment:
 \`\`\`bash
 # Check current remote
-git -C /home/openclaw/.openclaw/workspaces/ada remote -v
+git -C /home/openclaw/.openclaw/workspace remote -v
 # Expected: origin git@github.com:steveknipmeyer/sls-ada.git
 
 # If missing, add it
-git -C /home/openclaw/.openclaw/workspaces/ada remote add origin git@github.com:steveknipmeyer/sls-ada.git
+git -C /home/openclaw/.openclaw/workspace remote add origin git@github.com:steveknipmeyer/sls-ada.git
 
 # Clone fresh on a new deployment
-git clone git@github.com:steveknipmeyer/sls-ada.git /home/openclaw/.openclaw/workspaces/ada
-chown -R openclaw:openclaw /home/openclaw/.openclaw/workspaces/ada
+git clone git@github.com:steveknipmeyer/sls-ada.git /home/openclaw/.openclaw/workspace
+chown -R openclaw:openclaw /home/openclaw/.openclaw/workspace
 \`\`\`
 
 ### Known Issues
