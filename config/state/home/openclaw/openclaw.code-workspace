@@ -1,15 +1,71 @@
 {
 	"folders": [
-		{
-			"path": "."
-		},
-		{
-			"path": ".openclaw/workspace"
-		}
+		{ "path": "." },
 	],
 	"settings": {
+		"git.repositoryScanMaxDepth": 4,
+		"scm.countBadge": "all",
 		"workbench.colorCustomizations": {
 		"titleBar.activeBackground": "#055579"
-		}
+		},
+		"json.schemas": [
+			{
+				"fileMatch": ["/home/openclaw/.openclaw/openclaw.json"],
+				"url": "file:///home/openclaw/.openclaw/projects/sls-config/config/schemas/openclaw.schema.json"
+			},
+			{
+				"fileMatch": ["/home/openclaw/.openclaw/workspace/.agents/skills/sls-daily-brief/config.json"],
+				"url": "file:///home/openclaw/.openclaw/workspace/.agents/skills/sls-daily-brief/config.schema.json"
+			},
+			{
+				"fileMatch": ["/home/openclaw/.openclaw/workspace/.agents/skills/sls-openclaw-system/config.json"],
+				"url": "file:///home/openclaw/.openclaw/workspace/.agents/skills/sls-openclaw-system/config.schema.json"
+			},
+			{
+				"fileMatch": ["/home/openclaw/.openclaw/workspace/.agents/skills/sls-openclaw-usage/config.json"],
+				"url": "file:///home/openclaw/.openclaw/workspace/.agents/skills/sls-openclaw-usage/config.schema.json"
+			}
+		],
+		"files.watcherExclude": {
+			"**/node_modules/**": true,
+			"**/build/**": true,
+			"**/dist/**": true,
+			"**/.git/**": true,
+			"homebrew/**": true,
+			"projects/openclaw/**": true,
+			"workspace/npm/**": true
+		},
+		"files.exclude": {
+			"**/*.clobbered.*": true,
+			"**/*.bak.*": true,
+			"workspace/npm/**": true,
+			"homebrew/**": true,
+			"projects/openclaw/**": true
+		},
+		"search.exclude": {
+			"**/node_modules": true,
+			"homebrew": true,
+			"projects/openclaw": true,
+			"workspace/npm": true
+		},
+		"livePreview.portNumber": 3900,
+		"favorites.resources": [
+			{
+				"filePath": "/home/openclaw/.openclaw/projects",
+				"group": "Default"
+			},
+			{
+				"filePath": "/home/openclaw/.openclaw/workspace/.agents",
+				"group": "Default"
+			},
+			{
+				"filePath": "/home/openclaw/.openclaw/cron",
+				"group": "Default"
+			},
+			{
+				"filePath": "/home/openclaw/.openclaw/workspace/working",
+				"group": "Default"
+			}
+		]
 	}
 }

@@ -1,7 +1,7 @@
 {
   "meta": {
-    "lastTouchedVersion": "2026.4.11",
-    "lastTouchedAt": "2026-04-13T21:07:57.172Z"
+    "lastTouchedVersion": "2026.4.15",
+    "lastTouchedAt": "2026-04-30T19:50:21.021Z"
   },
   "agents": {
     "defaults": {
@@ -29,7 +29,8 @@
             "HIMALAYA_PASSWORD": "REDACTED",
             "ANTHROPIC_API_KEY": "REDACTED",
             "ANTHROPIC_ADMIN_KEY": "REDACTED",
-            "GEMINI_API_TOKEN": "REDACTED"
+            "GEMINI_API_TOKEN": "REDACTED",
+            "HIMALAYA_CONFIG": "REDACTED"
           }
         }
       }
