@@ -563,7 +563,7 @@ log "=== OpenClaw doctor ==="
 
 # Run non-interactively to avoid prompts
 capture_command "${STATE_DIR}/openclaw-doctor.txt" \
-    bash -c 'echo "" | openclaw doctor 2>&1 || true'
+    bash -c 'echo "" | sudo -u openclaw openclaw doctor 2>&1 || true'
 
 # =============================================================================
 # SECTION 9: Generate README.md

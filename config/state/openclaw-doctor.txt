@@ -1,15 +1,99 @@
-
-  +---------------------------------------------------------------+
-  | WARNING: openclaw CLI blocked - running as root               |
-  |                                                               |
-  | Gateway reads: /home/openclaw/.openclaw/openclaw.json         |
-  | Root writes:   /root/.openclaw/openclaw.json (WRONG)          |
-  | Atomic writes destroy any symlink at that path.               |
-  |                                                               |
-  | Run instead:                                                  |
-  |   sudo -u openclaw openclaw doctor                            |
-  |                                                               |
-  | Bypass (read-only): /usr/bin/openclaw --version               |
-  | See: MAINTENANCE.md                                           |
-  +---------------------------------------------------------------+
+▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+██░▄▄▄░██░▄▄░██░▄▄▄██░▀██░██░▄▄▀██░████░▄▄▀██░███░██
+██░███░██░▀▀░██░▄▄▄██░█░█░██░█████░████░▀▀░██░█░█░██
+██░▀▀▀░██░█████░▀▀▀██░██▄░██░▀▀▄██░▀▀░█░██░██▄▀▄▀▄██
+▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+                  🦞 OPENCLAW 🦞                    
+ 
+┌  OpenClaw doctor
+│
+◇  Startup optimization ─────────────────────────────────────────────────╮
+│                                                                        │
+│  - NODE_COMPILE_CACHE is not set; repeated CLI runs can be slower on   │
+│    small hosts (Pi/VM).                                                │
+│  - OPENCLAW_NO_RESPAWN is not set to 1; set it to avoid extra startup  │
+│    overhead from self-respawn.                                         │
+│  - Suggested env for low-power hosts:                                  │
+│    export NODE_COMPILE_CACHE=/var/tmp/openclaw-compile-cache           │
+│    mkdir -p /var/tmp/openclaw-compile-cache                            │
+│    export OPENCLAW_NO_RESPAWN=1                                        │
+│                                                                        │
+├────────────────────────────────────────────────────────────────────────╯
+│
+◇  Doctor changes ─────────────────────────────────╮
+│                                                  │
+│  Removed legacy skills.entries.nano-banana-pro.  │
+│                                                  │
+├──────────────────────────────────────────────────╯
+│
+◇  Doctor ──────────────────────────────────────────────╮
+│                                                       │
+│  Run "openclaw doctor --fix" to apply these changes.  │
+│                                                       │
+├───────────────────────────────────────────────────────╯
+│
+◇  Command owner ─────────────────────────────────────────────────────────╮
+│                                                                         │
+│  No command owner is configured.                                        │
+│  A command owner is the human operator account allowed to run           │
+│  owner-only commands and approve dangerous actions, including           │
+│  /diagnostics, /export-trajectory, /config, and exec approvals.         │
+│  DM pairing only lets someone talk to the bot; it does not make that    │
+│  sender the owner for privileged commands.                              │
+│  Fix: set commands.ownerAllowFrom to your channel user id, for example  │
+│  openclaw config set commands.ownerAllowFrom '["telegram:123456789"]'   │
+│  Restart the gateway after changing this if it is already running.      │
+│                                                                         │
+├─────────────────────────────────────────────────────────────────────────╯
+│
+◇  State integrity ────────────────────────────────────────────────────╮
+│                                                                      │
+│  - OAuth dir not present (~/.openclaw/credentials). Skipping create  │
+│    because no WhatsApp/pairing channel config is active.             │
+│                                                                      │
+├──────────────────────────────────────────────────────────────────────╯
+│
+◇  Security ─────────────────────────────────╮
+│                                            │
+│  - No channel security warnings detected.  │
+│  - Run: openclaw security audit --deep     │
+│                                            │
+├────────────────────────────────────────────╯
+│
+◇  Skills status ───────────╮
+│                           │
+│  Eligible: 19             │
+│  Missing requirements: 1  │
+│  Blocked by allowlist: 0  │
+│                           │
+├───────────────────────────╯
+│
+◇  Plugins ─────╮
+│               │
+│  Loaded: 48   │
+│  Imported: 0  │
+│  Disabled: 0  │
+│  Errors: 0    │
+│               │
+├───────────────╯
+│
+◇  Skills ─────────────────────────────────────────────────────────────────╮
+│                                                                          │
+│  Some skills are allowed for this agent but are not usable in the        │
+│  current runtime environment.                                            │
+│  - coding-agent: any bins: claude, codex, opencode, pi                   │
+│  Disable unused skills: openclaw doctor --fix                            │
+│  Inspect details: openclaw skills check --agent <id> or openclaw skills  │
+│  info <name> --agent <id>                                                │
+│                                                                          │
+├──────────────────────────────────────────────────────────────────────────╯
+│
+◇  Memory search ──────────────────────────────────────────╮
+│                                                          │
+│  Memory search is explicitly disabled (enabled: false).  │
+│                                                          │
+├──────────────────────────────────────────────────────────╯
+Run "openclaw doctor --fix" to apply changes.
+│
+└  Doctor complete.
 
