@@ -38,6 +38,7 @@ SyslogIdentifier=sls-web-server
 
 # Environment
 Environment=NODE_ENV=production
+EnvironmentFile=/etc/sls-web-server.env
 
 # Security hardening
 NoNewPrivileges=true

@@ -32,7 +32,7 @@
 set -euo pipefail
 
 # Generate a new cryptographically random token
-NEW_TOKEN=REDACTED rand -hex 32)
+NEW_TOKEN=REDACTED
 
 echo "============================================"
 echo "New gateway token generated."

@@ -1,5 +1,5 @@
 # OpenClaw Environment — Version Snapshot
-# Generated: 2026-05-05T13:05:19Z
+# Generated: 2026-05-07T17:07:05Z
 
 ## OpenClaw
 OpenClaw 2026.5.4 (325df3e)
@@ -18,7 +18,7 @@ Release:	24.04
 Codename:	noble
 
 ## Docker
-Docker version 29.1.3, build 29.1.3-0ubuntu3~24.04.1
+Docker version 29.1.3, build 29.1.3-0ubuntu3~24.04.2
 
 ## Tailscale
 1.96.4

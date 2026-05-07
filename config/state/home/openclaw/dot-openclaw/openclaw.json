@@ -1,7 +1,7 @@
 {
   "meta": {
     "lastTouchedVersion": "2026.5.4",
-    "lastTouchedAt": "2026-05-05T12:59:24.447Z"
+    "lastTouchedAt": "2026-05-07T16:37:03.956Z"
   },
   "agents": {
     "defaults": {
@@ -13,7 +13,7 @@
       },
       "heartbeat": {
         "every": "1h",
-        "model": "anthropic/claude-haiku-4-5-20251001",
+        "model": "openai-codex/gpt-5.4-mini",
         "lightContext": true,
         "isolatedSession": true
       },
@@ -31,12 +31,17 @@
             "ANTHROPIC_ADMIN_KEY": "REDACTED",
             "GEMINI_API_TOKEN": "REDACTED",
             "HIMALAYA_CONFIG": "REDACTED",
-            "EMAIL_API_TOKEN": "REDACTED"
+            "EMAIL_API_TOKEN": "REDACTED",
+            "OURA_CLIENT_ID": "REDACTED",
+            "OURA_CLIENT_SECRET": "REDACTED"
           }
         }
       },
       "imageGenerationModel": {
         "primary": "google/gemini-3-pro-image-preview"
+      },
+      "models": {
+        "openai-codex/gpt-5.5": {}
       }
     }
   },
@@ -90,6 +95,9 @@
         "enabled": true
       },
       "google": {
+        "enabled": true
+      },
+      "openai": {
         "enabled": true
       }
     }
@@ -233,6 +241,14 @@
       },
       "xurl": {
         "enabled": false
+      }
+    }
+  },
+  "auth": {
+    "profiles": {
+      "openai-codex:steve@knipmeyer.org": {
+        "provider": "openai-codex",
+        "mode": "oauth"
       }
     }
   }
