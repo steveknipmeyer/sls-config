@@ -24,6 +24,10 @@
 			{
 				"fileMatch": ["/home/openclaw/.openclaw/workspace/.agents/skills/sls-openclaw-usage/config.json"],
 				"url": "file:///home/openclaw/.openclaw/workspace/.agents/skills/sls-openclaw-usage/config.schema.json"
+			},
+			{
+				"fileMatch": ["/home/openclaw/.openclaw/workspace/.agents/skills/sls-calendar/config.json"],
+				"url": "file:///home/openclaw/.openclaw/workspace/.agents/skills/sls-calendar/config.schema.json"
 			}
 		],
 		"files.watcherExclude": {

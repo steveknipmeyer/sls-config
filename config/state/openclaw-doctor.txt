@@ -50,15 +50,15 @@
 │                                                                      │
 │  - OAuth dir not present (~/.openclaw/credentials). Skipping create  │
 │    because no WhatsApp/pairing channel config is active.             │
-│  - Found 58 orphan transcript files in                               │
+│  - Found 199 orphan transcript files in                              │
 │    ~/.openclaw/agents/main/sessions.                                 │
 │    These .jsonl files are no longer referenced by sessions.json, so  │
 │    they are not part of any active session history.                  │
 │    Doctor can archive them safely by renaming each file to           │
 │    *.deleted.<timestamp>.                                            │
-│    Examples: 0268db87-2c58-43a4-9475-092f8f78222d.jsonl,             │
-│    03f75f42-de7f-43d7-8dfb-80dc42a60b63.jsonl,                       │
-│    0502bd22-2c46-49be-b7ad-5bbb4108e790.jsonl, and 55 more           │
+│    Examples: 02276861-6a0f-42ee-892e-dc6e22fea420.jsonl,             │
+│    0268db87-2c58-43a4-9475-092f8f78222d.jsonl,                       │
+│    03f75f42-de7f-43d7-8dfb-80dc42a60b63.jsonl, and 196 more          │
 │                                                                      │
 ├──────────────────────────────────────────────────────────────────────╯
 │
@@ -71,7 +71,7 @@
 │
 ◇  Skills status ───────────╮
 │                           │
-│  Eligible: 21             │
+│  Eligible: 24             │
 │  Missing requirements: 1  │
 │  Blocked by allowlist: 0  │
 │                           │

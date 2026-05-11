@@ -6,7 +6,7 @@
   "agents": {
     "defaults": {
       "model": {
-        "primary": "anthropic/claude-sonnet-4-6"
+        "primary": "openai-codex/gpt-5.4"
       },
       "memorySearch": {
         "enabled": false
@@ -33,7 +33,9 @@
             "HIMALAYA_CONFIG": "REDACTED",
             "EMAIL_API_TOKEN": "REDACTED",
             "OURA_CLIENT_ID": "REDACTED",
-            "OURA_CLIENT_SECRET": "REDACTED"
+            "OURA_CLIENT_SECRET": "REDACTED",
+            "GOOGLE_CLIENT_ID": "REDACTED",
+            "GOOGLE_CLIENT_SECRET": "REDACTED"
           }
         }
       },
@@ -41,6 +43,11 @@
         "primary": "google/gemini-3-pro-image-preview"
       },
       "models": {
+        "anthropic/claude-haiku-4-5-20251001": {},
+        "anthropic/claude-sonnet-4-6": {},
+        "google/gemini-3-pro-image-preview": {},
+        "openai-codex/gpt-5.4": {},
+        "openai-codex/gpt-5.4-mini": {},
         "openai-codex/gpt-5.5": {}
       }
     }
