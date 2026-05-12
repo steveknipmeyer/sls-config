@@ -15,3 +15,7 @@ config/state/home/openclaw/dot-openclaw/gateway-token.txt
 
 # Docker build cache
 .dockerignore
+
+# Python virtual environments
+.venv/
+venv/
