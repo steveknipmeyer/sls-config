@@ -263,7 +263,8 @@ redact_secrets "${STATE_DIR}/opt/tailscale-reauth.sh"
 # REVIEWED AND CORRECTED: The original script (generated Mar 29) incorrectly
 # attempted to copy /root/.openclaw/openclaw.json to /home/openclaw/.openclaw/openclaw.json.
 # These are the same file via symlink — the copy was unnecessary and has been removed.
-# The correct manual rotation procedure is documented in extras/MAINTENANCE.md.
+# As of 2026-05-13, the script should follow the config-first policy documented
+# in extras/MAINTENANCE.md: do not keep OPENCLAW_GATEWAY_TOKEN in /opt/openclaw.env.
 # Origin: Created during setup (Mar 29), reviewed and corrected.
 # ---
 harvest_file "/opt/rotate-openclaw-gateway.sh" "${STATE_DIR}/opt/rotate-openclaw-gateway.sh"
@@ -416,7 +417,8 @@ harvest_file "/home/openclaw/.openclaw/openclaw.code-workspace" "${STATE_DIR}/ho
 # a safe, intentionally-committed redacted snapshot.
 #
 # MUST be redacted — contains gateway.auth.token, gateway.remote.token,
-# and hooks.token. Redaction uses jq to target exact JSON paths.
+# and hooks.token. On sls, openclaw.json is the canonical gateway auth source.
+# Redaction uses jq to target exact JSON paths.
 harvest_file "/home/openclaw/.openclaw/openclaw.json" "${STATE_DIR}/home/openclaw/dot-openclaw/openclaw.json"
 jq '
     .gateway.auth.token = "REDACTED" |
@@ -768,8 +770,9 @@ The following secrets are NOT included in this snapshot and must be configured m
 - \`ANTHROPIC_API_KEY\` — set in \`/opt/openclaw.env\`
 - Gateway \`auth.token\` — set in \`~/.openclaw/openclaw.json\`
 - Gateway \`remote.token\` — set in \`~/.openclaw/openclaw.json\`
+- \`OPENCLAW_SERVICE_KIND=gateway\` — set in \`/opt/openclaw.env\` (not a secret, but required for consistent local gateway auth precedence)
 - Hooks \`token\` — set in \`~/.openclaw/openclaw.json\` and \`/opt/openclaw.env\` as \`OPENCLAW_HOOKS_TOKEN\`. Must be different from the gateway auth token.
-- \`~/.openclaw/gateway-token.txt\` — created by installer, contains gateway token (chmod 600)
+- \`~/.openclaw/gateway-token.txt\` — optional legacy convenience file, if you intentionally keep it
 - Tailscale pre-auth key — used in \`/opt/tailscale-reauth.sh\`
 - SSH private keys — must be generated fresh for each deployment
 

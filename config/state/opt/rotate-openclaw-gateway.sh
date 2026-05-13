@@ -4,12 +4,20 @@
 # =============================================================================
 #
 # PURPOSE:
-#   Rotates the OpenClaw gateway authentication token. The token must be
-#   updated in three places to keep them in sync:
-#     1. /opt/openclaw.env              — loaded by systemd at service start
-#     2. ~/.openclaw/openclaw.json      — runtime config (gateway.auth.token
-#                                         and gateway.remote.token)
-#     3. ~/.openclaw/gateway-token.txt  — convenience file created by installer
+#   Rotates the OpenClaw gateway authentication token.
+#
+#   Current sls policy:
+#     1. ~/.openclaw/openclaw.json      — canonical runtime config
+#        (gateway.auth.token and gateway.remote.token)
+#     2. /opt/openclaw.env              — must NOT contain
+#        OPENCLAW_GATEWAY_TOKEN; should contain
+#        OPENCLAW_SERVICE_KIND=gateway
+#     3. ~/.openclaw/gateway-token.txt  — optional legacy convenience file;
+#        keep in sync only if you still intentionally use it
+#
+#   This changed after the 2026-05-13 Telegram outage, where a stale
+#   OPENCLAW_GATEWAY_TOKEN in /opt/openclaw.env drifted from config and caused
+#   internal gateway client token_mismatch failures.
 #
 # USAGE:
 #   Run as root:
@@ -43,25 +51,34 @@ echo ""
 echo "============================================"
 read -rp "Press Enter to apply the new token, or Ctrl+C to abort..."
 
-# Update /opt/openclaw.env
-if grep -q "^OPENCLAW_GATEWAY_TOKEN=" /opt/openclaw.env; then
-    sed -i "s/^OPENCLAW_GATEWAY_TOKEN=REDACTED" /opt/openclaw.env
-    echo "✓ Updated /opt/openclaw.env"
+# Update openclaw.json via openclaw CLI
+# This updates the runtime config file at /home/openclaw/.openclaw/openclaw.json.
+# Set both fields explicitly; do not rely on implicit mirroring.
+su - openclaw -c "openclaw config set gateway.auth.token '${NEW_TOKEN}'"
+su - openclaw -c "openclaw config set gateway.remote.token '${NEW_TOKEN}'"
+echo "✓ Updated gateway.auth.token in openclaw.json"
+echo "✓ Updated gateway.remote.token in openclaw.json"
+
+# Ensure /opt/openclaw.env does not override gateway auth and has service kind
+if grep -q '^OPENCLAW_GATEWAY_TOKEN=' /opt/openclaw.env; then
+    sed -i '/^OPENCLAW_GATEWAY_TOKEN=/d' /opt/openclaw.env
+    echo "✓ Removed OPENCLAW_GATEWAY_TOKEN from /opt/openclaw.env"
 else
-    echo "WARNING: OPENCLAW_GATEWAY_TOKEN not found in /opt/openclaw.env — adding it"
-    echo "OPENCLAW_GATEWAY_TOKEN=REDACTED" >> /opt/openclaw.env
+    echo "✓ OPENCLAW_GATEWAY_TOKEN already absent from /opt/openclaw.env"
 fi
 
-# Update openclaw.json via openclaw CLI
-# This updates the runtime config file at /home/openclaw/.openclaw/openclaw.json
-su - openclaw -c "openclaw config set gateway.auth.token '${NEW_TOKEN}'"
-echo "✓ Updated gateway.auth.token in openclaw.json"
+if grep -q '^OPENCLAW_SERVICE_KIND=' /opt/openclaw.env; then
+    sed -i 's/^OPENCLAW_SERVICE_KIND=.*/OPENCLAW_SERVICE_KIND=gateway/' /opt/openclaw.env
+else
+    echo 'OPENCLAW_SERVICE_KIND=gateway' >> /opt/openclaw.env
+fi
+echo "✓ Ensured OPENCLAW_SERVICE_KIND=gateway in /opt/openclaw.env"
 
-# Update gateway-token.txt (convenience file created by DigitalOcean installer)
+# Update gateway-token.txt only as a legacy convenience file.
 echo "${NEW_TOKEN}" > /home/openclaw/.openclaw/gateway-token.txt
 chmod 600 /home/openclaw/.openclaw/gateway-token.txt
 chown openclaw:openclaw /home/openclaw/.openclaw/gateway-token.txt
-echo "✓ Updated ~/.openclaw/gateway-token.txt"
+echo "✓ Updated ~/.openclaw/gateway-token.txt (legacy convenience copy)"
 
 # Record rotation date for sls-openclaw-system age monitoring
 STATE_DIR="/home/openclaw/.openclaw/workspaces/ada/state/openclaw"
@@ -74,6 +91,14 @@ echo "✓ Updated state/openclaw/gateway-token.json (rotation date recorded)"
 # Restart the gateway service to pick up the new token
 systemctl restart openclaw
 echo "✓ Gateway restarted"
+
+# Verify the live process env did not pick up a stray gateway token
+MAIN_PID=$(systemctl show openclaw -p MainPID --value)
+if tr '\0' '\n' < "/proc/${MAIN_PID}/environ" | grep -q '^OPENCLAW_GATEWAY_TOKEN='; then
+    echo "ERROR: live process still has OPENCLAW_GATEWAY_TOKEN in its environment"
+    exit 1
+fi
+echo "✓ Verified live process has no OPENCLAW_GATEWAY_TOKEN override"
 
 echo ""
 echo "============================================"
