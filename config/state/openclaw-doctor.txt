@@ -20,11 +20,23 @@
 │                                                                        │
 ├────────────────────────────────────────────────────────────────────────╯
 │
-◇  Doctor changes ─────────────────────────────────╮
-│                                                  │
-│  Removed legacy skills.entries.nano-banana-pro.  │
-│                                                  │
-├──────────────────────────────────────────────────╯
+◇  Doctor changes ─────────────────────────────────────────────╮
+│                                                              │
+│  Removed legacy skills.entries.nano-banana-pro.              │
+│  Set messages.groupChat.visibleReplies to "message_tool" so  │
+│  group/channel replies use the message tool by default.      │
+│                                                              │
+├──────────────────────────────────────────────────────────────╯
+│
+◇  Doctor warnings ──────────────────────────────────────────────────────╮
+│                                                                        │
+│  - channels.telegram: default account has no available bot token, and  │
+│    TELEGRAM_BOT_TOKEN is absent in this doctor environment. After      │
+│    migration, verify TELEGRAM_BOT_TOKEN is present in the state-dir    │
+│    .env or configure channels.telegram.botToken /                      │
+│    channels.telegram.accounts.default.botToken as a SecretRef.         │
+│                                                                        │
+├────────────────────────────────────────────────────────────────────────╯
 │
 ◇  Doctor ──────────────────────────────────────────────╮
 │                                                       │
@@ -32,35 +44,32 @@
 │                                                       │
 ├───────────────────────────────────────────────────────╯
 │
-◇  Command owner ─────────────────────────────────────────────────────────╮
-│                                                                         │
-│  No command owner is configured.                                        │
-│  A command owner is the human operator account allowed to run           │
-│  owner-only commands and approve dangerous actions, including           │
-│  /diagnostics, /export-trajectory, /config, and exec approvals.         │
-│  DM pairing only lets someone talk to the bot; it does not make that    │
-│  sender the owner for privileged commands.                              │
-│  Fix: set commands.ownerAllowFrom to your channel user id, for example  │
-│  openclaw config set commands.ownerAllowFrom '["telegram:123456789"]'   │
-│  Restart the gateway after changing this if it is already running.      │
-│                                                                         │
-├─────────────────────────────────────────────────────────────────────────╯
-│
-◇  State integrity ────────────────────────────────────────────────────╮
-│                                                                      │
-│  - OAuth dir not present (~/.openclaw/credentials). Skipping create  │
-│    because no WhatsApp/pairing channel config is active.             │
-│  - Found 199 orphan transcript files in                              │
-│    ~/.openclaw/agents/main/sessions.                                 │
-│    These .jsonl files are no longer referenced by sessions.json, so  │
-│    they are not part of any active session history.                  │
-│    Doctor can archive them safely by renaming each file to           │
-│    *.deleted.<timestamp>.                                            │
-│    Examples: 02276861-6a0f-42ee-892e-dc6e22fea420.jsonl,             │
-│    0268db87-2c58-43a4-9475-092f8f78222d.jsonl,                       │
-│    03f75f42-de7f-43d7-8dfb-80dc42a60b63.jsonl, and 196 more          │
-│                                                                      │
-├──────────────────────────────────────────────────────────────────────╯
+◇  State integrity ────────────────────────────────────────────────────────────╮
+│                                                                              │
+│  - 1/5 recent sessions are missing transcripts.                              │
+│    Verify sessions in store: openclaw sessions --store                       │
+│    "/home/openclaw/.openclaw/agents/main/sessions/sessions.json"             │
+│    Preview cleanup impact: openclaw sessions cleanup --store                 │
+│    "/home/openclaw/.openclaw/agents/main/sessions/sessions.json"             │
+│    --dry-run                                                                 │
+│    Prune missing entries: openclaw sessions cleanup --store                  │
+│    "/home/openclaw/.openclaw/agents/main/sessions/sessions.json"             │
+│    --enforce --fix-missing                                                   │
+│  - Main session transcript missing                                           │
+│    (~/.openclaw/agents/main/sessions/c8cd9a1e-c623-44ab-9556-c1a8e4adcaf6.j  │
+│  sonl).                                                                      │
+│    History will appear to reset.                                             │
+│  - Found 347 orphan transcript files in                                      │
+│    ~/.openclaw/agents/main/sessions.                                         │
+│    These .jsonl files are no longer referenced by sessions.json, so          │
+│    they are not part of any active session history.                          │
+│    Doctor can archive them safely by renaming each file to                   │
+│    *.deleted.<timestamp>.                                                    │
+│    Examples: 00834180-5ce6-4cdf-9c6c-d6371aab02ad.jsonl,                     │
+│    018c9dcf-4607-4b6f-a03c-56df4009520b.jsonl,                               │
+│    02276861-6a0f-42ee-892e-dc6e22fea420.jsonl, and 344 more                  │
+│                                                                              │
+├──────────────────────────────────────────────────────────────────────────────╯
 │
 ◇  Security ─────────────────────────────────╮
 │                                            │
@@ -71,31 +80,20 @@
 │
 ◇  Skills status ───────────╮
 │                           │
-│  Eligible: 24             │
-│  Missing requirements: 1  │
+│  Eligible: 26             │
+│  Missing requirements: 0  │
 │  Blocked by allowlist: 0  │
 │                           │
 ├───────────────────────────╯
 │
 ◇  Plugins ──────╮
 │                │
-│  Loaded: 66    │
+│  Loaded: 67    │
 │  Imported: 0   │
-│  Disabled: 26  │
+│  Disabled: 25  │
 │  Errors: 0     │
 │                │
 ├────────────────╯
-│
-◇  Skills ─────────────────────────────────────────────────────────────────╮
-│                                                                          │
-│  Some skills are allowed for this agent but are not usable in the        │
-│  current runtime environment.                                            │
-│  - coding-agent: any bins: claude, codex, opencode, pi                   │
-│  Disable unused skills: openclaw doctor --fix                            │
-│  Inspect details: openclaw skills check --agent <id> or openclaw skills  │
-│  info <name> --agent <id>                                                │
-│                                                                          │
-├──────────────────────────────────────────────────────────────────────────╯
 │
 ◇  Memory search ──────────────────────────────────────────╮
 │                                                          │

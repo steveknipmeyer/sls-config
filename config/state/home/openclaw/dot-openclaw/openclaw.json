@@ -1,7 +1,7 @@
 {
   "meta": {
     "lastTouchedVersion": "2026.5.4",
-    "lastTouchedAt": "2026-05-07T16:37:03.956Z"
+    "lastTouchedAt": "2026-05-13T16:14:14.837Z"
   },
   "agents": {
     "defaults": {
@@ -27,11 +27,10 @@
           "binds": [],
           "env": {
             "HIMALAYA_PASSWORD": "REDACTED",
-            "ANTHROPIC_API_KEY": "REDACTED",
             "ANTHROPIC_ADMIN_KEY": "REDACTED",
-            "GEMINI_API_TOKEN": "REDACTED",
+            "GEMINI_API_KEY": "REDACTED",
             "HIMALAYA_CONFIG": "REDACTED",
-            "EMAIL_API_TOKEN": "REDACTED",
+            "RESEND_API_KEY": "REDACTED",
             "OURA_CLIENT_ID": "REDACTED",
             "OURA_CLIENT_SECRET": "REDACTED",
             "GOOGLE_CLIENT_ID": "REDACTED",
@@ -66,7 +65,20 @@
     "native": "auto",
     "nativeSkills": "auto",
     "restart": true,
-    "ownerDisplay": "raw"
+    "ownerDisplay": "raw",
+    "ownerAllowFrom": [
+      "telegram:8226581034"
+    ]
+  },
+  "channels": {
+    "telegram": {
+      "enabled": true,
+      "dmPolicy": "allowlist",
+      "allowFrom": [
+        8226581034
+      ],
+      "groupPolicy": "disabled"
+    }
   },
   "gateway": {
     "mode": "local",
@@ -77,7 +89,8 @@
       "dangerouslyDisableDeviceAuth": false
     },
     "auth": {
-      "token": "REDACTED"
+      "token": "REDACTED",
+      "mode": "token"
     },
     "trustedProxies": [
       "127.0.0.1"
@@ -90,11 +103,11 @@
     }
   },
   "hooks": {
-    "enabled": true,
-    "token": "REDACTED",
+    "enabled": false,
     "allowedAgentIds": [
       "main"
-    ]
+    ],
+    "token": "REDACTED"
   },
   "plugins": {
     "entries": {

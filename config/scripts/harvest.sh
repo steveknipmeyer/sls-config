@@ -771,7 +771,7 @@ The following secrets are NOT included in this snapshot and must be configured m
 - Gateway \`auth.token\` — set in \`~/.openclaw/openclaw.json\`
 - Gateway \`remote.token\` — set in \`~/.openclaw/openclaw.json\`
 - \`OPENCLAW_SERVICE_KIND=gateway\` — set in \`/opt/openclaw.env\` (not a secret, but required for consistent local gateway auth precedence)
-- Hooks \`token\` — set in \`~/.openclaw/openclaw.json\` and \`/opt/openclaw.env\` as \`OPENCLAW_HOOKS_TOKEN\`. Must be different from the gateway auth token.
+- Webhook hooks \`token\` — only if hooks are re-enabled later. When used, set in \`~/.openclaw/openclaw.json\` and \`/opt/openclaw.env\` as \`OPENCLAW_HOOKS_TOKEN\`. Must be different from the gateway auth token.
 - \`~/.openclaw/gateway-token.txt\` — optional legacy convenience file, if you intentionally keep it
 - Tailscale pre-auth key — used in \`/opt/tailscale-reauth.sh\`
 - SSH private keys — must be generated fresh for each deployment

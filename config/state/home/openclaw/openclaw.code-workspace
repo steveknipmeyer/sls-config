@@ -3,7 +3,7 @@
 		{ "path": "." },
 	],
 	"settings": {
-		"git.repositoryScanMaxDepth": 4,
+		"git.repositoryScanMaxDepth": 2,
 		"scm.countBadge": "all",
 		"workbench.colorCustomizations": {
 		"titleBar.activeBackground": "#055579"
@@ -52,6 +52,12 @@
 			"projects/openclaw": true,
 			"workspace/npm": true
 		},
+		"python.analysis.exclude": [
+			"workspace/working/**",
+			"workspace/public/**",
+			"workspace/npm/**",
+			"**/node_modules/**"
+		],
 		"livePreview.portNumber": 3900,
 		"favorites.resources": [
 			{
@@ -70,6 +76,9 @@
 				"filePath": "/home/openclaw/.openclaw/workspace/working",
 				"group": "Default"
 			}
-		]
+		],
+		"chat.tools.terminal.autoApprove": {
+			"journalctl": true
+		}
 	}
 }
