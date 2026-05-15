@@ -36,20 +36,20 @@
 			"**/dist/**": true,
 			"**/.git/**": true,
 			"homebrew/**": true,
-			"projects/openclaw/**": true,
 			"workspace/npm/**": true
 		},
 		"files.exclude": {
 			"**/*.clobbered.*": true,
 			"**/*.bak.*": true,
+			"**/.env": true,
+			"**/secrets": true,
 			"workspace/npm/**": true,
-			"homebrew/**": true,
-			"projects/openclaw/**": true
+			"homebrew/**": true
 		},
 		"search.exclude": {
+			"**/.env": true,
 			"**/node_modules": true,
 			"homebrew": true,
-			"projects/openclaw": true,
 			"workspace/npm": true
 		},
 		"python.analysis.exclude": [

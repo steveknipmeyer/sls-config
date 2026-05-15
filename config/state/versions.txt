@@ -1,8 +1,8 @@
 # OpenClaw Environment — Version Snapshot
-# Generated: 2026-05-14T16:18:59Z
+# Generated: 2026-05-15T14:04:20Z
 
 ## OpenClaw
-OpenClaw 2026.5.4 (325df3e)
+OpenClaw 2026.5.12 (f066dd2)
 
 ## Node.js
 v22.22.2

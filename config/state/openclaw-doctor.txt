@@ -20,13 +20,11 @@
 │                                                                        │
 ├────────────────────────────────────────────────────────────────────────╯
 │
-◇  Doctor changes ─────────────────────────────────────────────╮
-│                                                              │
-│  Removed legacy skills.entries.nano-banana-pro.              │
-│  Set messages.groupChat.visibleReplies to "message_tool" so  │
-│  group/channel replies use the message tool by default.      │
-│                                                              │
-├──────────────────────────────────────────────────────────────╯
+◇  Doctor changes preview ─────────────────────────╮
+│                                                  │
+│  Removed legacy skills.entries.nano-banana-pro.  │
+│                                                  │
+├──────────────────────────────────────────────────╯
 │
 ◇  Doctor warnings ──────────────────────────────────────────────────────╮
 │                                                                        │
@@ -38,38 +36,25 @@
 │                                                                        │
 ├────────────────────────────────────────────────────────────────────────╯
 │
+◇  Doctor warnings ────────────────────────────────────────────────────────╮
+│                                                                          │
+│  - Personal Codex CLI assets were found, but native Codex-mode OpenClaw  │
+│    agents use isolated per-agent Codex homes.                            │
+│  - Sources: /home/openclaw/.codex and /home/openclaw/.agents/skills (1   │
+│    skill, 3 plugins, 1 config file, 0 hook files).                       │
+│  - These assets will not be loaded by the Codex app-server child unless  │
+│    you intentionally promote them.                                       │
+│  - Run `openclaw migrate codex --dry-run` to inventory them. Applying    │
+│    that migration copies skills into the current OpenClaw agent          │
+│    workspace; Codex plugins, hooks, and config stay manual-review only.  │
+│                                                                          │
+├──────────────────────────────────────────────────────────────────────────╯
+│
 ◇  Doctor ──────────────────────────────────────────────╮
 │                                                       │
 │  Run "openclaw doctor --fix" to apply these changes.  │
 │                                                       │
 ├───────────────────────────────────────────────────────╯
-│
-◇  State integrity ────────────────────────────────────────────────────────────╮
-│                                                                              │
-│  - 1/5 recent sessions are missing transcripts.                              │
-│    Verify sessions in store: openclaw sessions --store                       │
-│    "/home/openclaw/.openclaw/agents/main/sessions/sessions.json"             │
-│    Preview cleanup impact: openclaw sessions cleanup --store                 │
-│    "/home/openclaw/.openclaw/agents/main/sessions/sessions.json"             │
-│    --dry-run                                                                 │
-│    Prune missing entries: openclaw sessions cleanup --store                  │
-│    "/home/openclaw/.openclaw/agents/main/sessions/sessions.json"             │
-│    --enforce --fix-missing                                                   │
-│  - Main session transcript missing                                           │
-│    (~/.openclaw/agents/main/sessions/c8cd9a1e-c623-44ab-9556-c1a8e4adcaf6.j  │
-│  sonl).                                                                      │
-│    History will appear to reset.                                             │
-│  - Found 347 orphan transcript files in                                      │
-│    ~/.openclaw/agents/main/sessions.                                         │
-│    These .jsonl files are no longer referenced by sessions.json, so          │
-│    they are not part of any active session history.                          │
-│    Doctor can archive them safely by renaming each file to                   │
-│    *.deleted.<timestamp>.                                                    │
-│    Examples: 00834180-5ce6-4cdf-9c6c-d6371aab02ad.jsonl,                     │
-│    018c9dcf-4607-4b6f-a03c-56df4009520b.jsonl,                               │
-│    02276861-6a0f-42ee-892e-dc6e22fea420.jsonl, and 344 more                  │
-│                                                                              │
-├──────────────────────────────────────────────────────────────────────────────╯
 │
 ◇  Security ─────────────────────────────────╮
 │                                            │
@@ -88,12 +73,24 @@
 │
 ◇  Plugins ──────╮
 │                │
-│  Loaded: 67    │
+│  Loaded: 66    │
 │  Imported: 0   │
-│  Disabled: 25  │
+│  Disabled: 24  │
 │  Errors: 0     │
 │                │
 ├────────────────╯
+│
+◇  OpenClaw version mismatch ─────────────────────────────────────────────╮
+│                                                                         │
+│  This command is OpenClaw 2026.5.12; the running Gateway is OpenClaw    │
+│  2026.5.4.                                                              │
+│  Check `openclaw --version`, `which openclaw`, and `openclaw gateway    │
+│  status --deep`.                                                        │
+│  If this mismatch is unexpected, update PATH so `openclaw` points to    │
+│  the version you want, or reinstall the Gateway service from that same  │
+│  OpenClaw install.                                                      │
+│                                                                         │
+├─────────────────────────────────────────────────────────────────────────╯
 │
 ◇  Memory search ──────────────────────────────────────────╮
 │                                                          │

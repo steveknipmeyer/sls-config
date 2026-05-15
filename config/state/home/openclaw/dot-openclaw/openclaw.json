@@ -1,19 +1,19 @@
 {
   "meta": {
-    "lastTouchedVersion": "2026.5.4",
-    "lastTouchedAt": "2026-05-13T16:14:14.837Z"
+    "lastTouchedVersion": "2026.5.12",
+    "lastTouchedAt": "2026-05-15T13:49:30.536Z"
   },
   "agents": {
     "defaults": {
       "model": {
-        "primary": "openai-codex/gpt-5.4"
+        "primary": "openai/gpt-5.4"
       },
       "memorySearch": {
         "enabled": false
       },
       "heartbeat": {
         "every": "1h",
-        "model": "openai-codex/gpt-5.4-mini",
+        "model": "openai/gpt-5.4-mini",
         "lightContext": true,
         "isolatedSession": true
       },
@@ -26,11 +26,11 @@
           "network": "bridge",
           "binds": [],
           "env": {
-            "HIMALAYA_PASSWORD": "REDACTED",
-            "ANTHROPIC_ADMIN_KEY": "REDACTED",
             "GEMINI_API_KEY": "REDACTED",
-            "HIMALAYA_CONFIG": "REDACTED",
+            "ANTHROPIC_ADMIN_KEY": "REDACTED",
             "RESEND_API_KEY": "REDACTED",
+            "HIMALAYA_PASSWORD": "REDACTED",
+            "HIMALAYA_CONFIG": "REDACTED",
             "OURA_CLIENT_ID": "REDACTED",
             "OURA_CLIENT_SECRET": "REDACTED",
             "GOOGLE_CLIENT_ID": "REDACTED",
@@ -45,10 +45,23 @@
         "anthropic/claude-haiku-4-5-20251001": {},
         "anthropic/claude-sonnet-4-6": {},
         "google/gemini-3-pro-image-preview": {},
-        "openai-codex/gpt-5.4": {},
-        "openai-codex/gpt-5.4-mini": {},
-        "openai-codex/gpt-5.5": {}
-      }
+        "openai/gpt-5.4": {
+          "agentRuntime": {
+            "id": "codex"
+          }
+        },
+        "openai/gpt-5.4-mini": {
+          "agentRuntime": {
+            "id": "codex"
+          }
+        },
+        "openai/gpt-5.5": {
+          "agentRuntime": {
+            "id": "codex"
+          }
+        }
+      },
+      "workspace": "/home/openclaw/.openclaw/workspace"
     }
   },
   "tools": {
@@ -59,7 +72,8 @@
     },
     "elevated": {
       "enabled": true
-    }
+    },
+    "profile": "coding"
   },
   "commands": {
     "native": "auto",
@@ -96,11 +110,14 @@
       "127.0.0.1"
     ],
     "tailscale": {
-      "mode": "serve"
+      "mode": "off",
+      "resetOnExit": false
     },
     "remote": {
       "token": "REDACTED"
-    }
+    },
+    "port": 18789,
+    "bind": "loopback"
   },
   "hooks": {
     "enabled": false,
@@ -119,12 +136,15 @@
       },
       "openai": {
         "enabled": true
+      },
+      "codex": {
+        "enabled": true
       }
     }
   },
   "wizard": {
-    "lastRunAt": "2026-05-05T12:59:24.390Z",
-    "lastRunVersion": "2026.5.4",
+    "lastRunAt": "2026-05-15T13:49:30.226Z",
+    "lastRunVersion": "2026.5.12",
     "lastRunCommand": "doctor",
     "lastRunMode": "local"
   },
@@ -262,6 +282,9 @@
       "xurl": {
         "enabled": false
       }
+    },
+    "install": {
+      "nodeManager": "npm"
     }
   },
   "auth": {
@@ -269,7 +292,19 @@
       "openai-codex:steve@knipmeyer.org": {
         "provider": "openai-codex",
         "mode": "oauth"
+      },
+      "google:api-key": {
+        "provider": "google",
+        "mode": "token"
       }
     }
+  },
+  "messages": {
+    "groupChat": {
+      "visibleReplies": "message_tool"
+    }
+  },
+  "session": {
+    "dmScope": "per-channel-peer"
   }
 }
