@@ -27,3 +27,4 @@
 30 7 * * * mkdir -p /home/openclaw/.openclaw/workspace/working/sls-openclaw && bash /home/openclaw/.openclaw/workspace/.agents/skills/sls-openclaw/scripts/openclaw-health.sh > /home/openclaw/.openclaw/workspace/working/sls-openclaw/health.json 2>/home/openclaw/.openclaw/workspace/working/sls-openclaw/health.err
 30 7 * * * bash /home/openclaw/.openclaw/workspace/.agents/skills/sls-openclaw-usage/scripts/fetch-openclaw-usage.sh >> /home/openclaw/.openclaw/workspace/working/sls-openclaw/usage-fetch.log 2>&1
 30 7 * * * bash /home/openclaw/.openclaw/workspace/.agents/skills/sls-news-gemini/scripts/fetch-news.sh >> /home/openclaw/.openclaw/workspace/working/sls-news-gemini/fetch-news.log 2>&1
+30 7 * * * bash /home/openclaw/.openclaw/workspace/.agents/skills/sls-inbox/scripts/fetch-inbox.sh >> /home/openclaw/.openclaw/workspace/working/sls-inbox/fetch-inbox.log 2>&1
