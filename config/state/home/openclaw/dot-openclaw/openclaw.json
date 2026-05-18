@@ -25,21 +25,14 @@
           "image": "openclaw-sandbox-sls:bookworm-slim",
           "network": "bridge",
           "binds": [],
-          "env": {
-            "GEMINI_API_KEY": "REDACTED",
-            "ANTHROPIC_ADMIN_KEY": "REDACTED",
-            "RESEND_API_KEY": "REDACTED",
-            "HIMALAYA_PASSWORD": "REDACTED",
-            "HIMALAYA_CONFIG": "REDACTED",
-            "OURA_CLIENT_ID": "REDACTED",
-            "OURA_CLIENT_SECRET": "REDACTED",
-            "GOOGLE_CLIENT_ID": "REDACTED",
-            "GOOGLE_CLIENT_SECRET": "REDACTED"
-          }
+          "env": {}
         }
       },
       "imageGenerationModel": {
-        "primary": "google/gemini-3-pro-image-preview"
+        "primary": "openai/gpt-image-2",
+        "fallbacks": [
+          "google/gemini-3-pro-image-preview"
+        ]
       },
       "models": {
         "anthropic/claude-haiku-4-5-20251001": {},
@@ -73,7 +66,16 @@
     "elevated": {
       "enabled": true
     },
-    "profile": "coding"
+    "profile": "coding",
+    "sandbox": {
+      "tools": {
+        "alsoAllow": [
+          "image_generate",
+          "web_fetch",
+          "web_search"
+        ]
+      }
+    }
   },
   "commands": {
     "native": "auto",
@@ -138,7 +140,10 @@
         "enabled": true
       },
       "codex": {
-        "enabled": true
+        "enabled": true,
+        "config": {
+          "codexDynamicToolsLoading": "direct"
+        }
       }
     }
   },
@@ -302,7 +307,8 @@
   "messages": {
     "groupChat": {
       "visibleReplies": "message_tool"
-    }
+    },
+    "visibleReplies": "automatic"
   },
   "session": {
     "dmScope": "per-channel-peer"

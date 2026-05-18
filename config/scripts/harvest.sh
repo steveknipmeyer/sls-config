@@ -148,7 +148,7 @@ redact_secrets() {
             local key="${BASH_REMATCH[1]}"
             local value="${BASH_REMATCH[2]}"
 
-            if [[ ! "$key" =~ _URL$ ]] && [[ "$key" =~ (API_KEY|TOKEN|SECRET|PASSWORD|CREDENTIAL|CLIENT_ID) ]]; then
+            if [[ ! "$key" =~ _URL$ ]] && [[ "$key" =~ (API_KEY|ADMIN_KEY|TOKEN|SECRET|PASSWORD|CREDENTIAL|CLIENT_ID) ]]; then
                 local quote=""
 
                 if [[ ${#value} -ge 2 ]]; then

@@ -56,6 +56,22 @@
 │                                                       │
 ├───────────────────────────────────────────────────────╯
 │
+◇  State integrity ─────────────────────────────────────────────────────╮
+│                                                                       │
+│  - State directory permissions are too open (~/.openclaw). Recommend  │
+│    chmod 700.                                                         │
+│  - Found 135 orphan transcript files in                               │
+│    ~/.openclaw/agents/main/sessions.                                  │
+│    These .jsonl files are no longer referenced by sessions.json, so   │
+│    they are not part of any active session history.                   │
+│    Doctor can archive them safely by renaming each file to            │
+│    *.deleted.<timestamp>.                                             │
+│    Examples: 013b5103-abe8-4986-90b2-f6ee5803a471.jsonl,              │
+│    014a9cbe-c244-42e2-b1a2-275ddae74362.jsonl,                        │
+│    034a20e1-d43a-4a36-8555-93b3ab8342f9.jsonl, and 132 more           │
+│                                                                       │
+├───────────────────────────────────────────────────────────────────────╯
+│
 ◇  Security ─────────────────────────────────╮
 │                                            │
 │  - No channel security warnings detected.  │
@@ -79,18 +95,6 @@
 │  Errors: 0     │
 │                │
 ├────────────────╯
-│
-◇  OpenClaw version mismatch ─────────────────────────────────────────────╮
-│                                                                         │
-│  This command is OpenClaw 2026.5.12; the running Gateway is OpenClaw    │
-│  2026.5.4.                                                              │
-│  Check `openclaw --version`, `which openclaw`, and `openclaw gateway    │
-│  status --deep`.                                                        │
-│  If this mismatch is unexpected, update PATH so `openclaw` points to    │
-│  the version you want, or reinstall the Gateway service from that same  │
-│  OpenClaw install.                                                      │
-│                                                                         │
-├─────────────────────────────────────────────────────────────────────────╯
 │
 ◇  Memory search ──────────────────────────────────────────╮
 │                                                          │
