@@ -1,31 +1,64 @@
 # Edit this file to introduce tasks to be run by cron.
-# 
+#
 # Each task to run has to be defined through a single line
 # indicating with different fields when the task will be run
 # and what command to run for the task
-# 
+#
 # To define the time you can provide concrete values for
 # minute (m), hour (h), day of month (dom), month (mon),
 # and day of week (dow) or use '*' in these fields (for 'any').
-# 
+#
 # Notice that tasks will be started based on the cron's system
 # daemon's notion of time and timezones.
-# 
+#
 # Output of the crontab jobs (including errors) is sent through
 # email to the user the crontab file belongs to (unless redirected).
-# 
+#
 # For example, you can run a backup of all your user accounts
 # at 5 a.m every week with:
 # 0 5 * * 1 tar -zcf /var/backups/home.tgz /home/
-# 
+#
 # For more information see the manual pages of crontab(5) and cron(8)
-# 
+#
 # m h  dom mon dow   command
 
-# sls-system: run audit scripts as root, write JSON for Ada's 3:45 AM cron
-#N.B. The root cron job tines are UTC not local time.
+# N.B. All times are UTC. Ada's OpenClaw crons run at 7:45–8:00 AM UTC (3:45–4:00 AM ET).
+#      Root scripts at 7:25 and 7:30 must complete before Ada's crons start.
+#
+# ORDERING MATTERS for the fragment directory:
+#   7:25 — pre-create fragments/DATE/ as openclaw (MUST run before 7:30 scripts)
+#   7:30 — all data-fetch scripts run concurrently; they write into the pre-created dir
+
+# [7:25] Pre-create today's brief fragment directory as openclaw.
+# Guarantees the directory is openclaw-owned before any 7:30 script touches it.
+# If this step is skipped, any 7:30 script that creates the directory as root
+# will block all Ada fragment writes (PermissionError).
+25 7 * * * install -d -o openclaw -g openclaw /home/openclaw/.openclaw/workspace/working/sls-daily-brief/fragments/$(date -u +%Y-%m-%d)
+
+# [7:30] sls-system: run security audit and system health checks as root.
+# Writes working/sls-system/security.json and health.json.
+# Ada's sls-system cron (7:45 AM UTC) reads these files to build the brief fragment.
 30 7 * * * mkdir -p /home/openclaw/.openclaw/workspace/working/sls-system && bash /home/openclaw/.openclaw/workspace/.agents/skills/sls-system/scripts/security-audit.sh > /home/openclaw/.openclaw/workspace/working/sls-system/security.json 2>&1 && bash /home/openclaw/.openclaw/workspace/.agents/skills/sls-system/scripts/system-health.sh > /home/openclaw/.openclaw/workspace/working/sls-system/health.json 2>&1
+
+# [7:30] sls-openclaw: run OpenClaw gateway health check as root.
+# Writes working/sls-openclaw/health.json.
+# Ada's sls-openclaw cron (7:47 AM UTC) reads this file to build the brief fragment.
 30 7 * * * mkdir -p /home/openclaw/.openclaw/workspace/working/sls-openclaw && bash /home/openclaw/.openclaw/workspace/.agents/skills/sls-openclaw/scripts/openclaw-health.sh > /home/openclaw/.openclaw/workspace/working/sls-openclaw/health.json 2>/home/openclaw/.openclaw/workspace/working/sls-openclaw/health.err
+
+# [7:30] sls-openclaw-usage: fetch Anthropic API usage via Admin API.
+# Reads ANTHROPIC_ADMIN_KEY from /opt/openclaw.env.
+# Writes fragments/DATE/sls-openclaw-usage.html (and alerts if issues found).
+# Ada's sls-openclaw cron (7:47 AM UTC) verifies this fragment exists.
 30 7 * * * bash /home/openclaw/.openclaw/workspace/.agents/skills/sls-openclaw-usage/scripts/fetch-openclaw-usage.sh >> /home/openclaw/.openclaw/workspace/working/sls-openclaw/usage-fetch.log 2>&1
+
+# [7:30] sls-news-gemini: fetch daily news via Gemini API with grounding.
+# Reads GEMINI_API_KEY from /opt/openclaw.env.
+# Writes news-*.html fragments to fragments/DATE/. Ada cron for this skill is disabled;
+# sls-daily-brief assembler reads these fragments directly.
 30 7 * * * bash /home/openclaw/.openclaw/workspace/.agents/skills/sls-news-gemini/scripts/fetch-news.sh >> /home/openclaw/.openclaw/workspace/working/sls-news-gemini/fetch-news.log 2>&1
+
+# [7:30] sls-inbox: fetch Ada's inbox via himalaya IMAP as root.
+# Reads HIMALAYA_PASSWORD from /opt/openclaw.env.
+# Exports all 24h envelopes and message parts to working/sls-inbox/himalaya-run/.
+# Ada's sls-inbox cron (7:55 AM UTC) reads pre-fetched data; makes no live IMAP calls.
 30 7 * * * bash /home/openclaw/.openclaw/workspace/.agents/skills/sls-inbox/scripts/fetch-inbox.sh >> /home/openclaw/.openclaw/workspace/working/sls-inbox/fetch-inbox.log 2>&1
