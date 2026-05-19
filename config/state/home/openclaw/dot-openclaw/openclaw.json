@@ -1,7 +1,7 @@
 {
   "meta": {
-    "lastTouchedVersion": "2026.5.12",
-    "lastTouchedAt": "2026-05-15T13:49:30.536Z"
+    "lastTouchedVersion": "2026.5.18",
+    "lastTouchedAt": "2026-05-19T13:51:39.611Z"
   },
   "agents": {
     "defaults": {
@@ -93,7 +93,10 @@
       "allowFrom": [
         8226581034
       ],
-      "groupPolicy": "disabled"
+      "groupPolicy": "disabled",
+      "groupAllowFrom": [
+        "8226581034"
+      ]
     }
   },
   "gateway": {
@@ -148,8 +151,8 @@
     }
   },
   "wizard": {
-    "lastRunAt": "2026-05-15T13:49:30.226Z",
-    "lastRunVersion": "2026.5.12",
+    "lastRunAt": "2026-05-19T13:51:39.558Z",
+    "lastRunVersion": "2026.5.18",
     "lastRunCommand": "doctor",
     "lastRunMode": "local"
   },

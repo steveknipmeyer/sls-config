@@ -3,22 +3,23 @@
 ██░███░██░▀▀░██░▄▄▄██░█░█░██░█████░████░▀▀░██░█░█░██
 ██░▀▀▀░██░█████░▀▀▀██░██▄░██░▀▀▄██░▀▀░█░██░██▄▀▄▀▄██
 ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
-                  🦞 OPENCLAW 🦞                    
+                       OPENCLAW                       
  
 ┌  OpenClaw doctor
 │
-◇  Startup optimization ─────────────────────────────────────────────────╮
-│                                                                        │
-│  - NODE_COMPILE_CACHE is not set; repeated CLI runs can be slower on   │
-│    small hosts (Pi/VM).                                                │
-│  - OPENCLAW_NO_RESPAWN is not set to 1; set it to avoid extra startup  │
-│    overhead from self-respawn.                                         │
-│  - Suggested env for low-power hosts:                                  │
-│    export NODE_COMPILE_CACHE=/var/tmp/openclaw-compile-cache           │
-│    mkdir -p /var/tmp/openclaw-compile-cache                            │
-│    export OPENCLAW_NO_RESPAWN=1                                        │
-│                                                                        │
-├────────────────────────────────────────────────────────────────────────╯
+◇  Startup optimization ────────────────────────────────────────────────╮
+│                                                                       │
+│  - NODE_COMPILE_CACHE is not set; repeated CLI runs can be slower on  │
+│    small hosts (Pi/VM).                                               │
+│  - OPENCLAW_NO_RESPAWN is not set to 1; set it when you want routine  │
+│    gateway restarts to stay in-process instead of handing off to a    │
+│    managed supervisor.                                                │
+│  - Suggested env for low-power hosts:                                 │
+│    export NODE_COMPILE_CACHE=/var/tmp/openclaw-compile-cache          │
+│    mkdir -p /var/tmp/openclaw-compile-cache                           │
+│    export OPENCLAW_NO_RESPAWN=1                                       │
+│                                                                       │
+├───────────────────────────────────────────────────────────────────────╯
 │
 ◇  Doctor changes preview ─────────────────────────╮
 │                                                  │
@@ -56,21 +57,45 @@
 │                                                       │
 ├───────────────────────────────────────────────────────╯
 │
-◇  State integrity ─────────────────────────────────────────────────────╮
-│                                                                       │
-│  - State directory permissions are too open (~/.openclaw). Recommend  │
-│    chmod 700.                                                         │
-│  - Found 135 orphan transcript files in                               │
-│    ~/.openclaw/agents/main/sessions.                                  │
-│    These .jsonl files are no longer referenced by sessions.json, so   │
-│    they are not part of any active session history.                   │
-│    Doctor can archive them safely by renaming each file to            │
-│    *.deleted.<timestamp>.                                             │
-│    Examples: 013b5103-abe8-4986-90b2-f6ee5803a471.jsonl,              │
-│    014a9cbe-c244-42e2-b1a2-275ddae74362.jsonl,                        │
-│    034a20e1-d43a-4a36-8555-93b3ab8342f9.jsonl, and 132 more           │
-│                                                                       │
-├───────────────────────────────────────────────────────────────────────╯
+◇  State integrity ────────────────────────────────────────────────────╮
+│                                                                      │
+│  - Found 195 orphan transcript files in                              │
+│    ~/.openclaw/agents/main/sessions.                                 │
+│    These .jsonl files are no longer referenced by sessions.json, so  │
+│    they are not part of any active session history.                  │
+│    Doctor can archive them safely by renaming each file to           │
+│    *.deleted.<timestamp>.                                            │
+│    Examples: 013b5103-abe8-4986-90b2-f6ee5803a471.jsonl,             │
+│    014a9cbe-c244-42e2-b1a2-275ddae74362.jsonl,                       │
+│    0300fa32-d5a0-4e33-a84b-9b6d5f9c5870.jsonl, and 192 more          │
+│                                                                      │
+├──────────────────────────────────────────────────────────────────────╯
+│
+◇  Doctor warnings ───────────────────────────────────────────────────────╮
+│                                                                         │
+│  - Legacy `openai-codex/*` session route state detected.                │
+│  - Affected sessions: 8.                                                │
+│  - Run `openclaw doctor --fix` to rewrite stale session model/provider  │
+│    pins across all agent session stores.                                │
+│                                                                         │
+├─────────────────────────────────────────────────────────────────────────╯
+│
+◇  Cron ───────────────────────────────────────────────────────────────────╮
+│                                                                          │
+│  Cron model overrides detected at ~/.openclaw/cron/jobs.json.            │
+│  - 10 jobs set `payload.model` and will not inherit                      │
+│    `agents.defaults.model` (openai/gpt-5.4)                              │
+│  - Provider namespaces: openai=10                                        │
+│  - 6 jobs use a different model than `agents.defaults.model`             │
+│    (openai/gpt-5.4)                                                      │
+│  - Examples: 4dce6b51-6028-4a50-8433-db0e9c28cf89 ->                     │
+│    openai/gpt-5.4-mini, 2a7aa4d3-f6dd-489e-a56e-b90cd4f96c3a ->          │
+│    openai/gpt-5.4-mini, db2c95ec-6ed7-4e97-8ad8-10ebfd51a449 ->          │
+│    openai/gpt-5.4-mini                                                   │
+│  Review with openclaw cron list and openclaw cron show <job-id>; remove  │
+│  `payload.model` from jobs that should inherit the default.              │
+│                                                                          │
+├──────────────────────────────────────────────────────────────────────────╯
 │
 ◇  Security ─────────────────────────────────╮
 │                                            │
@@ -81,7 +106,7 @@
 │
 ◇  Skills status ───────────╮
 │                           │
-│  Eligible: 26             │
+│  Eligible: 32             │
 │  Missing requirements: 0  │
 │  Blocked by allowlist: 0  │
 │                           │
@@ -91,10 +116,22 @@
 │                │
 │  Loaded: 66    │
 │  Imported: 0   │
-│  Disabled: 24  │
+│  Disabled: 25  │
 │  Errors: 0     │
 │                │
 ├────────────────╯
+│
+◇  OpenClaw version mismatch ─────────────────────────────────────────────╮
+│                                                                         │
+│  This command is OpenClaw 2026.5.18; the running Gateway is OpenClaw    │
+│  2026.5.12.                                                             │
+│  Check `openclaw --version`, `which openclaw`, and `openclaw gateway    │
+│  status --deep`.                                                        │
+│  If this mismatch is unexpected, update PATH so `openclaw` points to    │
+│  the version you want, or reinstall the Gateway service from that same  │
+│  OpenClaw install.                                                      │
+│                                                                         │
+├─────────────────────────────────────────────────────────────────────────╯
 │
 ◇  Memory search ──────────────────────────────────────────╮
 │                                                          │

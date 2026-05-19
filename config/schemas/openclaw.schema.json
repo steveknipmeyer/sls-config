@@ -141,6 +141,11 @@
           "title": "Session Abort Threshold (ms)",
           "description": "No-progress age threshold in milliseconds before eligible stalled active work may be abort-drained for recovery. Defaults to the safer extended embedded-run recovery window."
         },
+        "memoryPressureSnapshot": {
+          "type": "boolean",
+          "title": "Memory Pressure Snapshot Enabled",
+          "description": "Whether critical memory pressure automatically captures a redacted stability snapshot. Default: false. Enable only when this host can tolerate the extra file-system scan and snapshot write during critical memory pressure."
+        },
         "otel": {
           "type": "object",
           "properties": {
@@ -1290,6 +1295,14 @@
           "type": "string",
           "title": "ACP Backend",
           "description": "Default ACP runtime backend id (for example: acpx). Must match a registered ACP runtime plugin backend."
+        },
+        "fallbacks": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "ACP Fallback Backends",
+          "description": "Ordered list of fallback ACP backend ids tried when the primary backend fails with UNAVAILABLE (for example: rate-limit / quota exhausted). Each entry must match a registered ACP runtime plugin backend."
         },
         "defaultAgent": {
           "type": "string",
@@ -3151,7 +3164,7 @@
                   "allowPrivateNetwork": {
                     "type": "boolean",
                     "title": "Model Provider Request Allow Private Network",
-                    "description": "When true, allow HTTPS to the model base URL when DNS resolves to private, CGNAT, or similar ranges, via the provider HTTP fetch guard (fetchWithSsrFGuard). OpenAI Responses WebSocket reuses request for headers/TLS but does not use that fetch SSRF path. Use only for operator-controlled self-hosted OpenAI-compatible endpoints (LAN, overlay, split DNS). Default is false."
+                    "description": "When true, allow model-provider HTTP requests to private, CGNAT, or similar ranges through the provider HTTP fetch guard (fetchWithSsrFGuard). Custom/local provider base URLs already trust the exact configured origin, except metadata/link-local origins; set this to false to opt out of that trust. OpenAI Responses WebSocket reuses request for headers/TLS but does not use that fetch SSRF path. Use true only for operator-controlled self-hosted endpoints that must reach private origins outside the configured baseUrl origin."
                   }
                 },
                 "additionalProperties": false,
@@ -3409,6 +3422,10 @@
                             },
                             {
                               "type": "string",
+                              "const": "together"
+                            },
+                            {
+                              "type": "string",
                               "const": "qwen"
                             },
                             {
@@ -3585,11 +3602,6 @@
                       },
                       "title": "Model Fallbacks",
                       "description": "Ordered fallback models (provider/model). Used when the primary model fails."
-                    },
-                    "timeoutMs": {
-                      "type": "integer",
-                      "exclusiveMinimum": 0,
-                      "maximum": 9007199254740991
                     }
                   },
                   "additionalProperties": false
@@ -3827,18 +3839,6 @@
             "silentReply": {
               "type": "object",
               "properties": {
-                "direct": {
-                  "anyOf": [
-                    {
-                      "type": "string",
-                      "const": "allow"
-                    },
-                    {
-                      "type": "string",
-                      "const": "disallow"
-                    }
-                  ]
-                },
                 "group": {
                   "anyOf": [
                     {
@@ -3862,21 +3862,6 @@
                       "const": "disallow"
                     }
                   ]
-                }
-              },
-              "additionalProperties": false
-            },
-            "silentReplyRewrite": {
-              "type": "object",
-              "properties": {
-                "direct": {
-                  "type": "boolean"
-                },
-                "group": {
-                  "type": "boolean"
-                },
-                "internal": {
-                  "type": "boolean"
                 }
               },
               "additionalProperties": false
@@ -4001,7 +3986,7 @@
                 }
               ],
               "title": "Bootstrap Prompt Truncation Warning",
-              "description": "Inject agent-visible warning text when bootstrap files are truncated: \"off\", \"once\" (default), or \"always\"."
+              "description": "Inject agent-visible warning text when bootstrap files are truncated: \"off\", \"once\", or \"always\" (default)."
             },
             "userTimezone": {
               "type": "string"
@@ -5346,6 +5331,42 @@
               "title": "Compaction",
               "description": "Compaction tuning for when context nears token limits, including history share, reserve headroom, and pre-compaction memory flush behavior. Use this when long-running sessions need stable continuity under tight context windows."
             },
+            "runRetries": {
+              "type": "object",
+              "properties": {
+                "base": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991,
+                  "title": "Run Retries Base",
+                  "description": "Base number of run retry iterations for the embedded Pi runner's outer run loop (default: 24)."
+                },
+                "perProfile": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991,
+                  "title": "Run Retries Per Profile",
+                  "description": "Additional run retry iterations granted per fallback profile candidate (default: 8)."
+                },
+                "min": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991,
+                  "title": "Run Retries Minimum",
+                  "description": "Minimum absolute limit for run retry iterations (default: 32)."
+                },
+                "max": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991,
+                  "title": "Run Retries Maximum",
+                  "description": "Maximum absolute limit for run retry iterations to prevent runaway execution (default: 160)."
+                }
+              },
+              "additionalProperties": false,
+              "title": "Run Retries",
+              "description": "Outer run loop retry iteration boundaries for the embedded Pi runner to prevent infinite execution loops during failure recovery."
+            },
             "embeddedPi": {
               "type": "object",
               "properties": {
@@ -5729,7 +5750,7 @@
                 "skipWhenBusy": {
                   "type": "boolean",
                   "title": "Heartbeat Skip When Busy",
-                  "description": "When true, defer heartbeat turns on extra busy lanes: subagent or nested command work. Cron lanes always defer heartbeat turns."
+                  "description": "When true, defer heartbeat turns on this agent's extra busy lanes: its own session-keyed subagent or nested command work. Cron lanes always defer heartbeat turns."
                 }
               },
               "additionalProperties": false
@@ -5795,11 +5816,6 @@
                           "items": {
                             "type": "string"
                           }
-                        },
-                        "timeoutMs": {
-                          "type": "integer",
-                          "exclusiveMinimum": 0,
-                          "maximum": 9007199254740991
                         }
                       },
                       "additionalProperties": false
@@ -6414,6 +6430,9 @@
               "name": {
                 "type": "string"
               },
+              "description": {
+                "type": "string"
+              },
               "workspace": {
                 "type": "string"
               },
@@ -6465,11 +6484,6 @@
                         "items": {
                           "type": "string"
                         }
-                      },
-                      "timeoutMs": {
-                        "type": "integer",
-                        "exclusiveMinimum": 0,
-                        "maximum": 9007199254740991
                       }
                     },
                     "additionalProperties": false
@@ -6560,6 +6574,38 @@
                 "type": "boolean",
                 "title": "Agent Fast Mode Default",
                 "description": "Optional per-agent default for fast mode. Applies when no per-message or session fast-mode override is set."
+              },
+              "contextInjection": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "const": "always"
+                  },
+                  {
+                    "type": "string",
+                    "const": "continuation-skip"
+                  },
+                  {
+                    "type": "string",
+                    "const": "never"
+                  }
+                ],
+                "title": "Agent Context Injection",
+                "description": "Per-agent override for when workspace bootstrap files are injected into this agent's system prompt. Omit to inherit agents.defaults.contextInjection."
+              },
+              "bootstrapMaxChars": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991,
+                "title": "Agent Bootstrap Max Chars",
+                "description": "Per-agent override for max characters of each workspace bootstrap file injected into this agent's system prompt. Omit to inherit agents.defaults.bootstrapMaxChars."
+              },
+              "bootstrapTotalMaxChars": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991,
+                "title": "Agent Bootstrap Total Max Chars",
+                "description": "Per-agent override for max total characters across all workspace bootstrap files injected into this agent's system prompt. Omit to inherit agents.defaults.bootstrapTotalMaxChars."
               },
               "skills": {
                 "type": "array",
@@ -7590,7 +7636,7 @@
                   "skipWhenBusy": {
                     "type": "boolean",
                     "title": "Heartbeat Skip When Busy",
-                    "description": "Per-agent override that defers heartbeat turns on extra busy lanes: subagent or nested command work. Cron lanes always defer heartbeat turns."
+                    "description": "Per-agent override that defers heartbeat turns on that agent's extra busy lanes: its own session-keyed subagent or nested command work. Cron lanes always defer heartbeat turns."
                   }
                 },
                 "additionalProperties": false
@@ -7628,6 +7674,13 @@
                     "type": "integer",
                     "exclusiveMinimum": 0,
                     "maximum": 9007199254740991
+                  },
+                  "unmentionedInbound": {
+                    "type": "string",
+                    "enum": [
+                      "user_request",
+                      "room_event"
+                    ]
                   },
                   "visibleReplies": {
                     "anyOf": [
@@ -7694,6 +7747,42 @@
                   }
                 },
                 "additionalProperties": false
+              },
+              "runRetries": {
+                "type": "object",
+                "properties": {
+                  "base": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991,
+                    "title": "Agent Run Retries Base",
+                    "description": "Base number of run retry iterations for this agent."
+                  },
+                  "perProfile": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991,
+                    "title": "Agent Run Retries Per Profile",
+                    "description": "Additional run retry iterations granted per fallback profile candidate for this agent."
+                  },
+                  "min": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991,
+                    "title": "Agent Run Retries Minimum",
+                    "description": "Minimum absolute limit for run retry iterations for this agent."
+                  },
+                  "max": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991,
+                    "title": "Agent Run Retries Maximum",
+                    "description": "Maximum absolute limit for run retry iterations for this agent."
+                  }
+                },
+                "additionalProperties": false,
+                "title": "Agent Run Retries",
+                "description": "Optional per-agent override for the embedded Pi runner's outer run loop retry iteration boundaries."
               },
               "embeddedPi": {
                 "type": "object",
@@ -8420,6 +8509,82 @@
                       },
                       "additionalProperties": false
                     }
+                  },
+                  "codeMode": {
+                    "anyOf": [
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "enabled": {
+                            "type": "boolean"
+                          },
+                          "runtime": {
+                            "type": "string",
+                            "const": "quickjs-wasi"
+                          },
+                          "mode": {
+                            "type": "string",
+                            "const": "only"
+                          },
+                          "languages": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": [
+                                "javascript",
+                                "typescript"
+                              ]
+                            }
+                          },
+                          "timeoutMs": {
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "memoryLimitBytes": {
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "maxOutputBytes": {
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "maxSnapshotBytes": {
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "maxPendingToolCalls": {
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "snapshotTtlSeconds": {
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "searchDefaultLimit": {
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "maxSearchLimit": {
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
+                          }
+                        },
+                        "additionalProperties": false
+                      }
+                    ],
+                    "title": "Agent Code Mode",
+                    "description": "Per-agent code mode override. Use this to test or roll out exec/wait tool-surface mode for one agent without enabling it fleet-wide."
                   },
                   "elevated": {
                     "type": "object",
@@ -20055,6 +20220,106 @@
           "title": "Tool Search",
           "description": "Compact large OpenClaw, MCP, and client tool catalogs behind one search/call surface. Set to true for the default code bridge or use the object form to choose the structured fallback."
         },
+        "codeMode": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "title": "Enable Code Mode",
+                  "description": "Enables generic code mode. Default is off. When explicitly enabled, OpenClaw fails closed if the runtime is unavailable instead of exposing the full tool list."
+                },
+                "runtime": {
+                  "type": "string",
+                  "const": "quickjs-wasi",
+                  "title": "Code Mode Runtime",
+                  "description": "Guest JavaScript runtime. Only \"quickjs-wasi\" is supported."
+                },
+                "mode": {
+                  "type": "string",
+                  "const": "only",
+                  "title": "Code Mode Surface",
+                  "description": "Model-facing surface. Only \"only\" is supported: expose code-mode `exec` and `wait` and hide normal tools."
+                },
+                "languages": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "javascript",
+                      "typescript"
+                    ]
+                  },
+                  "title": "Code Mode Languages",
+                  "description": "Accepted source languages for `exec`. Supported values are \"javascript\" and \"typescript\"."
+                },
+                "timeoutMs": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991,
+                  "title": "Code Mode Timeout",
+                  "description": "Maximum milliseconds for one code-mode `exec` or `wait` call."
+                },
+                "memoryLimitBytes": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991,
+                  "title": "Code Mode Memory Limit",
+                  "description": "QuickJS heap limit for one code-mode VM."
+                },
+                "maxOutputBytes": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991,
+                  "title": "Code Mode Output Limit",
+                  "description": "Maximum serialized bytes returned through code-mode output."
+                },
+                "maxSnapshotBytes": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991,
+                  "title": "Code Mode Snapshot Limit",
+                  "description": "Maximum serialized bytes retained for one suspended QuickJS snapshot."
+                },
+                "maxPendingToolCalls": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991,
+                  "title": "Code Mode Pending Tool Limit",
+                  "description": "Maximum concurrent nested tool calls a code-mode VM can start before it must resume later."
+                },
+                "snapshotTtlSeconds": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991,
+                  "title": "Code Mode Snapshot TTL",
+                  "description": "How long suspended code-mode snapshots can be resumed with `wait` before they expire."
+                },
+                "searchDefaultLimit": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991,
+                  "title": "Code Mode Default Search Results",
+                  "description": "Default number of hidden catalog search results returned by `tools.search` inside code mode."
+                },
+                "maxSearchLimit": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991,
+                  "title": "Code Mode Max Search Results",
+                  "description": "Maximum number of hidden catalog search results a code-mode program can request."
+                }
+              },
+              "additionalProperties": false
+            }
+          ],
+          "title": "Code Mode",
+          "description": "Generic OpenClaw code mode. When enabled, agent runs expose only `exec` and `wait` to the model and hide normal tools behind a QuickJS-WASI catalog bridge."
+        },
         "message": {
           "type": "object",
           "properties": {
@@ -20470,6 +20735,46 @@
       "title": "Tools",
       "description": "Global tool access policy and capability configuration across web, exec, media, messaging, and elevated surfaces. Use this section to constrain risky capabilities before broad rollout."
     },
+    "security": {
+      "type": "object",
+      "properties": {
+        "audit": {
+          "type": "object",
+          "properties": {
+            "suppressions": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "checkId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "titleIncludes": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "detailIncludes": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "checkId"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
     "bindings": {
       "type": "array",
       "items": {
@@ -20846,7 +21151,7 @@
             }
           ],
           "title": "Visible Replies",
-          "description": "Controls visible source replies across direct, group, and channel conversations. \"message_tool\" keeps normal final replies private and requires message(action=send) for visible output; \"automatic\" posts normal replies as before."
+          "description": "Controls visible source replies across direct, group, and channel conversations. \"message_tool\" requires message(action=send) for visible output and keeps normal final text private. \"automatic\" posts normal replies as before."
         },
         "responsePrefix": {
           "type": "string",
@@ -20871,6 +21176,15 @@
               "title": "Group History Limit",
               "description": "Maximum number of prior group messages loaded as context per turn for group sessions. Use higher values for richer continuity, or lower values for faster and cheaper responses."
             },
+            "unmentionedInbound": {
+              "type": "string",
+              "enum": [
+                "user_request",
+                "room_event"
+              ],
+              "title": "Group Unmentioned Inbound",
+              "description": "Controls how unmentioned always-on group chatter is submitted. \"user_request\" treats it as a user request; \"room_event\" submits it as quiet context where visible output requires the message tool."
+            },
             "visibleReplies": {
               "anyOf": [
                 {
@@ -20885,7 +21199,7 @@
                 }
               ],
               "title": "Group Visible Replies",
-              "description": "Overrides visible source replies for group/channel conversations. Defaults to \"message_tool\" when no global visible reply policy is set. \"message_tool\" keeps normal final replies private and requires message(action=send) for room output; \"automatic\" posts normal replies as before."
+              "description": "Overrides visible source replies for group/channel conversations. Defaults to \"automatic\" when no global visible reply policy is set. \"message_tool\" requires message(action=send) for room output and keeps normal final text private. \"automatic\" posts normal replies as before."
             }
           },
           "additionalProperties": false,
@@ -20911,23 +21225,11 @@
                 },
                 {
                   "type": "string",
-                  "const": "steer-backlog"
-                },
-                {
-                  "type": "string",
-                  "const": "steer+backlog"
-                },
-                {
-                  "type": "string",
-                  "const": "queue"
-                },
-                {
-                  "type": "string",
                   "const": "interrupt"
                 }
               ],
               "title": "Queue Mode",
-              "description": "Queue behavior mode. Use \"steer\" to inject all queued steering messages at the next model boundary; \"queue\" is legacy one-at-a-time steering; \"followup\" runs later; \"collect\" batches later; \"steer-backlog\" (alias \"steer+backlog\") does both; \"interrupt\" aborts the active run."
+              "description": "Queue mode for active runs. Use \"steer\" to inject prompts into the active run, \"followup\" to run later, \"collect\" to batch compatible messages later, or \"interrupt\" to abort the active run before starting the newest prompt."
             },
             "byChannel": {
               "type": "object",
@@ -20945,18 +21247,6 @@
                     {
                       "type": "string",
                       "const": "collect"
-                    },
-                    {
-                      "type": "string",
-                      "const": "steer-backlog"
-                    },
-                    {
-                      "type": "string",
-                      "const": "steer+backlog"
-                    },
-                    {
-                      "type": "string",
-                      "const": "queue"
                     },
                     {
                       "type": "string",
@@ -20980,18 +21270,6 @@
                     },
                     {
                       "type": "string",
-                      "const": "steer-backlog"
-                    },
-                    {
-                      "type": "string",
-                      "const": "steer+backlog"
-                    },
-                    {
-                      "type": "string",
-                      "const": "queue"
-                    },
-                    {
-                      "type": "string",
                       "const": "interrupt"
                     }
                   ]
@@ -21009,18 +21287,6 @@
                     {
                       "type": "string",
                       "const": "collect"
-                    },
-                    {
-                      "type": "string",
-                      "const": "steer-backlog"
-                    },
-                    {
-                      "type": "string",
-                      "const": "steer+backlog"
-                    },
-                    {
-                      "type": "string",
-                      "const": "queue"
                     },
                     {
                       "type": "string",
@@ -21044,18 +21310,6 @@
                     },
                     {
                       "type": "string",
-                      "const": "steer-backlog"
-                    },
-                    {
-                      "type": "string",
-                      "const": "steer+backlog"
-                    },
-                    {
-                      "type": "string",
-                      "const": "queue"
-                    },
-                    {
-                      "type": "string",
                       "const": "interrupt"
                     }
                   ]
@@ -21073,18 +21327,6 @@
                     {
                       "type": "string",
                       "const": "collect"
-                    },
-                    {
-                      "type": "string",
-                      "const": "steer-backlog"
-                    },
-                    {
-                      "type": "string",
-                      "const": "steer+backlog"
-                    },
-                    {
-                      "type": "string",
-                      "const": "queue"
                     },
                     {
                       "type": "string",
@@ -21108,18 +21350,6 @@
                     },
                     {
                       "type": "string",
-                      "const": "steer-backlog"
-                    },
-                    {
-                      "type": "string",
-                      "const": "steer+backlog"
-                    },
-                    {
-                      "type": "string",
-                      "const": "queue"
-                    },
-                    {
-                      "type": "string",
                       "const": "interrupt"
                     }
                   ]
@@ -21137,18 +21367,6 @@
                     {
                       "type": "string",
                       "const": "collect"
-                    },
-                    {
-                      "type": "string",
-                      "const": "steer-backlog"
-                    },
-                    {
-                      "type": "string",
-                      "const": "steer+backlog"
-                    },
-                    {
-                      "type": "string",
-                      "const": "queue"
                     },
                     {
                       "type": "string",
@@ -21172,18 +21390,6 @@
                     },
                     {
                       "type": "string",
-                      "const": "steer-backlog"
-                    },
-                    {
-                      "type": "string",
-                      "const": "steer+backlog"
-                    },
-                    {
-                      "type": "string",
-                      "const": "queue"
-                    },
-                    {
-                      "type": "string",
                       "const": "interrupt"
                     }
                   ]
@@ -21201,18 +21407,6 @@
                     {
                       "type": "string",
                       "const": "collect"
-                    },
-                    {
-                      "type": "string",
-                      "const": "steer-backlog"
-                    },
-                    {
-                      "type": "string",
-                      "const": "steer+backlog"
-                    },
-                    {
-                      "type": "string",
-                      "const": "queue"
                     },
                     {
                       "type": "string",
@@ -21236,18 +21430,6 @@
                     },
                     {
                       "type": "string",
-                      "const": "steer-backlog"
-                    },
-                    {
-                      "type": "string",
-                      "const": "steer+backlog"
-                    },
-                    {
-                      "type": "string",
-                      "const": "queue"
-                    },
-                    {
-                      "type": "string",
                       "const": "interrupt"
                     }
                   ]
@@ -21255,14 +21437,14 @@
               },
               "additionalProperties": false,
               "title": "Queue Mode by Channel",
-              "description": "Per-channel queue mode overrides keyed by provider id (for example telegram, discord, slack). Use this when one channel’s traffic pattern needs different queue behavior than global defaults."
+              "description": "Per-channel queue mode overrides keyed by provider id (for example telegram, discord, slack). Use this when one channel's traffic pattern needs different behavior than global defaults."
             },
             "debounceMs": {
               "type": "integer",
               "minimum": 0,
               "maximum": 9007199254740991,
-              "title": "Queue Debounce (ms)",
-              "description": "Global followup queue debounce window in milliseconds before draining buffered inbound messages. Default is 500ms; higher values coalesce bursts, lower values reduce latency."
+              "title": "Queue Fallback Debounce (ms)",
+              "description": "Global fallback followup queue debounce window in milliseconds before draining buffered inbound messages. Default is 500ms; higher values coalesce bursts, lower values reduce latency."
             },
             "debounceMsByChannel": {
               "type": "object",
@@ -21274,7 +21456,7 @@
                 "minimum": 0,
                 "maximum": 9007199254740991
               },
-              "title": "Queue Debounce by Channel (ms)",
+              "title": "Queue Fallback Debounce by Channel (ms)",
               "description": "Per-channel debounce overrides for queue behavior keyed by provider id. Use this to tune burst handling independently for chat surfaces with different pacing."
             },
             "cap": {
@@ -21305,7 +21487,7 @@
           },
           "additionalProperties": false,
           "title": "Inbound Queue",
-          "description": "Inbound message queue strategy for messages that arrive while a session run is active. Default mode is steer, with followup fallback when steering is unavailable."
+          "description": "Queue strategy for inbound messages that arrive while a session run is active. Use this to tune steering, deferred followups, batching, or interruption."
         },
         "inbound": {
           "type": "object",
@@ -21364,7 +21546,7 @@
             "enabled": {
               "type": "boolean",
               "title": "Enable Status Reactions",
-              "description": "Enable lifecycle status reactions on supported channels. Slack and Discord treat unset as enabled when ack reactions are active; Telegram requires this to be true before lifecycle reactions are used."
+              "description": "Enable lifecycle status reactions on supported channels. Slack and Discord treat unset as enabled when ack reactions are active; Telegram and WhatsApp require this to be true before lifecycle reactions are used."
             },
             "emojis": {
               "type": "object",
@@ -21379,6 +21561,15 @@
                   "type": "string"
                 },
                 "web": {
+                  "type": "string"
+                },
+                "deploy": {
+                  "type": "string"
+                },
+                "build": {
+                  "type": "string"
+                },
+                "concierge": {
                   "type": "string"
                 },
                 "done": {
@@ -21399,7 +21590,7 @@
               },
               "additionalProperties": false,
               "title": "Status Reaction Emojis",
-              "description": "Override default status reaction emojis. Keys: thinking, compacting, tool, coding, web, done, error, stallSoft, stallHard. Must be valid Telegram reaction emojis."
+              "description": "Override default status reaction emojis. Keys: queued, thinking, compacting, tool, coding, web, deploy, build, concierge, done, error, stallSoft, stallHard. Telegram chooses the first supported fallback when a configured emoji is not available in the chat."
             },
             "timing": {
               "type": "object",
@@ -22592,12 +22783,26 @@
               "exclusiveMinimum": 0,
               "maximum": 9007199254740991,
               "title": "Session Write Lock Acquire Timeout",
-              "description": "Milliseconds to wait while acquiring a session transcript write lock before reporting the session as busy. Default: 60000; raise for slow disks or long prep/cleanup, lower only when quick failure is preferred."
+              "description": "Milliseconds to wait while acquiring a session transcript write lock before reporting the session as busy. Default: 60000; env override: OPENCLAW_SESSION_WRITE_LOCK_ACQUIRE_TIMEOUT_MS."
+            },
+            "staleMs": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991,
+              "title": "Session Write Lock Stale Timeout",
+              "description": "Milliseconds before an existing session transcript lock can be treated as stale and reclaimed. Default: 1800000; env override: OPENCLAW_SESSION_WRITE_LOCK_STALE_MS."
+            },
+            "maxHoldMs": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991,
+              "title": "Session Write Lock Max Hold",
+              "description": "Milliseconds a held in-process session transcript lock may remain held before the watchdog releases it. Default: 300000; env override: OPENCLAW_SESSION_WRITE_LOCK_MAX_HOLD_MS."
             }
           },
           "additionalProperties": false,
           "title": "Session Write Lock",
-          "description": "Groups session transcript write-lock acquisition controls. Tune only when legitimate transcript prep, cleanup, compaction, or mirror work contends longer than the default wait."
+          "description": "Groups session transcript write-lock controls. Tune only when legitimate transcript prep, cleanup, compaction, or mirror work contends longer than the default policies."
         },
         "agentToAgent": {
           "type": "object",
@@ -24179,6 +24384,30 @@
                 }
               ]
             },
+            "botLoopProtection": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                },
+                "maxEventsPerWindow": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "windowSeconds": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "cooldownSeconds": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                }
+              },
+              "additionalProperties": false
+            },
             "dangerouslyAllowNameMatching": {
               "type": "boolean"
             },
@@ -24240,6 +24469,9 @@
               "type": "integer",
               "exclusiveMinimum": 0,
               "maximum": 9007199254740991
+            },
+            "suppressEmbeds": {
+              "type": "boolean"
             },
             "streaming": {
               "type": "object",
@@ -24329,6 +24561,11 @@
                       }
                     },
                     "maxLines": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "maxLineChars": {
                       "type": "integer",
                       "exclusiveMinimum": 0,
                       "maximum": 9007199254740991
@@ -25870,6 +26107,30 @@
                       }
                     ]
                   },
+                  "botLoopProtection": {
+                    "type": "object",
+                    "properties": {
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "maxEventsPerWindow": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "windowSeconds": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "cooldownSeconds": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      }
+                    },
+                    "additionalProperties": false
+                  },
                   "dangerouslyAllowNameMatching": {
                     "type": "boolean"
                   },
@@ -25931,6 +26192,9 @@
                     "type": "integer",
                     "exclusiveMinimum": 0,
                     "maximum": 9007199254740991
+                  },
+                  "suppressEmbeds": {
+                    "type": "boolean"
                   },
                   "streaming": {
                     "type": "object",
@@ -26020,6 +26284,11 @@
                             }
                           },
                           "maxLines": {
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "maxLineChars": {
                             "type": "integer",
                             "exclusiveMinimum": 0,
                             "maximum": 9007199254740991
@@ -28884,6 +29153,30 @@
             "allowBots": {
               "type": "boolean"
             },
+            "botLoopProtection": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                },
+                "maxEventsPerWindow": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "windowSeconds": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "cooldownSeconds": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                }
+              },
+              "additionalProperties": false
+            },
             "dangerouslyAllowNameMatching": {
               "type": "boolean"
             },
@@ -28925,6 +29218,30 @@
                   },
                   "requireMention": {
                     "type": "boolean"
+                  },
+                  "botLoopProtection": {
+                    "type": "object",
+                    "properties": {
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "maxEventsPerWindow": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "windowSeconds": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "cooldownSeconds": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      }
+                    },
+                    "additionalProperties": false
                   },
                   "users": {
                     "type": "array",
@@ -29307,6 +29624,30 @@
                   "allowBots": {
                     "type": "boolean"
                   },
+                  "botLoopProtection": {
+                    "type": "object",
+                    "properties": {
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "maxEventsPerWindow": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "windowSeconds": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "cooldownSeconds": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      }
+                    },
+                    "additionalProperties": false
+                  },
                   "dangerouslyAllowNameMatching": {
                     "type": "boolean"
                   },
@@ -29348,6 +29689,30 @@
                         },
                         "requireMention": {
                           "type": "boolean"
+                        },
+                        "botLoopProtection": {
+                          "type": "object",
+                          "properties": {
+                            "enabled": {
+                              "type": "boolean"
+                            },
+                            "maxEventsPerWindow": {
+                              "type": "integer",
+                              "exclusiveMinimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "windowSeconds": {
+                              "type": "integer",
+                              "exclusiveMinimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "cooldownSeconds": {
+                              "type": "integer",
+                              "exclusiveMinimum": 0,
+                              "maximum": 9007199254740991
+                            }
+                          },
+                          "additionalProperties": false
                         },
                         "users": {
                           "type": "array",
@@ -31709,6 +32074,30 @@
                 }
               ]
             },
+            "botLoopProtection": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                },
+                "maxEventsPerWindow": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "windowSeconds": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "cooldownSeconds": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                }
+              },
+              "additionalProperties": false
+            },
             "groupPolicy": {
               "type": "string",
               "enum": [
@@ -31775,6 +32164,11 @@
                           }
                         },
                         "maxLines": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "maxLineChars": {
                           "type": "integer",
                           "exclusiveMinimum": 0,
                           "maximum": 9007199254740991
@@ -32049,6 +32443,30 @@
                       }
                     ]
                   },
+                  "botLoopProtection": {
+                    "type": "object",
+                    "properties": {
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "maxEventsPerWindow": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "windowSeconds": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "cooldownSeconds": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      }
+                    },
+                    "additionalProperties": false
+                  },
                   "tools": {
                     "type": "object",
                     "properties": {
@@ -32127,6 +32545,30 @@
                         "const": "mentions"
                       }
                     ]
+                  },
+                  "botLoopProtection": {
+                    "type": "object",
+                    "properties": {
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "maxEventsPerWindow": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "windowSeconds": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "cooldownSeconds": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      }
+                    },
+                    "additionalProperties": false
                   },
                   "tools": {
                     "type": "object",
@@ -32466,6 +32908,11 @@
                           }
                         },
                         "maxLines": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "maxLineChars": {
                           "type": "integer",
                           "exclusiveMinimum": 0,
                           "maximum": 9007199254740991
@@ -32914,6 +33361,11 @@
                                 }
                               },
                               "maxLines": {
+                                "type": "integer",
+                                "exclusiveMinimum": 0,
+                                "maximum": 9007199254740991
+                              },
+                              "maxLineChars": {
                                 "type": "integer",
                                 "exclusiveMinimum": 0,
                                 "maximum": 9007199254740991
@@ -33414,6 +33866,11 @@
                       }
                     },
                     "maxLines": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "maxLineChars": {
                       "type": "integer",
                       "exclusiveMinimum": 0,
                       "maximum": 9007199254740991
@@ -36795,6 +37252,30 @@
                 }
               ]
             },
+            "botLoopProtection": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                },
+                "maxEventsPerWindow": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "windowSeconds": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "cooldownSeconds": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                }
+              },
+              "additionalProperties": false
+            },
             "dangerouslyAllowNameMatching": {
               "type": "boolean"
             },
@@ -36944,6 +37425,11 @@
                       }
                     },
                     "maxLines": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "maxLineChars": {
                       "type": "integer",
                       "exclusiveMinimum": 0,
                       "maximum": 9007199254740991
@@ -37358,6 +37844,30 @@
                         "const": "mentions"
                       }
                     ]
+                  },
+                  "botLoopProtection": {
+                    "type": "object",
+                    "properties": {
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "maxEventsPerWindow": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "windowSeconds": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "cooldownSeconds": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      }
+                    },
+                    "additionalProperties": false
                   },
                   "users": {
                     "type": "array",
@@ -37895,6 +38405,30 @@
                       }
                     ]
                   },
+                  "botLoopProtection": {
+                    "type": "object",
+                    "properties": {
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "maxEventsPerWindow": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "windowSeconds": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "cooldownSeconds": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      }
+                    },
+                    "additionalProperties": false
+                  },
                   "dangerouslyAllowNameMatching": {
                     "type": "boolean"
                   },
@@ -38043,6 +38577,11 @@
                             }
                           },
                           "maxLines": {
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "maxLineChars": {
                             "type": "integer",
                             "exclusiveMinimum": 0,
                             "maximum": 9007199254740991
@@ -38457,6 +38996,30 @@
                               "const": "mentions"
                             }
                           ]
+                        },
+                        "botLoopProtection": {
+                          "type": "object",
+                          "properties": {
+                            "enabled": {
+                              "type": "boolean"
+                            },
+                            "maxEventsPerWindow": {
+                              "type": "integer",
+                              "exclusiveMinimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "windowSeconds": {
+                              "type": "integer",
+                              "exclusiveMinimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "cooldownSeconds": {
+                              "type": "integer",
+                              "exclusiveMinimum": 0,
+                              "maximum": 9007199254740991
+                            }
+                          },
+                          "additionalProperties": false
                         },
                         "users": {
                           "type": "array",
@@ -39394,6 +39957,11 @@
                       }
                     },
                     "maxLines": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "maxLineChars": {
                       "type": "integer",
                       "exclusiveMinimum": 0,
                       "maximum": 9007199254740991
@@ -40629,6 +41197,11 @@
                             }
                           },
                           "maxLines": {
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "maxLineChars": {
                             "type": "integer",
                             "exclusiveMinimum": 0,
                             "maximum": 9007199254740991
@@ -43724,6 +44297,9 @@
         "remote": {
           "type": "object",
           "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
             "url": {
               "type": "string",
               "title": "Remote Gateway URL",
@@ -43742,6 +44318,11 @@
               ],
               "title": "Remote Gateway Transport",
               "description": "Remote connection transport: \"direct\" uses configured URL connectivity, while \"ssh\" tunnels through SSH. Use SSH when you need encrypted tunnel semantics without exposing remote ports."
+            },
+            "remotePort": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65535
             },
             "token": {
               "anyOf": [
@@ -44756,6 +45337,44 @@
                     }
                   ]
                 }
+              },
+              "codex": {
+                "type": "object",
+                "properties": {
+                  "agents": {
+                    "minItems": 1,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+                    },
+                    "title": "Codex MCP Agents",
+                    "description": "Optional non-empty OpenClaw agent ids that should receive this MCP server in Codex app-server thread config. Empty, blank, or invalid lists fail closed; when omitted, the server is projected for all Codex app-server agents."
+                  },
+                  "defaultToolsApprovalMode": {
+                    "type": "string",
+                    "enum": [
+                      "auto",
+                      "prompt",
+                      "approve"
+                    ],
+                    "title": "Codex MCP Tool Approval",
+                    "description": "Optional Codex MCP tool approval mode for this server: \"auto\", \"prompt\", or \"approve\". Use only for MCP servers you intentionally trust."
+                  },
+                  "default_tools_approval_mode": {
+                    "type": "string",
+                    "enum": [
+                      "auto",
+                      "prompt",
+                      "approve"
+                    ],
+                    "title": "Codex MCP Tool Approval",
+                    "description": "Codex-native spelling for the same per-server MCP tool approval mode. Prefer defaultToolsApprovalMode in OpenClaw config."
+                  }
+                },
+                "additionalProperties": false,
+                "title": "Codex MCP Projection",
+                "description": "OpenClaw projection metadata for Codex app-server threads only. It does not affect ACP sessions or generic Codex harness config. Omit this block to keep the server available to every Codex app-server agent with Codex's default MCP approval behavior."
               }
             },
             "additionalProperties": {}
@@ -45431,6 +46050,112 @@
                       }
                     }
                   }
+                }
+              },
+              "additionalProperties": false
+            },
+            "admin-http-rpc": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "title": "Plugin Enabled",
+                  "description": "Per-plugin enablement override for a specific entry, applied on top of global plugin policy (restart required). Use this to stage plugin rollout gradually across environments."
+                },
+                "hooks": {
+                  "type": "object",
+                  "properties": {
+                    "allowPromptInjection": {
+                      "type": "boolean",
+                      "title": "Allow Prompt Injection Hooks",
+                      "description": "Controls whether this plugin may mutate prompts through typed hooks. Set false to block `before_prompt_build` and ignore prompt-mutating fields from legacy `before_agent_start`, while preserving legacy `modelOverride` and `providerOverride` behavior."
+                    },
+                    "allowConversationAccess": {
+                      "type": "boolean",
+                      "title": "Allow Conversation Access Hooks",
+                      "description": "Controls whether this plugin may read raw conversation content from typed hooks such as `before_agent_run`, `before_model_resolve`, `before_agent_reply`, `llm_input`, `llm_output`, `before_agent_finalize`, and `agent_end`. Non-bundled plugins must opt in explicitly."
+                    },
+                    "timeoutMs": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 600000,
+                      "title": "Plugin Hook Timeout (ms)",
+                      "description": "Default timeout in milliseconds for this plugin's typed hooks, capped at 600000. Use this to bound slow plugin hooks without changing plugin code; per-hook values in hooks.timeouts take precedence."
+                    },
+                    "timeouts": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 600000
+                      },
+                      "title": "Plugin Hook Timeout Overrides",
+                      "description": "Per-hook timeout overrides in milliseconds keyed by typed hook name, capped at 600000. Use narrow overrides for known slow hooks such as before_prompt_build or agent_end instead of raising every hook timeout."
+                    }
+                  },
+                  "additionalProperties": false,
+                  "title": "Plugin Hook Policy",
+                  "description": "Per-plugin typed hook policy controls for core-enforced safety gates. Use this to constrain high-impact hook categories without disabling the entire plugin."
+                },
+                "subagent": {
+                  "type": "object",
+                  "properties": {
+                    "allowModelOverride": {
+                      "type": "boolean",
+                      "title": "Allow Plugin Subagent Model Override",
+                      "description": "Explicitly allows this plugin to request provider/model overrides in background subagent runs. Keep false unless the plugin is trusted to steer model selection."
+                    },
+                    "allowedModels": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "title": "Plugin Subagent Allowed Models",
+                      "description": "Allowed override targets for trusted plugin subagent runs as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
+                    }
+                  },
+                  "additionalProperties": false,
+                  "title": "Plugin Subagent Policy",
+                  "description": "Per-plugin subagent runtime controls for model override trust and allowlists. Keep this unset unless a plugin must explicitly steer subagent model selection."
+                },
+                "llm": {
+                  "type": "object",
+                  "properties": {
+                    "allowModelOverride": {
+                      "type": "boolean",
+                      "title": "Allow Plugin LLM Model Override",
+                      "description": "Explicitly allows this plugin to request model overrides in api.runtime.llm.complete. Keep false unless the plugin is trusted to steer model selection."
+                    },
+                    "allowedModels": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "title": "Plugin LLM Allowed Models",
+                      "description": "Allowed override targets for trusted plugin LLM completions as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
+                    },
+                    "allowAgentIdOverride": {
+                      "type": "boolean",
+                      "title": "Allow Plugin LLM Agent Override",
+                      "description": "Explicitly allows this plugin to request api.runtime.llm.complete against a non-default agent id. Keep false unless the plugin is trusted for cross-agent model access."
+                    }
+                  },
+                  "additionalProperties": false,
+                  "title": "Plugin LLM Policy",
+                  "description": "Per-plugin api.runtime.llm.complete controls for model and agent override trust. Keep this unset unless a plugin must explicitly steer host-owned completion calls."
+                },
+                "config": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": false,
+                  "title": "Plugin Config",
+                  "description": "Plugin-defined configuration payload interpreted by that plugin's own schema and validation rules. Use only documented fields from the plugin to prevent ignored or invalid settings.",
+                  "properties": {}
                 }
               },
               "additionalProperties": false
@@ -55829,18 +56554,6 @@
           "silentReply": {
             "type": "object",
             "properties": {
-              "direct": {
-                "anyOf": [
-                  {
-                    "type": "string",
-                    "const": "allow"
-                  },
-                  {
-                    "type": "string",
-                    "const": "disallow"
-                  }
-                ]
-              },
               "group": {
                 "anyOf": [
                   {
@@ -55864,21 +56577,6 @@
                     "const": "disallow"
                   }
                 ]
-              }
-            },
-            "additionalProperties": false
-          },
-          "silentReplyRewrite": {
-            "type": "object",
-            "properties": {
-              "direct": {
-                "type": "boolean"
-              },
-              "group": {
-                "type": "boolean"
-              },
-              "internal": {
-                "type": "boolean"
               }
             },
             "additionalProperties": false
@@ -55891,11 +56589,29 @@
       "type": "object",
       "properties": {
         "enabled": {
-          "type": "boolean"
+          "type": "boolean",
+          "title": "Managed Proxy Enabled",
+          "description": "Enables operator-managed proxy routing. When enabled, OpenClaw fails startup if no managed proxy URL is configured."
         },
         "proxyUrl": {
           "type": "string",
-          "format": "uri"
+          "format": "uri",
+          "title": "Managed Proxy URL",
+          "description": "Managed forward proxy URL. Use http:// for a plain CONNECT proxy or https:// when the connection to the proxy endpoint itself must use TLS."
+        },
+        "tls": {
+          "type": "object",
+          "properties": {
+            "caFile": {
+              "type": "string",
+              "minLength": 1,
+              "title": "Managed Proxy TLS CA File",
+              "description": "Filesystem path to a custom CA bundle used to verify an HTTPS managed proxy endpoint certificate."
+            }
+          },
+          "additionalProperties": false,
+          "title": "Managed Proxy TLS",
+          "description": "TLS settings used when connecting to the managed proxy endpoint. These settings apply to proxy TLS, not destination TLS after CONNECT."
         },
         "loopbackMode": {
           "type": "string",
@@ -55903,10 +56619,14 @@
             "gateway-only",
             "proxy",
             "block"
-          ]
+          ],
+          "title": "Managed Proxy Loopback Mode",
+          "description": "Controls Gateway loopback control-plane routing while managed proxy mode is active: \"gateway-only\", \"proxy\", or \"block\"."
         }
       },
-      "additionalProperties": false
+      "additionalProperties": false,
+      "title": "Managed Proxy",
+      "description": "Operator-managed forward proxy routing for OpenClaw runtime HTTP, HTTPS, WebSocket, and supported raw-egress paths. Use this when central egress control is part of the deployment boundary."
     }
   },
   "required": [

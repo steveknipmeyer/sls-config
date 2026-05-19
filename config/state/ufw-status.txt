@@ -6,5 +6,6 @@ New profiles: skip
 To                         Action      From
 --                         ------      ----
 22/tcp on tailscale0       ALLOW IN    Anywhere                  
+3001/tcp                   ALLOW IN    172.17.0.0/16              # Docker sandbox to sls-web-server proxy
 22/tcp (v6) on tailscale0  ALLOW IN    Anywhere (v6)             
 
