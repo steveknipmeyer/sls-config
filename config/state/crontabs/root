@@ -62,8 +62,3 @@
 # Exports all 24h envelopes and message parts to working/sls-inbox/himalaya-run/.
 # Ada's sls-inbox cron (7:55 AM UTC) reads pre-fetched data; makes no live IMAP calls.
 30 7 * * * bash /home/openclaw/.openclaw/workspace/.agents/skills/sls-inbox/scripts/fetch-inbox.sh >> /home/openclaw/.openclaw/workspace/working/sls-inbox/fetch-inbox.log 2>&1
-
-# [7:30] sls-images: fetch daily Unsplash images via REST API as root.
-# Reads UNSPLASH_API_KEY from /opt/openclaw.env.
-# Writes working/sls-images/YYYY-MM-DD.json for Ada's sls-images cron (7:57 AM UTC).
-30 7 * * * bash /home/openclaw/.openclaw/workspace/.agents/skills/sls-images/scripts/fetch-images.sh >> /home/openclaw/.openclaw/workspace/working/sls-images/fetch-images.log 2>&1

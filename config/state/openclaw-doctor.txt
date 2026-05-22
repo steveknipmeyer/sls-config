@@ -41,8 +41,8 @@
 │                                                                          │
 │  - Personal Codex CLI assets were found, but native Codex-mode OpenClaw  │
 │    agents use isolated per-agent Codex homes.                            │
-│  - Sources: /home/openclaw/.codex and /home/openclaw/.agents/skills (1   │
-│    skill, 3 plugins, 1 config file, 0 hook files).                       │
+│  - Sources: /home/openclaw/.codex and /home/openclaw/.agents/skills (0   │
+│    skills, 3 plugins, 1 config file, 0 hook files).                      │
 │  - These assets will not be loaded by the Codex app-server child unless  │
 │    you intentionally promote them.                                       │
 │  - Run `openclaw migrate codex --dry-run` to inventory them. Applying    │
@@ -57,24 +57,31 @@
 │                                                       │
 ├───────────────────────────────────────────────────────╯
 │
-◇  State integrity ────────────────────────────────────────────────────╮
-│                                                                      │
-│  - Found 198 orphan transcript files in                              │
-│    ~/.openclaw/agents/main/sessions.                                 │
-│    These .jsonl files are no longer referenced by sessions.json, so  │
-│    they are not part of any active session history.                  │
-│    Doctor can archive them safely by renaming each file to           │
-│    *.deleted.<timestamp>.                                            │
-│    Examples: 013b5103-abe8-4986-90b2-f6ee5803a471.jsonl,             │
-│    014a9cbe-c244-42e2-b1a2-275ddae74362.jsonl,                       │
-│    0300fa32-d5a0-4e33-a84b-9b6d5f9c5870.jsonl, and 195 more          │
-│                                                                      │
-├──────────────────────────────────────────────────────────────────────╯
+◇  State integrity ───────────────────────────────────────────────────────╮
+│                                                                         │
+│  - Found explicit Anthropic model overrides in 1 session outside the    │
+│    current configured route.                                            │
+│    Doctor leaves explicit or legacy user selections untouched; switch   │
+│    them with /model or reset the session if that provider is no longer  │
+│    intended.                                                            │
+│    Examples: agent:main:subagent:86f56276-f362-4514-b50d-aebdffd10e3b   │
+│    (anthropic/claude-sonnet-4-6, user)                                  │
+│  - Found 11 orphan transcript files in                                  │
+│    ~/.openclaw/agents/main/sessions.                                    │
+│    These .jsonl files are no longer referenced by sessions.json, so     │
+│    they are not part of any active session history.                     │
+│    Doctor can archive them safely by renaming each file to              │
+│    *.deleted.<timestamp>.                                               │
+│    Examples: 1322f5f4-fae0-4d74-9c47-90f9a134cecd.jsonl,                │
+│    2780c7dc-71a2-43ec-b96e-aa1f5a91c799.jsonl,                          │
+│    2f37744b-c2f8-495e-89bc-2a29a839ce49.jsonl, and 8 more               │
+│                                                                         │
+├─────────────────────────────────────────────────────────────────────────╯
 │
 ◇  Doctor warnings ───────────────────────────────────────────────────────╮
 │                                                                         │
 │  - Legacy `openai-codex/*` session route state detected.                │
-│  - Affected sessions: 8.                                                │
+│  - Affected sessions: 9.                                                │
 │  - Run `openclaw doctor --fix` to rewrite stale session model/provider  │
 │    pins across all agent session stores.                                │
 │                                                                         │
@@ -97,16 +104,48 @@
 │                                                                          │
 ├──────────────────────────────────────────────────────────────────────────╯
 │
-◇  Security ─────────────────────────────────╮
-│                                            │
-│  - No channel security warnings detected.  │
-│  - Run: openclaw security audit --deep     │
-│                                            │
-├────────────────────────────────────────────╯
+◇  Sandbox ───────────────────────────────────────────────────────────────╮
+│                                                                         │
+│  Codex bwrap user namespace probe failed while Docker sandbox mode is   │
+│  enabled.                                                               │
+│  Codex app-server `workspace-write` shell execution needs unprivileged  │
+│  user namespaces. Docker sandbox network egress is enabled, so doctor   │
+│  only checked the user namespace.                                       │
+│  On Ubuntu/AppArmor hosts this usually appears as:                      │
+│    bwrap: setting up uid map: Permission denied                         │
+│  Probe command: unshare --user --map-root-user true                     │
+│  Probe result: unshare: write failed /proc/self/uid_map: Operation not  │
+│  permitted                                                              │
+│                                                                         │
+│  Fix the host namespace policy for the OpenClaw service user, then      │
+│  restart the gateway.                                                   │
+│  Prefer an AppArmor profile that grants the required namespaces to the  │
+│  OpenClaw service process.                                              │
+│  `kernel.apparmor_restrict_unprivileged_userns=0` is a host-wide        │
+│  fallback with security tradeoffs; use it only when that host posture   │
+│  is acceptable.                                                         │
+│  Do not add broad Docker container privileges just to satisfy nested    │
+│  bwrap; that weakens the outer sandbox.                                 │
+│                                                                         │
+├─────────────────────────────────────────────────────────────────────────╯
+│
+◇  Security ─────────────────────────────────────────────────────────────╮
+│                                                                        │
+│  - WARNING: openclaw.json contains plaintext secret-bearing config     │
+│    fields.                                                             │
+│    Paths: gateway.auth.token, gateway.remote.token                     │
+│    Agents or workspace tools that can read config files may see these  │
+│    API keys/tokens.                                                    │
+│    Migrate them to SecretRefs with openclaw secrets configure or       │
+│    openclaw secrets apply, then verify with openclaw secrets audit     │
+│    --check.                                                            │
+│  - Run: openclaw security audit --deep                                 │
+│                                                                        │
+├────────────────────────────────────────────────────────────────────────╯
 │
 ◇  Skills status ───────────╮
 │                           │
-│  Eligible: 32             │
+│  Eligible: 33             │
 │  Missing requirements: 0  │
 │  Blocked by allowlist: 0  │
 │                           │
@@ -116,22 +155,10 @@
 │                │
 │  Loaded: 66    │
 │  Imported: 0   │
-│  Disabled: 25  │
+│  Disabled: 26  │
 │  Errors: 0     │
 │                │
 ├────────────────╯
-│
-◇  OpenClaw version mismatch ─────────────────────────────────────────────╮
-│                                                                         │
-│  This command is OpenClaw 2026.5.18; the running Gateway is OpenClaw    │
-│  2026.5.12.                                                             │
-│  Check `openclaw --version`, `which openclaw`, and `openclaw gateway    │
-│  status --deep`.                                                        │
-│  If this mismatch is unexpected, update PATH so `openclaw` points to    │
-│  the version you want, or reinstall the Gateway service from that same  │
-│  OpenClaw install.                                                      │
-│                                                                         │
-├─────────────────────────────────────────────────────────────────────────╯
 │
 ◇  Memory search ──────────────────────────────────────────╮
 │                                                          │

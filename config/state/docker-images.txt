@@ -1,5 +1,6 @@
 WARNING: This output is designed for human readability. For machine-readable output, please use --format.
 IMAGE                                   ID             DISK USAGE   CONTENT SIZE   EXTRA
+alpine:latest                           3cb067eab609       8.45MB             0B        
 debian:bookworm-slim                    d6b3fe87704b       74.8MB             0B        
 openclaw-sandbox-common:bookworm-slim   c1671b74821b       1.88GB             0B        
 openclaw-sandbox-sls:bookworm-slim      0a6d88ff800a       1.91GB             0B   U    

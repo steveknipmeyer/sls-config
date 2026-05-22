@@ -1,0 +1,19 @@
+# Local workaround state
+# Generated: 2026-05-22T18:01:34Z
+#
+# This report records compatibility shims that are not fully preserved by the
+# normal git-tracked repos. Host files should still be harvested separately
+# when they are part of reconstruction-critical state.
+
+## Host compatibility shims
+- /etc/apparmor.d/openclaw-codex-bwrap: file present
+
+## Ignored runtime-tree artifacts
+- /home/openclaw/.openclaw/npm/node_modules/@openclaw/codex/node_modules/openclaw: symlink -> /usr/lib/node_modules/openclaw
+  resolved: /usr/lib/node_modules/openclaw
+- /home/openclaw/.openclaw/workspace/skills/sls-alerts/SKILL.md: file present
+- /home/openclaw/.openclaw/workspace/skills/sls-calendar/SKILL.md: file present
+
+## Ignore boundaries
+- Root repo ignores: npm/
+- Workspace repo ignores: /skills/

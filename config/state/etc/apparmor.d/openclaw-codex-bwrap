@@ -1,0 +1,8 @@
+abi <abi/4.0>,
+include <tunables/global>
+
+profile openclaw-codex-bwrap /home/openclaw/.openclaw/npm/node_modules/@openai/codex-linux-x64/**/bwrap flags=(default_allow) {
+  userns,
+
+  include if exists <local/openclaw-codex-bwrap>
+}
