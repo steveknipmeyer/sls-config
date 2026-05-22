@@ -9,6 +9,14 @@
 #   to capture everything needed to reproduce this environment on a fresh
 #   Ubuntu box.
 #
+#   Scope boundary (important): this script captures host-side state that is
+#   not reliably reconstructed from git alone (for example /opt files, /etc
+#   configs, systemd units, root crontab, and redacted runtime config).
+#   It is not a substitute for committing source-controlled repo files.
+#
+#   In this repo, `cron/` is version-controlled except explicitly ignored
+#   runtime ledgers (`cron/runs/`) and `cron/jobs-state.json`.
+#
 #   This script is designed to be run manually or from a cron job. It does
 #   NOT commit to git — that is a separate step, allowing you to review
 #   changes before committing.
@@ -85,6 +93,14 @@
 # =============================================================================
 
 set -euo pipefail
+
+# This script intentionally harvests root-owned files and system state.
+# Fail fast if not run as root so we don't produce a partial, misleading snapshot.
+if [[ "$EUID" -ne 0 ]]; then
+    echo "[harvest] ERROR: must be run as root." >&2
+    echo "[harvest] Run: sudo bash /home/openclaw/.openclaw/projects/sls-config/config/scripts/harvest.sh" >&2
+    exit 1
+fi
 
 # =============================================================================
 # CONFIGURATION
@@ -219,6 +235,25 @@ append_path_state() {
     else
         printf -- "- %s: absent\n" "$target_path" >> "$dest"
     fi
+}
+
+# Run OpenClaw CLI as the openclaw user even when harvest itself runs as root.
+# This preserves the root-guard contract and avoids accidental root-scoped CLI side effects.
+run_openclaw_as_openclaw() {
+    if command -v runuser >/dev/null 2>&1; then
+        runuser -u openclaw -- /usr/bin/openclaw "$@"
+        return
+    fi
+
+    if command -v su >/dev/null 2>&1; then
+        local escaped_args
+        printf -v escaped_args '%q ' "$@"
+        su - openclaw -c "/usr/bin/openclaw ${escaped_args% }"
+        return
+    fi
+
+    log "  ✗ missing runuser/su; cannot run openclaw as openclaw user"
+    return 127
 }
 
 # =============================================================================
@@ -512,14 +547,15 @@ harvest_file "/usr/local/bin/openclaw" "${STATE_DIR}/usr/local/bin/openclaw"
 # The schema evolves with each OpenClaw version — capturing it alongside the
 # state snapshot allows correlation between config structure and version.
 #
-# NOTE: Uses /usr/bin/openclaw directly (bypasses the root guard stub) since
-# harvest runs as root and schema generation is a read-only operation.
+# NOTE: Schema generation should be read-only, but this script still runs the
+# OpenClaw CLI as the openclaw user to keep behavior aligned with the root
+# guard contract and avoid relying on root-side CLI assumptions.
 # =============================================================================
 
 log ""
 log "=== OpenClaw config schema ==="
 
-if /usr/bin/openclaw config schema > "${SCHEMA_DIR}/openclaw.schema.json" 2>/dev/null; then
+if run_openclaw_as_openclaw config schema > "${SCHEMA_DIR}/openclaw.schema.json" 2>/dev/null; then
     log "  ✓ openclaw.schema.json"
 else
     log "  ✗ openclaw config schema failed — schema not captured"
@@ -575,7 +611,7 @@ log "=== Version snapshot ==="
     echo "# Generated: ${TIMESTAMP}"
     echo ""
     echo "## OpenClaw"
-    openclaw --version 2>/dev/null || echo "openclaw: not found in PATH"
+    run_openclaw_as_openclaw --version 2>/dev/null || echo "openclaw: not found"
     echo ""
     echo "## Node.js"
     node --version 2>/dev/null || echo "node: not found"
@@ -642,7 +678,7 @@ log "=== OpenClaw doctor ==="
 
 # Run non-interactively to avoid prompts
 capture_command "${STATE_DIR}/openclaw-doctor.txt" \
-    bash -c 'echo "" | sudo -u openclaw openclaw doctor 2>&1 || true'
+    run_openclaw_as_openclaw doctor
 
 # =============================================================================
 # SECTION 8a: Local workaround state
@@ -705,7 +741,7 @@ log "  ✓ local-workarounds.txt"
 log ""
 log "=== Generating README.md ==="
 
-OPENCLAW_VERSION=$(openclaw --version 2>/dev/null | grep -oP '\d{4}\.\d+\.\d+' || echo "unknown")
+OPENCLAW_VERSION=$(run_openclaw_as_openclaw --version 2>/dev/null | grep -oP '\d{4}\.\d+\.\d+' || echo "unknown")
 
 cat > "${STATE_DIR}/README.md" << EOF
 # OpenClaw Environment Snapshot
