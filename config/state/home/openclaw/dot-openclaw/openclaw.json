@@ -1,7 +1,7 @@
 {
   "meta": {
-    "lastTouchedVersion": "2026.5.18",
-    "lastTouchedAt": "2026-05-19T13:51:39.611Z"
+    "lastTouchedVersion": "2026.5.20",
+    "lastTouchedAt": "2026-05-22T17:10:36.367Z"
   },
   "agents": {
     "defaults": {
@@ -151,8 +151,8 @@
     }
   },
   "wizard": {
-    "lastRunAt": "2026-05-19T13:51:39.558Z",
-    "lastRunVersion": "2026.5.18",
+    "lastRunAt": "2026-05-22T17:10:36.312Z",
+    "lastRunVersion": "2026.5.20",
     "lastRunCommand": "doctor",
     "lastRunMode": "local"
   },
@@ -216,9 +216,6 @@
         "enabled": false
       },
       "model-usage": {
-        "enabled": false
-      },
-      "nano-banana-pro": {
         "enabled": false
       },
       "nano-pdf": {
@@ -288,6 +285,9 @@
         "enabled": false
       },
       "xurl": {
+        "enabled": false
+      },
+      "nano-banana-pro": {
         "enabled": false
       }
     },
