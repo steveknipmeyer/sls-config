@@ -1,7 +1,7 @@
 {
   "meta": {
     "lastTouchedVersion": "2026.5.20",
-    "lastTouchedAt": "2026-05-22T17:10:36.367Z"
+    "lastTouchedAt": "2026-05-23T20:08:55.572Z"
   },
   "agents": {
     "defaults": {
@@ -151,7 +151,7 @@
     }
   },
   "wizard": {
-    "lastRunAt": "2026-05-22T17:10:36.312Z",
+    "lastRunAt": "2026-05-23T20:08:55.504Z",
     "lastRunVersion": "2026.5.20",
     "lastRunCommand": "doctor",
     "lastRunMode": "local"
