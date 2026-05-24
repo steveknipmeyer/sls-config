@@ -48,16 +48,32 @@
 │    intended.                                                            │
 │    Examples: agent:main:subagent:86f56276-f362-4514-b50d-aebdffd10e3b   │
 │    (anthropic/claude-sonnet-4-6, user)                                  │
+│  - Found 67 orphan transcript files in                                  │
+│    ~/.openclaw/agents/main/sessions.                                    │
+│    These .jsonl files are no longer referenced by sessions.json, so     │
+│    they are not part of any active session history.                     │
+│    Doctor can archive them safely by renaming each file to              │
+│    *.deleted.<timestamp>.                                               │
+│    Examples: 00adfcb9-3045-4a34-b930-dd50cc680022.jsonl,                │
+│    06e34380-5d06-4731-95b1-e883338546e3.jsonl,                          │
+│    0ef53fda-1424-48f3-9742-a065ebf4b42a.jsonl, and 64 more              │
 │                                                                         │
 ├─────────────────────────────────────────────────────────────────────────╯
+│
+◇  Doctor changes ─────────────────────────────────────────────────────╮
+│                                                                      │
+│  Repaired Codex session routes: moved 12 sessions across 1 store to  │
+│  openai/* while preserving auth-profile pins.                        │
+│                                                                      │
+├──────────────────────────────────────────────────────────────────────╯
 │
 ◇  Cron ───────────────────────────────────────────────────────────────────╮
 │                                                                          │
 │  Cron model overrides detected at ~/.openclaw/cron/jobs.json.            │
-│  - 10 jobs set `payload.model` and will not inherit                      │
+│  - 11 jobs set `payload.model` and will not inherit                      │
 │    `agents.defaults.model` (openai/gpt-5.4)                              │
-│  - Provider namespaces: openai=10                                        │
-│  - 6 jobs use a different model than `agents.defaults.model`             │
+│  - Provider namespaces: openai=11                                        │
+│  - 7 jobs use a different model than `agents.defaults.model`             │
 │    (openai/gpt-5.4)                                                      │
 │  - Examples: 4dce6b51-6028-4a50-8433-db0e9c28cf89 ->                     │
 │    openai/gpt-5.4-mini, 2a7aa4d3-f6dd-489e-a56e-b90cd4f96c3a ->          │
@@ -109,7 +125,7 @@
 │
 ◇  Skills status ───────────╮
 │                           │
-│  Eligible: 33             │
+│  Eligible: 34             │
 │  Missing requirements: 0  │
 │  Blocked by allowlist: 0  │
 │                           │

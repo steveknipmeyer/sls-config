@@ -40,7 +40,16 @@
 set -euo pipefail
 
 # Generate a new cryptographically random token
-NEW_TOKEN=REDACTED
+if command -v openssl >/dev/null 2>&1; then
+    NEW_TOKEN="$(openssl rand -hex 32)"
+else
+    NEW_TOKEN="$(head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n')"
+fi
+
+if [[ -z "${NEW_TOKEN}" ]]; then
+    echo "ERROR: failed to generate a new gateway token"
+    exit 1
+fi
 
 echo "============================================"
 echo "New gateway token generated."
@@ -81,7 +90,7 @@ chown openclaw:openclaw /home/openclaw/.openclaw/gateway-token.txt
 echo "✓ Updated ~/.openclaw/gateway-token.txt (legacy convenience copy)"
 
 # Record rotation date for sls-openclaw-system age monitoring
-STATE_DIR="/home/openclaw/.openclaw/workspaces/ada/state/openclaw"
+STATE_DIR="/home/openclaw/.openclaw/workspace/state/openclaw"
 mkdir -p "${STATE_DIR}"
 printf '{\n  "last_rotated": "%s",\n  "method": "rotate-openclaw-gateway.sh"\n}\n' \
     "$(date -u +%Y-%m-%d)" > "${STATE_DIR}/gateway-token.json"

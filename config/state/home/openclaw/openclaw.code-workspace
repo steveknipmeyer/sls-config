@@ -28,6 +28,14 @@
 			{
 				"fileMatch": ["/home/openclaw/.openclaw/workspace/.agents/skills/sls-calendar/config.json"],
 				"url": "file:///home/openclaw/.openclaw/workspace/.agents/skills/sls-calendar/config.schema.json"
+			},
+			{
+				"fileMatch": ["/home/openclaw/.openclaw/workspace/.agents/skills/sls-costs/config.json"],
+				"url": "file:///home/openclaw/.openclaw/workspace/.agents/skills/sls-costs/config.schema.json"
+			},
+			{
+				"fileMatch": ["/home/openclaw/.openclaw/workspace/working/sls-costs/*.json"],
+				"url": "file:///home/openclaw/.openclaw/workspace/.agents/skills/sls-costs/costs-artifact.schema.json"
 			}
 		],
 		"files.watcherExclude": {

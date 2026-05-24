@@ -694,12 +694,10 @@ capture_command "${STATE_DIR}/ufw-status.txt" ufw status verbose 2>/dev/null || 
 log ""
 log "=== OpenClaw doctor ==="
 
-# Run with --fix to apply pending repairs non-interactively.
-# Without --fix, doctor renders an interactive TUI prompt to stdout; since
-# capture_command redirects stdout to a file, the prompt is invisible and
-# harvest appears to hang waiting for stdin input that never arrives.
+# Run with explicit non-interactive flags so doctor cannot block waiting for
+# prompt input when stdout is redirected to a file by capture_command.
 capture_command "${STATE_DIR}/openclaw-doctor.txt" \
-    run_openclaw_as_openclaw doctor --fix
+    run_openclaw_as_openclaw doctor --fix --non-interactive --yes
 
 # =============================================================================
 # SECTION 8a: Local workaround state
