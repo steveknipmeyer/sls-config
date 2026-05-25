@@ -25,15 +25,14 @@
 # N.B. All times are UTC. Ada's OpenClaw crons run at 7:45–8:00 AM UTC (3:45–4:00 AM ET).
 #      Root scripts at 7:25 and 7:30 must complete before Ada's crons start.
 #
-# ORDERING MATTERS for the fragment directory:
-#   7:25 — pre-create fragments/DATE/ as openclaw (MUST run before 7:30 scripts)
+# ORDERING MATTERS for the daily-brief staging directories:
+#   7:25 — pre-create runs/DATE and fragments/DATE as openclaw (MUST run before 7:30 scripts)
 #   7:30 — all data-fetch scripts run concurrently; they write into the pre-created dir
 
-# [7:25] Pre-create today's brief fragment directory as openclaw.
-# Guarantees the directory is openclaw-owned before any 7:30 script touches it.
-# If this step is skipped, any 7:30 script that creates the directory as root
-# will block all Ada fragment writes (PermissionError).
-25 7 * * * install -d -o openclaw -g openclaw /home/openclaw/.openclaw/workspace/working/sls-daily-brief/fragments/$(date -u +%Y-%m-%d)
+# [7:25] Pre-create today's brief runs + fragments directories as openclaw.
+# Guarantees both daily-brief staging directories are openclaw-owned before
+# any 7:30 script touches them.
+25 7 * * * bash /home/openclaw/.openclaw/cron/prepare-daily-brief-paths.sh
 
 # [7:30] sls-system: run security audit and system health checks as root.
 # Writes working/sls-system/security.json and health.json.
