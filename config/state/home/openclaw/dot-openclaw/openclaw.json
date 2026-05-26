@@ -1,7 +1,7 @@
 {
   "meta": {
     "lastTouchedVersion": "2026.5.20",
-    "lastTouchedAt": "2026-05-23T20:18:24.068Z"
+    "lastTouchedAt": "2026-05-25T18:09:25.047Z"
   },
   "agents": {
     "defaults": {
@@ -54,7 +54,13 @@
           }
         }
       },
-      "workspace": "/home/openclaw/.openclaw/workspace"
+      "workspace": "/home/openclaw/.openclaw/workspace",
+      "imageModel": {
+        "primary": "google/gemini-3-pro-image-preview",
+        "fallbacks": [
+          "google/gemini-3-pro-image-preview"
+        ]
+      }
     }
   },
   "tools": {
@@ -151,7 +157,7 @@
     }
   },
   "wizard": {
-    "lastRunAt": "2026-05-23T20:18:23.987Z",
+    "lastRunAt": "2026-05-24T17:49:51.433Z",
     "lastRunVersion": "2026.5.20",
     "lastRunCommand": "doctor",
     "lastRunMode": "local"

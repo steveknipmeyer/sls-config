@@ -27,6 +27,14 @@
 │                                                  │
 ├──────────────────────────────────────────────────╯
 │
+◇  Model auth ──────────────────────────────────────────────────────────╮
+│                                                                       │
+│  - openai-codex:steve@knipmeyer.org: expiring (21h) — Re-auth via     │
+│    `openclaw models auth login --provider openai-codex` or `openclaw  │
+│    configure`.                                                        │
+│                                                                       │
+├───────────────────────────────────────────────────────────────────────╯
+│
 ◇  Doctor changes ──────────────────────────────╮
 │                                               │
 │  Disabled unavailable skill nano-banana-pro.  │
@@ -48,15 +56,15 @@
 │    intended.                                                            │
 │    Examples: agent:main:subagent:86f56276-f362-4514-b50d-aebdffd10e3b   │
 │    (anthropic/claude-sonnet-4-6, user)                                  │
-│  - Found 67 orphan transcript files in                                  │
+│  - Found 165 orphan transcript files in                                 │
 │    ~/.openclaw/agents/main/sessions.                                    │
 │    These .jsonl files are no longer referenced by sessions.json, so     │
 │    they are not part of any active session history.                     │
 │    Doctor can archive them safely by renaming each file to              │
 │    *.deleted.<timestamp>.                                               │
 │    Examples: 00adfcb9-3045-4a34-b930-dd50cc680022.jsonl,                │
-│    06e34380-5d06-4731-95b1-e883338546e3.jsonl,                          │
-│    0ef53fda-1424-48f3-9742-a065ebf4b42a.jsonl, and 64 more              │
+│    042c477e-cd19-44ae-ae05-fd51d9c2c949.jsonl,                          │
+│    04916695-f9ef-4d48-8d0d-e61d45cda7ba.jsonl, and 162 more             │
 │                                                                         │
 ├─────────────────────────────────────────────────────────────────────────╯
 │
