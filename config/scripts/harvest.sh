@@ -1156,6 +1156,9 @@ config/state/home/openclaw/.ssh/config
 config/state/home/openclaw/dot-openclaw/openclaw.json
 config/state/home/openclaw/openclaw.code-workspace
 config/state/usr/local/bin/openclaw
+config/state/opt/complete-openclaw-upgrade.sh
+config/state/opt/deprecated/setup-openclaw-domain.sh
+config/state/opt/deprecated/update-openclaw.sh
 config/state/opt/openclaw.env
 config/state/opt/sls-billing-reader.json
 config/state/opt/openclaw-cli.sh
