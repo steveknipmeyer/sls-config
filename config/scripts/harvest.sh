@@ -360,26 +360,29 @@ redact_secrets "${STATE_DIR}/opt/rotate-openclaw-gateway.sh"
 harvest_file "/opt/status-openclaw.sh" "${STATE_DIR}/opt/status-openclaw.sh"
 
 # ---
-# update-openclaw.sh — updates OpenClaw from npm and restarts the service.
-# NOTE: This script uses `npm update -g openclaw` which may not install the
-# latest version. Our tested update procedure uses `sudo npm install -g openclaw@latest`
-# instead. See extras/MAINTENANCE.md for the recommended update procedure.
-# Origin: DigitalOcean installer (Mar 20), not modified.
+# complete-openclaw-upgrade.sh — full OpenClaw upgrade automation.
+# Covers backup, install, axios integrity check, doctor, plugin reconciliation,
+# env update, gateway restart, and version verification.
+# Replaces update-openclaw.sh. Harvest/commit left as a manual step.
+# Origin: SLS session 54 (May 26 2026).
 # ---
-harvest_file "/opt/update-openclaw.sh" "${STATE_DIR}/opt/update-openclaw.sh"
+harvest_file "/opt/complete-openclaw-upgrade.sh" "${STATE_DIR}/opt/complete-openclaw-upgrade.sh"
 
 # ---
-# setup-openclaw-domain.sh — configures Caddy as a public HTTPS reverse proxy.
-# STATUS: DISABLED — Caddy has been disabled on this deployment.
-# This deployment uses Tailscale exclusively for access (zero public ports).
-# Caddy was part of the original DigitalOcean installer setup for public access
-# before Tailscale was configured. It has been stopped and disabled:
-#   sudo systemctl stop caddy
-#   sudo systemctl disable caddy
-# This script is retained for reference only — do NOT run it.
-# Origin: DigitalOcean installer (Mar 20), not modified.
+# update-openclaw.sh — DEPRECATED. Moved to /opt/deprecated/.
+# Replaced by complete-openclaw-upgrade.sh. Original used npm update -g which
+# does not reliably install the latest version and skips security checks.
+# Origin: DigitalOcean installer (Mar 20). Now a blocking wrapper.
 # ---
-harvest_file "/opt/setup-openclaw-domain.sh" "${STATE_DIR}/opt/setup-openclaw-domain.sh"
+harvest_file "/opt/deprecated/update-openclaw.sh" "${STATE_DIR}/opt/deprecated/update-openclaw.sh"
+
+# ---
+# setup-openclaw-domain.sh — DEPRECATED. Moved to /opt/deprecated/.
+# Configures Caddy as a public HTTPS reverse proxy — incompatible with the
+# current Tailscale-only architecture (zero public ports, no Caddy).
+# Origin: DigitalOcean installer (Mar 20).
+# ---
+harvest_file "/opt/deprecated/setup-openclaw-domain.sh" "${STATE_DIR}/opt/deprecated/setup-openclaw-domain.sh"
 
 # ---
 # openclaw-cli.sh — helper to run OpenClaw CLI commands as the openclaw user.
@@ -390,12 +393,11 @@ harvest_file "/opt/setup-openclaw-domain.sh" "${STATE_DIR}/opt/setup-openclaw-do
 harvest_file "/opt/openclaw-cli.sh" "${STATE_DIR}/opt/openclaw-cli.sh"
 
 # ---
-# openclaw-tui.sh — launches the OpenClaw TUI with the gateway token.
-# WARNING: This script reads the gateway token from /opt/openclaw.env and
-# passes it as a command-line argument (--token=<value>). The token will be
-# visible in `ps aux` output while the TUI is running. Use with caution in
-# shared environments.
-# Origin: DigitalOcean installer (Mar 20), not modified.
+# openclaw-tui.sh — launches the OpenClaw TUI as the openclaw user.
+# Simplified in session 54: no longer reads openclaw.json or passes --token
+# (the TUI authenticates automatically via local gateway connection).
+# Just delegates: su - openclaw -c "openclaw tui $*"
+# Origin: DigitalOcean installer (Mar 20), updated session 54.
 # ---
 harvest_file "/opt/openclaw-tui.sh" "${STATE_DIR}/opt/openclaw-tui.sh"
 
