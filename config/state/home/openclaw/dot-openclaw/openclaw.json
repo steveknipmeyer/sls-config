@@ -1,7 +1,7 @@
 {
   "meta": {
     "lastTouchedVersion": "2026.5.20",
-    "lastTouchedAt": "2026-05-25T18:09:25.047Z"
+    "lastTouchedAt": "2026-05-28T17:08:39.652Z"
   },
   "agents": {
     "defaults": {
@@ -66,8 +66,8 @@
   "tools": {
     "exec": {
       "host": "sandbox",
-      "security": "full",
-      "ask": "off"
+      "security": "allowlist",
+      "ask": "on-miss"
     },
     "elevated": {
       "enabled": true
@@ -157,7 +157,7 @@
     }
   },
   "wizard": {
-    "lastRunAt": "2026-05-24T17:49:51.433Z",
+    "lastRunAt": "2026-05-28T17:08:39.592Z",
     "lastRunVersion": "2026.5.20",
     "lastRunCommand": "doctor",
     "lastRunMode": "local"

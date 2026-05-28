@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "socket": {
+    "path": "/home/openclaw/.openclaw/exec-approvals.sock",
+    "token": "REDACTED"
+  },
+  "defaults": {},
+  "agents": {
+    "main": {
+      "security": "allowlist",
+      "ask": "on-miss",
+      "askFallback": "deny",
+      "autoAllowSkills": false,
+      "allowlist": []
+    }
+  }
+}
