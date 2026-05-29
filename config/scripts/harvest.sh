@@ -1178,6 +1178,7 @@ config/state/home/openclaw/dot-openclaw/exec-approvals.json
 config/state/home/openclaw/openclaw.code-workspace
 config/state/usr/local/bin/openclaw
 config/state/opt/complete-openclaw-upgrade.sh
+config/state/opt/protect-workspace.sh
 config/state/opt/deprecated/setup-openclaw-domain.sh
 config/state/opt/deprecated/update-openclaw.sh
 config/state/opt/openclaw.env

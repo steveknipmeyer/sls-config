@@ -41,8 +41,6 @@
 │
 ◇  State integrity ───────────────────────────────────────────────────────╮
 │                                                                         │
-│  - State directory permissions are too open (~/.openclaw). Recommend    │
-│    chmod 700.                                                           │
 │  - Found explicit Anthropic model overrides in 1 session outside the    │
 │    current configured route.                                            │
 │    Doctor leaves explicit or legacy user selections untouched; switch   │
@@ -50,23 +48,17 @@
 │    intended.                                                            │
 │    Examples: agent:main:subagent:86f56276-f362-4514-b50d-aebdffd10e3b   │
 │    (anthropic/claude-sonnet-4-6, user)                                  │
-│  - Found 236 orphan transcript files in                                 │
+│  - Found 274 orphan transcript files in                                 │
 │    ~/.openclaw/agents/main/sessions.                                    │
 │    These .jsonl files are no longer referenced by sessions.json, so     │
 │    they are not part of any active session history.                     │
 │    Doctor can archive them safely by renaming each file to              │
 │    *.deleted.<timestamp>.                                               │
 │    Examples: 00adfcb9-3045-4a34-b930-dd50cc680022.jsonl,                │
-│    02763295-f7ab-441c-bf58-224ac84f4574.jsonl,                          │
-│    042a34d9-38a1-4310-89b4-5d0a2d201fb8.jsonl, and 233 more             │
+│    01dc7727-3cd1-4244-90e4-587f069382d5.jsonl,                          │
+│    02763295-f7ab-441c-bf58-224ac84f4574.jsonl, and 271 more             │
 │                                                                         │
 ├─────────────────────────────────────────────────────────────────────────╯
-│
-◇  Doctor changes ────────────────────────────────╮
-│                                                 │
-│  - Tightened permissions on ~/.openclaw to 700  │
-│                                                 │
-├─────────────────────────────────────────────────╯
 │
 ◇  Cron ───────────────────────────────────────────────────────────────────╮
 │                                                                          │

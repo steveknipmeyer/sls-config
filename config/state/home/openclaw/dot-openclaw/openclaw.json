@@ -1,7 +1,7 @@
 {
   "meta": {
     "lastTouchedVersion": "2026.5.20",
-    "lastTouchedAt": "2026-05-28T17:08:39.652Z"
+    "lastTouchedAt": "2026-05-29T20:06:01.139Z"
   },
   "agents": {
     "defaults": {
@@ -157,7 +157,7 @@
     }
   },
   "wizard": {
-    "lastRunAt": "2026-05-28T17:08:39.592Z",
+    "lastRunAt": "2026-05-29T20:06:01.069Z",
     "lastRunVersion": "2026.5.20",
     "lastRunCommand": "doctor",
     "lastRunMode": "local"
@@ -321,5 +321,8 @@
   },
   "session": {
     "dmScope": "per-channel-peer"
+  },
+  "browser": {
+    "enabled": false
   }
 }

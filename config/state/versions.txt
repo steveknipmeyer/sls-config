@@ -1,5 +1,5 @@
 # OpenClaw Environment — Version Snapshot
-# Generated: 2026-05-28T17:18:32Z
+# Generated: 2026-05-29T20:06:53Z
 
 ## OpenClaw
 OpenClaw 2026.5.20 (e510042)
@@ -21,8 +21,8 @@ Codename:	noble
 Docker version 29.1.3, build 29.1.3-0ubuntu3~24.04.2
 
 ## Tailscale
-1.98.2
-  tailscale commit: aaf7caef13becf6989e9e81f66412f3edc564c38
-  long version: 1.98.2-taaf7caef1-gc4a37aed9
-  other commit: c4a37aed97b8b6dcc3fb32d87281c069fd2359d7
+1.98.3
+  tailscale commit: a16e0f20cff0acd5617fd1b315df32cdad17a8fa
+  long version: 1.98.3-ta16e0f20c-ge0c644472
+  other commit: e0c6444725a27ff911a18cc4b18575d8700339d5
   go version: go1.26.3 (tailscale/go e877d97384)
