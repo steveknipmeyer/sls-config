@@ -48,7 +48,7 @@
 │    intended.                                                            │
 │    Examples: agent:main:subagent:86f56276-f362-4514-b50d-aebdffd10e3b   │
 │    (anthropic/claude-sonnet-4-6, user)                                  │
-│  - Found 274 orphan transcript files in                                 │
+│  - Found 304 orphan transcript files in                                 │
 │    ~/.openclaw/agents/main/sessions.                                    │
 │    These .jsonl files are no longer referenced by sessions.json, so     │
 │    they are not part of any active session history.                     │
@@ -56,9 +56,16 @@
 │    *.deleted.<timestamp>.                                               │
 │    Examples: 00adfcb9-3045-4a34-b930-dd50cc680022.jsonl,                │
 │    01dc7727-3cd1-4244-90e4-587f069382d5.jsonl,                          │
-│    02763295-f7ab-441c-bf58-224ac84f4574.jsonl, and 271 more             │
+│    0208f258-bac2-4cf0-9c68-8c3a4fadb5b5.jsonl, and 301 more             │
 │                                                                         │
 ├─────────────────────────────────────────────────────────────────────────╯
+│
+◇  Doctor changes ─────────────────────────────────────────────────────╮
+│                                                                      │
+│  Repaired Codex session routes: moved 11 sessions across 1 store to  │
+│  openai/* while preserving auth-profile pins.                        │
+│                                                                      │
+├──────────────────────────────────────────────────────────────────────╯
 │
 ◇  Cron ───────────────────────────────────────────────────────────────────╮
 │                                                                          │
