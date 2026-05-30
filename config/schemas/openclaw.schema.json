@@ -18,7 +18,9 @@
             {
               "type": "string"
             },
-            {}
+            {
+              "type": "number"
+            }
           ],
           "title": "Config Last Touched At",
           "description": "ISO timestamp of the last config write (auto-set)."
@@ -270,6 +272,11 @@
                       "type": "boolean",
                       "title": "OpenTelemetry System Prompt Capture",
                       "description": "Capture system prompt text on OTEL spans when content capture is enabled. This remains off unless explicitly enabled."
+                    },
+                    "toolDefinitions": {
+                      "type": "boolean",
+                      "title": "OpenTelemetry Tool Definitions Capture",
+                      "description": "Capture model tool definition schemas on OTEL spans when content capture is enabled."
                     }
                   },
                   "additionalProperties": false
@@ -1576,6 +1583,7 @@
                   "openai-codex-responses",
                   "anthropic-messages",
                   "google-generative-ai",
+                  "google-vertex",
                   "github-copilot",
                   "bedrock-converse-stream",
                   "ollama",
@@ -1608,7 +1616,13 @@
                 "exclusiveMinimum": 0,
                 "maximum": 9007199254740991,
                 "title": "Model Provider Request Timeout",
-                "description": "Optional per-provider model request timeout in seconds. Applies to provider HTTP fetches, including connect, headers, body, and total request abort handling, and also raises the LLM idle/stream watchdog ceiling for this provider above the implicit ~120s default. Use this for slow local or self-hosted model servers, or for cloud providers that buffer reasoning tokens silently on the wire (Gemini preview, large-tool-payload Claude/Opus), instead of changing global agent timeouts."
+                "description": "Optional per-provider model request timeout in seconds. For built-in providers, this can be set as a standalone overlay. For custom providers, set it alongside the provider baseUrl and models. Applies to provider HTTP fetches, including connect, headers, body, and total request abort handling, and also raises the LLM idle/stream watchdog ceiling for this provider above the implicit ~120s default. Use this for slow local or self-hosted model servers, or for cloud providers that buffer reasoning tokens silently on the wire (Gemini preview, large-tool-payload Claude/Opus), instead of changing global agent timeouts."
+              },
+              "region": {
+                "type": "string",
+                "minLength": 1,
+                "title": "Model Provider Region",
+                "description": "Optional provider deployment/API region interpreted by providers that expose regional endpoints. Use provider docs for supported values; baseUrl overrides usually take precedence when both are set."
               },
               "injectNumCtxForOpenAICompat": {
                 "type": "boolean",
@@ -3192,6 +3206,7 @@
                         "openai-codex-responses",
                         "anthropic-messages",
                         "google-generative-ai",
+                        "google-vertex",
                         "github-copilot",
                         "bedrock-converse-stream",
                         "ollama",
@@ -3452,6 +3467,68 @@
                       },
                       "additionalProperties": false
                     },
+                    "mediaInput": {
+                      "type": "object",
+                      "properties": {
+                        "image": {
+                          "type": "object",
+                          "properties": {
+                            "maxBytes": {
+                              "type": "integer",
+                              "exclusiveMinimum": 0,
+                              "maximum": 9007199254740991,
+                              "title": "Model Image Max Bytes",
+                              "description": "Maximum encoded image payload size accepted by the provider for this model."
+                            },
+                            "maxPixels": {
+                              "type": "integer",
+                              "exclusiveMinimum": 0,
+                              "maximum": 9007199254740991,
+                              "title": "Model Image Max Pixels",
+                              "description": "Maximum image pixel count accepted by the provider for this model."
+                            },
+                            "maxSidePx": {
+                              "type": "integer",
+                              "exclusiveMinimum": 0,
+                              "maximum": 9007199254740991,
+                              "title": "Model Image Max Side",
+                              "description": "Maximum image width or height accepted by the provider for this model."
+                            },
+                            "preferredSidePx": {
+                              "type": "integer",
+                              "exclusiveMinimum": 0,
+                              "maximum": 9007199254740991,
+                              "title": "Model Image Preferred Side",
+                              "description": "Preferred image resize side for balanced compression. Leave unset to use OpenClaw's conservative default."
+                            },
+                            "tokenMode": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "const": "tile"
+                                },
+                                {
+                                  "type": "string",
+                                  "const": "detail"
+                                },
+                                {
+                                  "type": "string",
+                                  "const": "provider"
+                                }
+                              ],
+                              "title": "Model Image Token Mode",
+                              "description": "Provider image token accounting style: \"tile\", \"detail\", or \"provider\"."
+                            }
+                          },
+                          "additionalProperties": false,
+                          "title": "Model Image Input",
+                          "description": "Optional image input limits for this model, such as maximum side length, maximum pixels, and preferred compression side."
+                        }
+                      },
+                      "additionalProperties": false,
+                      "title": "Model Media Input",
+                      "description": "Optional model media capability metadata used by tools to choose conservative image compression defaults."
+                    },
                     "metadataSource": {
                       "type": "string",
                       "const": "models-add"
@@ -3470,7 +3547,7 @@
             "additionalProperties": false
           },
           "title": "Model Providers",
-          "description": "Provider map keyed by provider ID containing connection/auth settings and concrete model definitions. Use stable provider keys so references from agents and tooling remain portable across environments."
+          "description": "Provider map keyed by provider ID containing connection/auth settings and concrete model definitions. Built-in providers may be tuned with provider-level overlays; custom providers must include baseUrl and models. Use stable provider keys so references from agents and tooling remain portable across environments."
         },
         "pricing": {
           "type": "object",
@@ -3672,7 +3749,9 @@
                     "timeoutMs": {
                       "type": "integer",
                       "exclusiveMinimum": 0,
-                      "maximum": 9007199254740991
+                      "maximum": 9007199254740991,
+                      "title": "Video Generation Timeout (ms)",
+                      "description": "Default provider request timeout in milliseconds for video_generate calls. Per-call timeoutMs overrides this, and this value overrides provider-authored defaults."
                     }
                   },
                   "additionalProperties": false
@@ -4047,7 +4126,7 @@
                   "minimum": 1,
                   "maximum": 250000,
                   "title": "Default Tool Result Max Chars",
-                  "description": "Default max characters kept for a single live tool result before truncation. This affects both persisted live tool-result writes and overflow-recovery truncation heuristics."
+                  "description": "Advanced ceiling for a single live tool result before truncation. Leave unset to use the model-context auto cap; explicit values affect both persisted live tool-result writes and overflow-recovery truncation heuristics."
                 },
                 "postCompactionMaxChars": {
                   "type": "integer",
@@ -4534,7 +4613,7 @@
                 "provider": {
                   "type": "string",
                   "title": "Memory Search Provider",
-                  "description": "Selects the embedding backend used to build/query memory vectors: \"openai\", \"gemini\", \"voyage\", \"mistral\", \"bedrock\", \"lmstudio\", \"ollama\", or \"local\". Keep your most reliable provider here and configure fallback for resilience."
+                  "description": "Selects the embedding backend used to build/query memory vectors. Defaults to \"openai\"; set \"openai-compatible\", \"gemini\", \"voyage\", \"mistral\", \"bedrock\", \"deepinfra\", \"github-copilot\", \"lmstudio\", \"ollama\", or \"local\" when you want a different backend."
                 },
                 "remote": {
                   "type": "object",
@@ -5215,7 +5294,7 @@
                     "type": "string"
                   },
                   "title": "Post-Compaction Context Sections",
-                  "description": "AGENTS.md H2/H3 section names re-injected after compaction so the agent reruns critical startup guidance. Leave unset to use \"Session Startup\"/\"Red Lines\" with legacy fallback to \"Every Session\"/\"Safety\"; set to [] to disable reinjection entirely."
+                  "description": "Opt-in AGENTS.md H2/H3 section names re-injected after compaction so the agent reruns critical startup guidance. Leave unset or set [] to disable reinjection. Explicitly set [\"Session Startup\", \"Red Lines\"] to enable the legacy default pair with fallback to older \"Every Session\"/\"Safety\" headings. Enabling this can duplicate project context already present in the compaction summary."
                 },
                 "model": {
                   "type": "string",
@@ -5614,6 +5693,17 @@
               "title": "Image Max Dimension (px)",
               "description": "Max image side length in pixels when sanitizing transcript/tool-result image payloads (default: 1200)."
             },
+            "imageQuality": {
+              "type": "string",
+              "enum": [
+                "auto",
+                "efficient",
+                "balanced",
+                "high"
+              ],
+              "title": "Image Quality",
+              "description": "Image-tool media compression preference: \"auto\" adapts to provider/model limits and image count, \"efficient\" saves tokens and bytes, \"balanced\" keeps the current middle ground, and \"high\" preserves more detail for screenshots and document images."
+            },
             "typingIntervalSeconds": {
               "type": "integer",
               "exclusiveMinimum": 0,
@@ -5929,7 +6019,19 @@
                         "type": "string"
                       }
                     },
-                    "setupCommand": {},
+                    "setupCommand": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
                     "pidsLimit": {
                       "type": "integer",
                       "exclusiveMinimum": 0,
@@ -7519,7 +7621,7 @@
                     "minimum": 1,
                     "maximum": 250000,
                     "title": "Agent Tool Result Max Chars",
-                    "description": "Per-agent override for the live tool-result max character budget."
+                    "description": "Per-agent advanced ceiling for the live tool-result max character budget. Omit to inherit defaults or the model-context auto cap."
                   },
                   "postCompactionMaxChars": {
                     "type": "integer",
@@ -7907,7 +8009,19 @@
                           "type": "string"
                         }
                       },
-                      "setupCommand": {},
+                      "setupCommand": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        ]
+                      },
                       "pidsLimit": {
                         "type": "integer",
                         "exclusiveMinimum": 0,
@@ -9254,6 +9368,10 @@
                       "description": "Native Codex web search mode: \"cached\" (default) or \"live\"."
                     },
                     "allowedDomains": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
                       "title": "Codex Allowed Domains",
                       "description": "Optional domain allowlist passed to the native Codex web_search tool."
                     },
@@ -9275,7 +9393,32 @@
                       "title": "Codex Search Context Size",
                       "description": "Native Codex search context size hint: \"low\", \"medium\", or \"high\"."
                     },
-                    "userLocation": {}
+                    "userLocation": {
+                      "type": "object",
+                      "properties": {
+                        "country": {
+                          "type": "string",
+                          "title": "Codex User Country",
+                          "description": "Approximate country sent to native Codex web search."
+                        },
+                        "region": {
+                          "type": "string",
+                          "title": "Codex User Region",
+                          "description": "Approximate region/state sent to native Codex web search."
+                        },
+                        "city": {
+                          "type": "string",
+                          "title": "Codex User City",
+                          "description": "Approximate city sent to native Codex web search."
+                        },
+                        "timezone": {
+                          "type": "string",
+                          "title": "Codex User Timezone",
+                          "description": "Approximate timezone sent to native Codex web search."
+                        }
+                      },
+                      "additionalProperties": false
+                    }
                   },
                   "additionalProperties": false
                 }
@@ -21652,7 +21795,7 @@
               },
               "additionalProperties": false,
               "title": "Status Reaction Timing",
-              "description": "Override default timing. Keys: debounceMs (700), stallSoftMs (25000), stallHardMs (60000), doneHoldMs (1500), errorHoldMs (2500)."
+              "description": "Override default timing. Keys: debounceMs (700), stallSoftMs (10000), stallHardMs (30000), doneHoldMs (1500), errorHoldMs (2500)."
             }
           },
           "additionalProperties": false,
@@ -22202,12 +22345,6 @@
           "description": "Defines elevated command allow rules by channel and sender for owner-level command surfaces. Use narrow provider-specific identities so privileged commands are not exposed to broad chat audiences."
         }
       },
-      "required": [
-        "native",
-        "nativeSkills",
-        "restart",
-        "ownerDisplay"
-      ],
       "additionalProperties": false,
       "title": "Commands",
       "description": "Controls chat command surfaces, owner gating, and elevated command access behavior across providers. Keep defaults unless you need stricter operator controls or broader command availability."
@@ -23005,7 +23142,7 @@
           "exclusiveMinimum": 0,
           "maximum": 9007199254740991,
           "title": "Cron Max Concurrent Runs",
-          "description": "Limits how many cron jobs can execute at the same time when multiple schedules fire together, including isolated agent-turn LLM execution on the dedicated cron-nested lane. Use lower values to protect CPU/memory under heavy automation load, or raise carefully for higher throughput."
+          "description": "Defaults to 8. Limits how many cron jobs can execute at the same time when multiple schedules fire together, including isolated agent-turn LLM execution on the dedicated cron-nested lane. Use lower values to protect CPU/memory under heavy automation load, or raise carefully for higher throughput."
         },
         "retry": {
           "type": "object",
@@ -23235,6 +23372,82 @@
       "title": "Cron",
       "description": "Global scheduler settings for stored cron jobs, run concurrency, delivery fallback, and run-session retention. Keep defaults unless you are scaling job volume or integrating external webhook receivers."
     },
+    "transcripts": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "title": "Transcripts Enabled",
+          "description": "Enables the recording-capable transcripts agent tool and configured auto-start sources. Default: false. Enable only on hosts where operators have reviewed meeting capture policy and provider permissions."
+        },
+        "maxUtterances": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000,
+          "title": "Transcripts Max Utterances",
+          "description": "Maximum utterances retained in a transcript summary operation before truncation. Use lower values to limit prompt/storage footprint, or raise carefully for long meetings where summary completeness matters."
+        },
+        "autoStart": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "providerId": {
+                "type": "string",
+                "minLength": 1,
+                "title": "Transcript Source Provider ID",
+                "description": "Transcript source provider id, such as a Discord voice or future Slack huddle provider. Use the exact id exposed by the provider plugin."
+              },
+              "sessionId": {
+                "type": "string",
+                "minLength": 1,
+                "title": "Transcript Session ID",
+                "description": "Optional fixed transcript session id for this auto-start source. Leave unset for generated ids unless you need a stable daily selector and can avoid same-day collisions."
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "title": "Transcript Title",
+                "description": "Optional human-readable title stored with the transcript session and shown in transcript listings. Use concise meeting names that help operators identify the captured source."
+              },
+              "accountId": {
+                "type": "string",
+                "minLength": 1,
+                "title": "Transcript Account ID",
+                "description": "Optional provider account or workspace identifier for transcript sources that need account disambiguation. Use the provider's documented account id format."
+              },
+              "guildId": {
+                "type": "string",
+                "minLength": 1,
+                "title": "Discord Guild ID",
+                "description": "Optional Discord guild id for Discord voice transcript sources. Configure this with the matching channelId when the provider needs guild-scoped voice channel lookup."
+              },
+              "channelId": {
+                "type": "string",
+                "minLength": 1,
+                "title": "Transcript Channel ID",
+                "description": "Provider channel id for the live transcript source, such as a Discord voice channel or Slack huddle channel. Verify provider-specific id semantics before enabling auto-start."
+              },
+              "meetingUrl": {
+                "type": "string",
+                "minLength": 1,
+                "title": "Transcript Meeting URL",
+                "description": "Optional meeting URL for providers that join by URL instead of channel id. Use only trusted meeting links because auto-start may join and capture that meeting."
+              }
+            },
+            "required": [
+              "providerId"
+            ],
+            "additionalProperties": false
+          },
+          "title": "Transcripts Auto-start Sources",
+          "description": "Live transcript sources started automatically when the gateway starts. Each entry is enabled by being present; remove an entry to disable that source."
+        }
+      },
+      "additionalProperties": false,
+      "title": "Transcripts",
+      "description": "Core transcript capture settings for recording-capable agent tools and configured live meeting auto-start sources. Keep disabled unless operators explicitly want agents to capture or import meeting transcripts."
+    },
     "commitments": {
       "type": "object",
       "properties": {
@@ -23297,7 +23510,7 @@
             "type": "string"
           },
           "title": "Hooks Allowed Agent IDs",
-          "description": "Allowlist of agent IDs that hook mappings are allowed to target when selecting execution agents. Use this to constrain automation events to dedicated service agents and reduce blast radius if a hook token is exposed."
+          "description": "Allowlist of effective agent IDs that hook requests and mappings are allowed to target, including default-agent routing when agentId is omitted. Use this to constrain automation events to dedicated service agents and reduce blast radius if a hook token is exposed."
         },
         "maxBodyBytes": {
           "type": "integer",
@@ -23343,7 +23556,6 @@
                     "description": "Source match condition for a hook mapping, typically set by trusted upstream metadata or adapter logic. Use stable source identifiers so routing remains deterministic across retries."
                   }
                 },
-                "additionalProperties": false,
                 "title": "Hook Mapping Match",
                 "description": "Grouping object for mapping match predicates such as path and source before action routing is applied. Keep match criteria specific so unrelated webhook traffic does not trigger automations."
               },
@@ -25133,6 +25345,11 @@
               "properties": {
                 "enabled": {
                   "type": "boolean"
+                },
+                "ttlMs": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 86400000
                 }
               },
               "additionalProperties": false
@@ -25278,6 +25495,18 @@
                         "auto",
                         "always"
                       ]
+                    },
+                    "requireWakeName": {
+                      "type": "boolean"
+                    },
+                    "wakeNames": {
+                      "minItems": 1,
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "pattern": "^\\s*[^a-z0-9]*[a-z0-9]+(?:[^a-z0-9]+[a-z0-9]+)?[^a-z0-9]*\\s*$"
+                      }
                     },
                     "bootstrapContextFiles": {
                       "type": "array",
@@ -26885,6 +27114,11 @@
                     "properties": {
                       "enabled": {
                         "type": "boolean"
+                      },
+                      "ttlMs": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 86400000
                       }
                     },
                     "additionalProperties": false
@@ -27030,6 +27264,18 @@
                               "auto",
                               "always"
                             ]
+                          },
+                          "requireWakeName": {
+                            "type": "boolean"
+                          },
+                          "wakeNames": {
+                            "minItems": 1,
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1,
+                              "pattern": "^\\s*[^a-z0-9]*[a-z0-9]+(?:[^a-z0-9]+[a-z0-9]+)?[^a-z0-9]*\\s*$"
+                            }
                           },
                           "bootstrapContextFiles": {
                             "type": "array",
@@ -36176,6 +36422,9 @@
             "accountUuid": {
               "type": "string"
             },
+            "configPath": {
+              "type": "string"
+            },
             "httpUrl": {
               "type": "string"
             },
@@ -36532,6 +36781,9 @@
                     "type": "string"
                   },
                   "accountUuid": {
+                    "type": "string"
+                  },
+                  "configPath": {
                     "type": "string"
                   },
                   "httpUrl": {
@@ -39471,20 +39723,6 @@
                 }
               ]
             },
-            "dm": {
-              "type": "object",
-              "properties": {
-                "threadReplies": {
-                  "type": "string",
-                  "enum": [
-                    "off",
-                    "inbound",
-                    "always"
-                  ]
-                }
-              },
-              "additionalProperties": false
-            },
             "groups": {
               "type": "object",
               "propertyNames": {
@@ -39771,14 +40009,6 @@
                       "allowlist",
                       "open",
                       "disabled"
-                    ]
-                  },
-                  "threadReplies": {
-                    "type": "string",
-                    "enum": [
-                      "off",
-                      "inbound",
-                      "always"
                     ]
                   },
                   "tools": {
@@ -40735,20 +40965,6 @@
                       }
                     ]
                   },
-                  "dm": {
-                    "type": "object",
-                    "properties": {
-                      "threadReplies": {
-                        "type": "string",
-                        "enum": [
-                          "off",
-                          "inbound",
-                          "always"
-                        ]
-                      }
-                    },
-                    "additionalProperties": false
-                  },
                   "groups": {
                     "type": "object",
                     "propertyNames": {
@@ -41035,14 +41251,6 @@
                             "allowlist",
                             "open",
                             "disabled"
-                          ]
-                        },
-                        "threadReplies": {
-                          "type": "string",
-                          "enum": [
-                            "off",
-                            "inbound",
-                            "always"
                           ]
                         },
                         "tools": {
@@ -43904,6 +44112,15 @@
               ],
               "title": "Talk Realtime Brain",
               "description": "Talk reasoning strategy: agent-consult for Gateway-mediated agent help, direct-tools for local tool calls, or none."
+            },
+            "consultRouting": {
+              "type": "string",
+              "enum": [
+                "provider-direct",
+                "force-agent-consult"
+              ],
+              "title": "Talk Realtime Consult Routing",
+              "description": "Gateway relay fallback for final user transcripts when the realtime provider skips openclaw_agent_consult. provider-direct preserves provider replies; force-agent-consult routes through OpenClaw."
             }
           },
           "additionalProperties": false,
@@ -44049,6 +44266,7 @@
               "description": "DANGEROUS toggle that allows hosted embeds to load absolute external http(s) URLs. Keep this off unless your Control UI intentionally embeds trusted third-party pages; hosted /__openclaw__/canvas and /__openclaw__/a2ui documents do not need it."
             },
             "chatMessageMaxWidth": {
+              "type": "string",
               "title": "Control UI Chat Message Max Width",
               "description": "Optional CSS max-width for grouped Control UI chat messages, for example \"960px\", \"82%\", or \"min(1280px, 82%)\". Values are validated against a constrained width grammar before reaching the browser."
             },
@@ -44722,7 +44940,6 @@
               "description": "Optional CA bundle path for client verification or custom trust-chain requirements at the gateway edge. Use this when private PKI or custom certificate chains are part of deployment."
             }
           },
-          "additionalProperties": false,
           "title": "Gateway TLS",
           "description": "TLS certificate and key settings for terminating HTTPS directly in the gateway process. Use explicit certificates in production and avoid plaintext exposure on untrusted networks."
         },
@@ -57215,9 +57432,6 @@
       "description": "Operator-managed forward proxy routing for OpenClaw runtime HTTP, HTTPS, WebSocket, and supported raw-egress paths. Use this when central egress control is part of the deployment boundary."
     }
   },
-  "required": [
-    "commands"
-  ],
   "additionalProperties": false,
   "title": "OpenClawConfig"
 }

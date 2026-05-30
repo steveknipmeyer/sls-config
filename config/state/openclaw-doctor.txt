@@ -26,6 +26,8 @@
 │  Removed legacy skills.entries.nano-banana-pro.  │
 │                                                  │
 ├──────────────────────────────────────────────────╯
+[36m[agents/tool-policy][39m [36mtool policy removed 5 tool(s) via tools.profile (coding): agents_list, gateway, message, nodes, tts[39m
+[36m[agents/tool-policy][39m [36mtool policy removed 5 tool(s) via tools.profile (coding): agents_list, gateway, message, nodes, tts[39m
 │
 ◇  Doctor changes ──────────────────────────────╮
 │                                               │
@@ -41,6 +43,15 @@
 │
 ◇  State integrity ───────────────────────────────────────────────────────╮
 │                                                                         │
+│  - 1/5 recent sessions are missing transcripts.                         │
+│    Verify sessions in store: openclaw sessions --store                  │
+│    "/home/openclaw/.openclaw/agents/main/sessions/sessions.json"        │
+│    Preview cleanup impact: openclaw sessions cleanup --store            │
+│    "/home/openclaw/.openclaw/agents/main/sessions/sessions.json"        │
+│    --dry-run                                                            │
+│    Prune missing entries: openclaw sessions cleanup --store             │
+│    "/home/openclaw/.openclaw/agents/main/sessions/sessions.json"        │
+│    --enforce --fix-missing                                              │
 │  - Found explicit Anthropic model overrides in 1 session outside the    │
 │    current configured route.                                            │
 │    Doctor leaves explicit or legacy user selections untouched; switch   │
@@ -48,24 +59,14 @@
 │    intended.                                                            │
 │    Examples: agent:main:subagent:86f56276-f362-4514-b50d-aebdffd10e3b   │
 │    (anthropic/claude-sonnet-4-6, user)                                  │
-│  - Found 304 orphan transcript files in                                 │
-│    ~/.openclaw/agents/main/sessions.                                    │
+│  - Found 1 orphan transcript file in ~/.openclaw/agents/main/sessions.  │
 │    These .jsonl files are no longer referenced by sessions.json, so     │
 │    they are not part of any active session history.                     │
 │    Doctor can archive them safely by renaming each file to              │
 │    *.deleted.<timestamp>.                                               │
-│    Examples: 00adfcb9-3045-4a34-b930-dd50cc680022.jsonl,                │
-│    01dc7727-3cd1-4244-90e4-587f069382d5.jsonl,                          │
-│    0208f258-bac2-4cf0-9c68-8c3a4fadb5b5.jsonl, and 301 more             │
+│    Examples: 807fe8ef-8a0e-4ea5-84f9-323d554077eb.jsonl                 │
 │                                                                         │
 ├─────────────────────────────────────────────────────────────────────────╯
-│
-◇  Doctor changes ─────────────────────────────────────────────────────╮
-│                                                                      │
-│  Repaired Codex session routes: moved 11 sessions across 1 store to  │
-│  openai/* while preserving auth-profile pins.                        │
-│                                                                      │
-├──────────────────────────────────────────────────────────────────────╯
 │
 ◇  Cron ───────────────────────────────────────────────────────────────────╮
 │                                                                          │
@@ -122,6 +123,7 @@
 │  - Run: openclaw security audit --deep                                 │
 │                                                                        │
 ├────────────────────────────────────────────────────────────────────────╯
+[36m[agents/tool-policy][39m [36mtool policy removed 5 tool(s) via tools.profile (coding): agents_list, gateway, message, nodes, tts[39m
 │
 ◇  Skills status ───────────╮
 │                           │
