@@ -14,7 +14,9 @@
 #
 # PROTECTED FILE SCOPE:
 #   - workspace root identity files: SOUL.md, USER.md, IDENTITY.md, AGENTS.md, SECURITY.md
+#   - workspace context instructions: .agents/context/*.md
 #   - per-skill: SKILL.md, scripts/* (excluding __pycache__), templates/*
+#   - sls-news-gemini prompt parts: .agents/skills/sls-news-gemini/parts/**/*.md
 #   - NOT protected: config.json (legitimately edited when sources change)
 #
 # DAILY BRIEF INTEGRATION:
@@ -51,11 +53,13 @@ list_protected() {
     for f in SOUL.md USER.md IDENTITY.md AGENTS.md SECURITY.md; do
         [[ -f "$ws/$f" ]] && echo "$ws/$f"
     done
+    find "$ws/.agents/context" -maxdepth 1 -type f -name "*.md" 2>/dev/null
     find "$ws/.agents/skills" -maxdepth 2 -name "SKILL.md" 2>/dev/null
     find "$ws/.agents/skills" -path "*/scripts/*" \
         ! -path "*/__pycache__/*" ! -type d 2>/dev/null
     find "$ws/.agents/skills" -path "*/templates/*" \
         ! -type d 2>/dev/null
+    find "$ws/.agents/skills/sls-news-gemini/parts" -type f -name "*.md" 2>/dev/null
 }
 
 # ---------------------------------------------------------------------------
@@ -71,6 +75,9 @@ list_skill_protected() {
     [[ -f "$skill_dir/SKILL.md" ]] && echo "$skill_dir/SKILL.md"
     find "$skill_dir/scripts" ! -path "*/__pycache__/*" ! -type d 2>/dev/null
     find "$skill_dir/templates" ! -type d 2>/dev/null
+    if [[ "$skill" == "sls-news-gemini" ]]; then
+        find "$skill_dir/parts" -type f -name "*.md" 2>/dev/null
+    fi
 }
 
 # ---------------------------------------------------------------------------
