@@ -10,7 +10,7 @@
 ◇  Startup optimization ────────────────────────────────────────────────╮
 │                                                                       │
 │  - NODE_COMPILE_CACHE is not set; repeated CLI runs can be slower on  │
-│    small hosts (Pi/VM).                                               │
+│    small hosts (Raspberry Pi/VM).                                     │
 │  - OPENCLAW_NO_RESPAWN is not set to 1; set it when you want routine  │
 │    gateway restarts to stay in-process instead of handing off to a    │
 │    managed supervisor.                                                │
@@ -21,65 +21,60 @@
 │                                                                       │
 ├───────────────────────────────────────────────────────────────────────╯
 │
-◇  Doctor changes ─────────────────────────────────╮
-│                                                  │
-│  Removed legacy skills.entries.nano-banana-pro.  │
-│                                                  │
-├──────────────────────────────────────────────────╯
-[36m[agents/tool-policy][39m [36mtool policy removed 5 tool(s) via tools.profile (coding): agents_list, gateway, message, nodes, tts[39m
-[36m[agents/tool-policy][39m [36mtool policy removed 5 tool(s) via tools.profile (coding): agents_list, gateway, message, nodes, tts[39m
+◇  Doctor changes ─────────────────────────────────────────────────────────╮
+│                                                                          │
+│  Removed legacy skills.entries.nano-banana-pro.                          │
+│  Moved agents.defaults.model legacy runtime primary refs to canonical    │
+│  provider refs and selected codex runtime.                               │
+│  Moved agents.defaults.models legacy runtime keys to canonical provider  │
+│  keys.                                                                   │
+│                                                                          │
+├──────────────────────────────────────────────────────────────────────────╯
 │
-◇  Doctor changes ──────────────────────────────╮
-│                                               │
-│  Disabled unavailable skill nano-banana-pro.  │
-│                                               │
-├───────────────────────────────────────────────╯
+◇  Doctor changes ────────────────────────────────────────────────────╮
+│                                                                     │
+│  Migrated legacy OpenAI Codex auth profile config to the canonical  │
+│  OpenAI provider.                                                   │
+│                                                                     │
+├─────────────────────────────────────────────────────────────────────╯
 │
 ◇  Plugin registry ───────────────────────────────────────────╮
 │                                                             │
-│  Plugin registry refreshed: 66/92 enabled plugins indexed.  │
+│  Plugin registry refreshed: 68/95 enabled plugins indexed.  │
 │                                                             │
 ├─────────────────────────────────────────────────────────────╯
 │
-◇  State integrity ───────────────────────────────────────────────────────╮
-│                                                                         │
-│  - 1/5 recent sessions are missing transcripts.                         │
-│    Verify sessions in store: openclaw sessions --store                  │
-│    "/home/openclaw/.openclaw/agents/main/sessions/sessions.json"        │
-│    Preview cleanup impact: openclaw sessions cleanup --store            │
-│    "/home/openclaw/.openclaw/agents/main/sessions/sessions.json"        │
-│    --dry-run                                                            │
-│    Prune missing entries: openclaw sessions cleanup --store             │
-│    "/home/openclaw/.openclaw/agents/main/sessions/sessions.json"        │
-│    --enforce --fix-missing                                              │
-│  - Found explicit Anthropic model overrides in 1 session outside the    │
-│    current configured route.                                            │
-│    Doctor leaves explicit or legacy user selections untouched; switch   │
-│    them with /model or reset the session if that provider is no longer  │
-│    intended.                                                            │
-│    Examples: agent:main:subagent:86f56276-f362-4514-b50d-aebdffd10e3b   │
-│    (anthropic/claude-sonnet-4-6, user)                                  │
-│  - Found 1 orphan transcript file in ~/.openclaw/agents/main/sessions.  │
-│    These .jsonl files are no longer referenced by sessions.json, so     │
-│    they are not part of any active session history.                     │
-│    Doctor can archive them safely by renaming each file to              │
-│    *.deleted.<timestamp>.                                               │
-│    Examples: 807fe8ef-8a0e-4ea5-84f9-323d554077eb.jsonl                 │
-│                                                                         │
-├─────────────────────────────────────────────────────────────────────────╯
+◇  State integrity ────────────────────────────────────────────────────────╮
+│                                                                          │
+│  - Found explicit Anthropic model overrides in 1 session outside the     │
+│    current configured route.                                             │
+│    Doctor leaves explicit or legacy user selections untouched; switch    │
+│    them with /model or reset the session if that provider is no longer   │
+│    intended.                                                             │
+│    Examples: agent:main:subagent:86f56276-f362-4514-b50d-aebdffd10e3b    │
+│    (anthropic/claude-sonnet-4-6, user)                                   │
+│  - Found 2 orphan transcript files in ~/.openclaw/agents/main/sessions.  │
+│    These .jsonl files are no longer referenced by sessions.json, so      │
+│    they are not part of any active session history.                      │
+│    Doctor can archive them safely by renaming each file to               │
+│    *.deleted.<timestamp>.                                                │
+│    Examples: 9975662f-fed3-40c9-ad94-b74091a2a0e9.jsonl,                 │
+│    9bfca77b-b8e0-4f90-b7eb-3484e6451106.jsonl                            │
+│                                                                          │
+├──────────────────────────────────────────────────────────────────────────╯
 │
 ◇  Cron ───────────────────────────────────────────────────────────────────╮
 │                                                                          │
 │  Cron model overrides detected at ~/.openclaw/cron/jobs.json.            │
 │  - 11 jobs set `payload.model` and will not inherit                      │
 │    `agents.defaults.model` (openai/gpt-5.4)                              │
-│  - Provider namespaces: openai=11                                        │
-│  - 7 jobs use a different model than `agents.defaults.model`             │
+│  - Provider namespaces: codex=11                                         │
+│  - 11 jobs use a different model than `agents.defaults.model`            │
 │    (openai/gpt-5.4)                                                      │
 │  - Examples: 4dce6b51-6028-4a50-8433-db0e9c28cf89 ->                     │
-│    openai/gpt-5.4-mini, 2a7aa4d3-f6dd-489e-a56e-b90cd4f96c3a ->          │
-│    openai/gpt-5.4-mini, db2c95ec-6ed7-4e97-8ad8-10ebfd51a449 ->          │
-│    openai/gpt-5.4-mini                                                   │
+│    codex/gpt-5.4-mini, 2a7aa4d3-f6dd-489e-a56e-b90cd4f96c3a ->           │
+│    codex/gpt-5.4-mini, db2c95ec-6ed7-4e97-8ad8-10ebfd51a449 ->           │
+│    codex/gpt-5.4-mini                                                    │
 │  Review with openclaw cron list and openclaw cron show <job-id>; remove  │
 │  `payload.model` from jobs that should inherit the default.              │
 │                                                                          │
@@ -123,24 +118,53 @@
 │  - Run: openclaw security audit --deep                                 │
 │                                                                        │
 ├────────────────────────────────────────────────────────────────────────╯
-[36m[agents/tool-policy][39m [36mtool policy removed 5 tool(s) via tools.profile (coding): agents_list, gateway, message, nodes, tts[39m
 │
 ◇  Skills status ───────────╮
 │                           │
 │  Eligible: 34             │
-│  Missing requirements: 0  │
+│  Missing requirements: 1  │
 │  Blocked by allowlist: 0  │
 │                           │
 ├───────────────────────────╯
 │
 ◇  Plugins ──────╮
 │                │
-│  Loaded: 66    │
+│  Loaded: 68    │
 │  Imported: 0   │
-│  Disabled: 26  │
+│  Disabled: 27  │
 │  Errors: 0     │
 │                │
 ├────────────────╯
+│
+◇  Skills ─────────────────────────────────────────────────────────────────╮
+│                                                                          │
+│  Some skills are allowed for this agent but are not usable in the        │
+│  current runtime environment.                                            │
+│  - nano-banana-pro: bins: uv; env: GEMINI_API_KEY                        │
+│    install option: Install uv (brew)                                     │
+│  Disable unused skills: openclaw doctor --fix                            │
+│  Inspect details: openclaw skills check --agent <id> or openclaw skills  │
+│  info <name> --agent <id>                                                │
+│                                                                          │
+├──────────────────────────────────────────────────────────────────────────╯
+│
+◇  Doctor changes ─────────────╮
+│                              │
+│  - Disabled nano-banana-pro  │
+│                              │
+├──────────────────────────────╯
+│
+◇  OpenClaw version mismatch ─────────────────────────────────────────────╮
+│                                                                         │
+│  This command is OpenClaw 2026.6.1; the running Gateway is OpenClaw     │
+│  2026.5.27.                                                             │
+│  Check `openclaw --version`, `which openclaw`, and `openclaw gateway    │
+│  status --deep`.                                                        │
+│  If this mismatch is unexpected, update PATH so `openclaw` points to    │
+│  the version you want, or reinstall the Gateway service from that same  │
+│  OpenClaw install.                                                      │
+│                                                                         │
+├─────────────────────────────────────────────────────────────────────────╯
 │
 ◇  Memory search ──────────────────────────────────────────╮
 │                                                          │

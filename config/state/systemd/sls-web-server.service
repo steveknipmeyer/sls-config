@@ -29,7 +29,10 @@ Type=simple
 User=openclaw
 Group=openclaw
 WorkingDirectory=/home/openclaw/.openclaw/projects/sls-web-server
-ExecStart=/usr/bin/node server.js
+
+# ExecStart=/usr/bin/node server.js
+ExecStart=/usr/bin/node --inspect=127.0.0.1:9229 server.js
+
 Restart=on-failure
 RestartSec=5s
 StandardOutput=journal

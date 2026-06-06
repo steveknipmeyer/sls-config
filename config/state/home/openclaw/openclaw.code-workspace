@@ -10,6 +10,7 @@
 		"git.repositoryScanMaxDepth": 2,
 		"scm.countBadge": "all",
 		"workbench.colorCustomizations": {
+
 		"titleBar.activeBackground": "#055579"
 		},
 		"json.schemas": [

@@ -888,7 +888,7 @@
           "type": "object",
           "properties": {},
           "additionalProperties": {
-            "oneOf": [
+            "anyOf": [
               {
                 "type": "object",
                 "properties": {
@@ -954,79 +954,117 @@
                 "additionalProperties": false
               },
               {
-                "type": "object",
-                "properties": {
-                  "source": {
-                    "type": "string",
-                    "const": "exec"
-                  },
-                  "command": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "args": {
-                    "maxItems": 128,
-                    "type": "array",
-                    "items": {
-                      "type": "string",
-                      "maxLength": 1024
-                    }
-                  },
-                  "timeoutMs": {
-                    "type": "integer",
-                    "exclusiveMinimum": 0,
-                    "maximum": 120000
-                  },
-                  "noOutputTimeoutMs": {
-                    "type": "integer",
-                    "exclusiveMinimum": 0,
-                    "maximum": 120000
-                  },
-                  "maxOutputBytes": {
-                    "type": "integer",
-                    "exclusiveMinimum": 0,
-                    "maximum": 20971520
-                  },
-                  "jsonOnly": {
-                    "type": "boolean"
-                  },
-                  "env": {
+                "anyOf": [
+                  {
                     "type": "object",
-                    "propertyNames": {
-                      "type": "string"
+                    "properties": {
+                      "source": {
+                        "type": "string",
+                        "const": "exec"
+                      },
+                      "command": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "args": {
+                        "maxItems": 128,
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "maxLength": 1024
+                        }
+                      },
+                      "timeoutMs": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 120000
+                      },
+                      "noOutputTimeoutMs": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 120000
+                      },
+                      "maxOutputBytes": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 20971520
+                      },
+                      "jsonOnly": {
+                        "type": "boolean"
+                      },
+                      "env": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      },
+                      "passEnv": {
+                        "maxItems": 128,
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "pattern": "^[A-Z][A-Z0-9_]{0,127}$"
+                        }
+                      },
+                      "trustedDirs": {
+                        "maxItems": 64,
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "allowInsecurePath": {
+                        "type": "boolean"
+                      },
+                      "allowSymlinkCommand": {
+                        "type": "boolean"
+                      }
                     },
-                    "additionalProperties": {
-                      "type": "string"
-                    }
+                    "required": [
+                      "source",
+                      "command"
+                    ],
+                    "additionalProperties": false
                   },
-                  "passEnv": {
-                    "maxItems": 128,
-                    "type": "array",
-                    "items": {
-                      "type": "string",
-                      "pattern": "^[A-Z][A-Z0-9_]{0,127}$"
-                    }
-                  },
-                  "trustedDirs": {
-                    "maxItems": 64,
-                    "type": "array",
-                    "items": {
-                      "type": "string",
-                      "minLength": 1
-                    }
-                  },
-                  "allowInsecurePath": {
-                    "type": "boolean"
-                  },
-                  "allowSymlinkCommand": {
-                    "type": "boolean"
+                  {
+                    "type": "object",
+                    "properties": {
+                      "source": {
+                        "type": "string",
+                        "const": "exec"
+                      },
+                      "pluginIntegration": {
+                        "type": "object",
+                        "properties": {
+                          "pluginId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 128
+                          },
+                          "integrationId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 128
+                          }
+                        },
+                        "required": [
+                          "pluginId",
+                          "integrationId"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "required": [
+                      "source",
+                      "pluginIntegration"
+                    ],
+                    "additionalProperties": false
                   }
-                },
-                "required": [
-                  "source",
-                  "command"
-                ],
-                "additionalProperties": false
+                ]
               }
             ]
           }
@@ -1580,7 +1618,7 @@
                 "enum": [
                   "openai-completions",
                   "openai-responses",
-                  "openai-codex-responses",
+                  "openai-chatgpt-responses",
                   "anthropic-messages",
                   "google-generative-ai",
                   "google-vertex",
@@ -1616,7 +1654,7 @@
                 "exclusiveMinimum": 0,
                 "maximum": 9007199254740991,
                 "title": "Model Provider Request Timeout",
-                "description": "Optional per-provider model request timeout in seconds. For built-in providers, this can be set as a standalone overlay. For custom providers, set it alongside the provider baseUrl and models. Applies to provider HTTP fetches, including connect, headers, body, and total request abort handling, and also raises the LLM idle/stream watchdog ceiling for this provider above the implicit ~120s default. Use this for slow local or self-hosted model servers, or for cloud providers that buffer reasoning tokens silently on the wire (Gemini preview, large-tool-payload Claude/Opus), instead of changing global agent timeouts."
+                "description": "Optional per-provider model request timeout in seconds. Provider-level request settings affect explicit provider-owned model rows; they do not create implicit models. For custom providers, set it alongside the provider baseUrl and models. Applies to provider HTTP fetches, including connect, headers, body, and total request abort handling, and also raises the LLM idle/stream watchdog ceiling for this provider above the implicit ~120s default. Use this for slow local or self-hosted model servers, or for cloud providers that buffer reasoning tokens silently on the wire (Gemini preview, large-tool-payload Claude/Opus), instead of changing global agent timeouts."
               },
               "region": {
                 "type": "string",
@@ -1644,7 +1682,7 @@
                   "id": {
                     "type": "string",
                     "title": "Model Provider Runtime ID",
-                    "description": "Provider agent runtime id: \"pi\", \"auto\", a registered plugin harness id such as \"codex\", or a supported CLI backend alias such as \"claude-cli\". OpenAI on the official endpoint defaults to the Codex harness when omitted."
+                    "description": "Provider agent runtime id: \"openclaw\", \"auto\", a registered plugin harness id such as \"codex\", or a supported CLI backend alias such as \"claude-cli\". OpenAI on the official endpoint defaults to the Codex harness when omitted."
                   }
                 },
                 "additionalProperties": false,
@@ -3203,7 +3241,7 @@
                       "enum": [
                         "openai-completions",
                         "openai-responses",
-                        "openai-codex-responses",
+                        "openai-chatgpt-responses",
                         "anthropic-messages",
                         "google-generative-ai",
                         "google-vertex",
@@ -3338,7 +3376,7 @@
                         "id": {
                           "type": "string",
                           "title": "Model Runtime ID",
-                          "description": "Model agent runtime id: \"pi\", \"auto\", a registered plugin harness id such as \"codex\", or a supported CLI backend alias such as \"claude-cli\"."
+                          "description": "Model agent runtime id: \"openclaw\", \"auto\", a registered plugin harness id such as \"codex\", or a supported CLI backend alias such as \"claude-cli\"."
                         }
                       },
                       "additionalProperties": false,
@@ -3609,32 +3647,6 @@
               },
               "additionalProperties": {}
             },
-            "agentRuntime": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string",
-                  "title": "Legacy Default Agent Runtime ID",
-                  "description": "Legacy whole-agent runtime id. It is ignored by runtime selection; configure models.providers.<provider>.agentRuntime.id or a model-specific agentRuntime.id instead."
-                }
-              },
-              "additionalProperties": false,
-              "title": "Legacy Default Agent Runtime",
-              "description": "Legacy whole-agent runtime policy. It is ignored by runtime selection; configure runtime policy on a provider or model instead. Run openclaw doctor --fix to remove stale values."
-            },
-            "embeddedHarness": {
-              "type": "object",
-              "properties": {
-                "runtime": {
-                  "type": "string",
-                  "title": "Default Legacy Embedded Harness Runtime",
-                  "description": "Legacy whole-agent embedded harness runtime. Runtime selection ignores it; use provider/model runtime policy."
-                }
-              },
-              "additionalProperties": false,
-              "title": "Default Legacy Embedded Harness Settings",
-              "description": "Legacy whole-agent embedded harness input. Run openclaw doctor --fix to remove it and use provider/model runtime policy where needed."
-            },
             "model": {
               "anyOf": [
                 {
@@ -3789,6 +3801,39 @@
                 }
               ]
             },
+            "voiceModel": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "primary": {
+                      "type": "string",
+                      "title": "Voice Model",
+                      "description": "Optional voice model (provider/model) used by speech, transcription, and realtime voice capabilities."
+                    },
+                    "fallbacks": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "title": "Voice Model Fallbacks",
+                      "description": "Ordered fallback voice models (provider/model)."
+                    },
+                    "timeoutMs": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991,
+                      "title": "Voice Timeout (ms)",
+                      "description": "Default provider request timeout in milliseconds for voice model operations when the caller supports timeouts."
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
             "mediaGenerationAutoProviderFallback": {
               "type": "boolean",
               "title": "Media Generation Auto Provider Fallback",
@@ -3862,7 +3907,7 @@
                       "id": {
                         "type": "string",
                         "title": "Default Agent Model Runtime ID",
-                        "description": "Default-agent model runtime id: \"pi\", \"auto\", a registered plugin harness id such as \"codex\", or a supported CLI backend alias such as \"claude-cli\"."
+                        "description": "Default-agent model runtime id: \"openclaw\", \"auto\", a registered plugin harness id such as \"codex\", or a supported CLI backend alias such as \"claude-cli\"."
                       }
                     },
                     "additionalProperties": false,
@@ -3925,9 +3970,6 @@
               "type": "string",
               "title": "Repo Root",
               "description": "Optional repository root shown in the system prompt runtime line (overrides auto-detect)."
-            },
-            "systemPromptOverride": {
-              "type": "string"
             },
             "promptOverlays": {
               "type": "object",
@@ -4003,7 +4045,7 @@
               "exclusiveMinimum": 0,
               "maximum": 9007199254740991,
               "title": "Bootstrap Max Chars",
-              "description": "Max characters of each workspace bootstrap file injected into the system prompt before truncation (default: 12000)."
+              "description": "Max characters of each workspace bootstrap file injected into the system prompt before truncation (default: 20000)."
             },
             "bootstrapTotalMaxChars": {
               "type": "integer",
@@ -5203,7 +5245,7 @@
                   "minimum": 0,
                   "maximum": 9007199254740991,
                   "title": "Compaction Reserve Token Floor",
-                  "description": "Minimum floor enforced for reserveTokens in Pi compaction paths (0 disables the floor guard). Use a non-zero floor to avoid over-aggressive compression under fluctuating token estimates."
+                  "description": "Minimum floor enforced for reserveTokens in embedded OpenClaw compaction paths (0 disables the floor guard). Use a non-zero floor to avoid over-aggressive compression under fluctuating token estimates."
                 },
                 "maxHistoryShare": {
                   "type": "number",
@@ -5271,12 +5313,12 @@
                     "enabled": {
                       "type": "boolean",
                       "title": "Compaction Mid-turn Precheck Enabled",
-                      "description": "Enable structured mid-turn context pressure checks for Pi tool loops. Default: false. Keep disabled unless long tool-heavy sessions hit context overflow before normal turn-end compaction can run."
+                      "description": "Enable structured mid-turn context pressure checks for embedded OpenClaw tool loops. Default: false. Keep disabled unless long tool-heavy sessions hit context overflow before normal turn-end compaction can run."
                     }
                   },
                   "additionalProperties": false,
                   "title": "Compaction Mid-turn Precheck",
-                  "description": "Optional Pi tool-loop precheck that detects context pressure after a tool result is appended and before the next model call. When enabled, OpenClaw reuses existing precheck recovery to truncate tool results or compact before retrying."
+                  "description": "Optional embedded OpenClaw tool-loop precheck that detects context pressure after a tool result is appended and before the next model call. When enabled, OpenClaw reuses existing precheck recovery to truncate tool results or compact before retrying."
                 },
                 "postIndexSync": {
                   "type": "string",
@@ -5394,7 +5436,7 @@
                   "exclusiveMinimum": 0,
                   "maximum": 9007199254740991,
                   "title": "Run Retries Base",
-                  "description": "Base number of run retry iterations for the embedded Pi runner's outer run loop (default: 24)."
+                  "description": "Base number of run retry iterations for the embedded OpenClaw runner's outer run loop (default: 24)."
                 },
                 "perProfile": {
                   "type": "integer",
@@ -5420,9 +5462,9 @@
               },
               "additionalProperties": false,
               "title": "Run Retries",
-              "description": "Outer run loop retry iteration boundaries for the embedded Pi runner to prevent infinite execution loops during failure recovery."
+              "description": "Outer run loop retry iteration boundaries for the embedded OpenClaw runner to prevent infinite execution loops during failure recovery."
             },
-            "embeddedPi": {
+            "embeddedAgent": {
               "type": "object",
               "properties": {
                 "projectSettingsPolicy": {
@@ -5440,8 +5482,8 @@
                       "const": "ignore"
                     }
                   ],
-                  "title": "Embedded Pi Project Settings Policy",
-                  "description": "How embedded Pi handles workspace-local `.pi/config/settings.json`: \"sanitize\" (default) strips shellPath/shellCommandPrefix, \"ignore\" disables project settings entirely, and \"trusted\" applies project settings as-is."
+                  "title": "Embedded OpenClaw Project Settings Policy",
+                  "description": "How embedded OpenClaw handles workspace-local `.openclaw/settings.json`: \"sanitize\" (default) strips shellPath/shellCommandPrefix, \"ignore\" disables project settings entirely, and \"trusted\" applies project settings as-is."
                 },
                 "executionContract": {
                   "anyOf": [
@@ -5454,13 +5496,13 @@
                       "const": "strict-agentic"
                     }
                   ],
-                  "title": "Embedded Pi Execution Contract",
-                  "description": "Embedded Pi execution contract: \"default\" keeps the standard runner behavior, while \"strict-agentic\" keeps OpenAI/OpenAI Codex GPT-5-family runs acting until they hit a real blocker instead of stopping at plans or filler."
+                  "title": "Embedded OpenClaw Execution Contract",
+                  "description": "Embedded OpenClaw execution contract: \"default\" keeps the standard runner behavior, while \"strict-agentic\" keeps OpenAI/OpenAI Codex GPT-5-family runs acting until they hit a real blocker instead of stopping at plans or filler."
                 }
               },
               "additionalProperties": false,
-              "title": "Embedded Pi",
-              "description": "Embedded Pi runner hardening controls for how workspace-local Pi settings are trusted and applied in OpenClaw sessions."
+              "title": "Embedded OpenClaw",
+              "description": "Embedded OpenClaw runner hardening controls for how workspace-local agent settings are trusted and applied in OpenClaw sessions."
             },
             "thinkingDefault": {
               "anyOf": [
@@ -5805,7 +5847,7 @@
                   "exclusiveMinimum": 0,
                   "maximum": 9007199254740991,
                   "title": "Heartbeat Timeout (Seconds)",
-                  "description": "Maximum time in seconds allowed for a heartbeat agent turn before it is aborted. Leave unset to use agents.defaults.timeoutSeconds."
+                  "description": "Maximum time in seconds allowed for a heartbeat agent turn before it is aborted. Leave unset to use agents.defaults.timeoutSeconds when set, otherwise the heartbeat cadence capped at 600 seconds."
                 },
                 "lightContext": {
                   "type": "boolean"
@@ -6517,35 +6559,6 @@
               "agentDir": {
                 "type": "string"
               },
-              "systemPromptOverride": {
-                "type": "string"
-              },
-              "agentRuntime": {
-                "type": "object",
-                "properties": {
-                  "id": {
-                    "type": "string",
-                    "title": "Legacy Agent Runtime ID",
-                    "description": "Legacy per-agent runtime id. It is ignored by runtime selection; configure a provider/model runtime id instead."
-                  }
-                },
-                "additionalProperties": false,
-                "title": "Legacy Agent Runtime",
-                "description": "Legacy per-agent runtime policy. It is ignored by runtime selection; configure provider/model runtime policy instead. Run openclaw doctor --fix to remove stale values."
-              },
-              "embeddedHarness": {
-                "type": "object",
-                "properties": {
-                  "runtime": {
-                    "type": "string",
-                    "title": "Agent Legacy Embedded Harness Runtime",
-                    "description": "Legacy per-agent embedded harness runtime. Runtime selection ignores it; use provider/model runtime policy."
-                  }
-                },
-                "additionalProperties": false,
-                "title": "Agent Legacy Embedded Harness",
-                "description": "Legacy per-agent embedded harness input. Run openclaw doctor --fix to remove it and use provider/model runtime policy where needed."
-              },
               "model": {
                 "anyOf": [
                   {
@@ -6592,7 +6605,7 @@
                         "id": {
                           "type": "string",
                           "title": "Agent Model Runtime ID",
-                          "description": "Per-agent model runtime id: \"pi\", \"auto\", a registered plugin harness id such as \"codex\", or a supported CLI backend alias such as \"claude-cli\"."
+                          "description": "Per-agent model runtime id: \"openclaw\", \"auto\", a registered plugin harness id such as \"codex\", or a supported CLI backend alias such as \"claude-cli\"."
                         }
                       },
                       "additionalProperties": false,
@@ -7716,7 +7729,7 @@
                     "exclusiveMinimum": 0,
                     "maximum": 9007199254740991,
                     "title": "Heartbeat Timeout (Seconds)",
-                    "description": "Per-agent maximum time in seconds allowed for a heartbeat agent turn before it is aborted. Leave unset to inherit the merged heartbeat/default agent timeout."
+                    "description": "Per-agent maximum time in seconds allowed for a heartbeat agent turn before it is aborted. Leave unset to inherit the merged heartbeat timeout, then agents.defaults.timeoutSeconds when set, otherwise the heartbeat cadence capped at 600 seconds."
                   },
                   "lightContext": {
                     "type": "boolean"
@@ -7873,9 +7886,9 @@
                 },
                 "additionalProperties": false,
                 "title": "Agent Run Retries",
-                "description": "Optional per-agent override for the embedded Pi runner's outer run loop retry iteration boundaries."
+                "description": "Optional per-agent override for the embedded OpenClaw runner's outer run loop retry iteration boundaries."
               },
-              "embeddedPi": {
+              "embeddedAgent": {
                 "type": "object",
                 "properties": {
                   "executionContract": {
@@ -7889,13 +7902,13 @@
                         "const": "strict-agentic"
                       }
                     ],
-                    "title": "Agent Embedded Pi Execution Contract",
-                    "description": "Optional per-agent embedded Pi execution contract override. Set \"strict-agentic\" to keep that agent acting through plan-only turns on OpenAI/OpenAI Codex GPT-5-family runs, or \"default\" to inherit the standard runner behavior."
+                    "title": "Agent Embedded OpenClaw Execution Contract",
+                    "description": "Optional per-agent embedded OpenClaw execution contract override. Set \"strict-agentic\" to keep that agent acting through plan-only turns on OpenAI/OpenAI Codex GPT-5-family runs, or \"default\" to inherit the standard runner behavior."
                   }
                 },
                 "additionalProperties": false,
-                "title": "Agent Embedded Pi",
-                "description": "Optional per-agent embedded Pi overrides. Use this to opt specific agents into stricter GPT-5 execution behavior without changing the global default."
+                "title": "Agent Embedded OpenClaw",
+                "description": "Optional per-agent embedded OpenClaw overrides. Use this to opt specific agents into stricter GPT-5 execution behavior without changing the global default."
               },
               "sandbox": {
                 "type": "object",
@@ -8729,6 +8742,16 @@
                           "node"
                         ]
                       },
+                      "mode": {
+                        "type": "string",
+                        "enum": [
+                          "deny",
+                          "allowlist",
+                          "ask",
+                          "auto",
+                          "full"
+                        ]
+                      },
                       "security": {
                         "type": "string",
                         "enum": [
@@ -8805,6 +8828,39 @@
                           },
                           "additionalProperties": false
                         }
+                      },
+                      "reviewer": {
+                        "type": "object",
+                        "properties": {
+                          "model": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "primary": {
+                                    "type": "string"
+                                  },
+                                  "fallbacks": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string"
+                                    }
+                                  }
+                                },
+                                "additionalProperties": false
+                              }
+                            ]
+                          },
+                          "timeoutMs": {
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
+                          }
+                        },
+                        "additionalProperties": false
                       },
                       "backgroundMs": {
                         "type": "integer",
@@ -20313,7 +20369,7 @@
                 "enabled": {
                   "type": "boolean",
                   "title": "Enable Tool Search",
-                  "description": "Enables Tool Search. When on, OpenClaw hides large tool catalogs behind `tool_search_code` or structured search/describe/call tools during PI runs."
+                  "description": "Enables Tool Search. When on, OpenClaw hides large tool catalogs behind `tool_search_code` or structured search/describe/call tools during embedded runtime runs."
                 },
                 "mode": {
                   "type": "string",
@@ -20594,6 +20650,18 @@
               "title": "Exec Target",
               "description": "Selects execution target strategy for shell commands. Use \"auto\" for runtime-aware behavior (sandbox when available, otherwise gateway), or pin sandbox/gateway/node explicitly when you need a fixed surface."
             },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "deny",
+                "allowlist",
+                "ask",
+                "auto",
+                "full"
+              ],
+              "title": "Exec Mode",
+              "description": "Normalized exec policy selector. Use \"auto\" for classifier-reviewed approval misses, \"ask\" for human-reviewed misses, \"allowlist\" for deterministic safe commands only, or \"full\" for trusted local operation."
+            },
             "security": {
               "type": "string",
               "enum": [
@@ -20688,6 +20756,45 @@
               },
               "title": "Exec Safe Bin Profiles",
               "description": "Optional per-binary safe-bin profiles (positional limits + allowed/denied flags)."
+            },
+            "reviewer": {
+              "type": "object",
+              "properties": {
+                "model": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "primary": {
+                          "type": "string"
+                        },
+                        "fallbacks": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ],
+                  "title": "Exec Reviewer Model",
+                  "description": "Optional provider/model override for the exec reviewer agent. Omit to reuse the current agent model."
+                },
+                "timeoutMs": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991,
+                  "title": "Exec Reviewer Timeout (ms)",
+                  "description": "Exec reviewer timeout in milliseconds before falling back to human approval (default: 30000)."
+                }
+              },
+              "additionalProperties": false,
+              "title": "Exec Reviewer",
+              "description": "Model-backed exec reviewer used by auto mode before human approval fallback. Configure a narrow model override here when you want exec review isolated from the main agent model."
             },
             "backgroundMs": {
               "type": "integer",
@@ -20855,7 +20962,7 @@
             "planTool": {
               "type": "boolean",
               "title": "Enable Structured Plan Tool",
-              "description": "Enable the experimental structured `update_plan` tool for non-trivial multi-step work tracking. Leave this off unless you explicitly want the tool outside strict-agentic embedded Pi runs."
+              "description": "Enable the experimental structured `update_plan` tool for non-trivial multi-step work tracking. Leave this off unless you explicitly want the tool outside strict-agentic embedded OpenClaw runs."
             }
           },
           "additionalProperties": false,
@@ -23191,7 +23298,7 @@
           "type": "string",
           "format": "uri",
           "title": "Cron Legacy Webhook (Deprecated)",
-          "description": "Deprecated legacy fallback webhook URL used only for old jobs with `notify=true`. Migrate to per-job delivery using `delivery.mode=\"webhook\"` plus `delivery.to`, and avoid relying on this global field."
+          "description": "Deprecated legacy fallback webhook URL used by `openclaw doctor --fix` to migrate old jobs with `notify=true`. Runtime delivery uses per-job `delivery.mode=\"webhook\"` plus `delivery.to`, or `delivery.completionDestination` when preserving announce delivery."
         },
         "webhookToken": {
           "anyOf": [
@@ -23299,19 +23406,19 @@
                 }
               ],
               "title": "Cron Run Log Max Bytes",
-              "description": "Maximum bytes per cron run-log file before pruning rewrites to the last keepLines entries (for example `2mb`, default `2000000`)."
+              "description": "Compatibility setting for older file-backed cron run logs (for example `2mb`, default `2000000`). SQLite run history pruning is row-count based."
             },
             "keepLines": {
               "type": "integer",
               "exclusiveMinimum": 0,
               "maximum": 9007199254740991,
               "title": "Cron Run Log Keep Lines",
-              "description": "How many trailing run-log lines to retain when a file exceeds maxBytes (default `2000`). Increase for longer forensic history or lower for smaller disks."
+              "description": "How many trailing run-history rows to retain per cron job (default `2000`). Increase for longer forensic history or lower for smaller disks."
             }
           },
           "additionalProperties": false,
           "title": "Cron Run Log Pruning",
-          "description": "Pruning controls for per-job cron run history files under `cron/runs/<jobId>.jsonl`, including size and line retention."
+          "description": "Pruning controls for per-job cron run history. Run history is stored in SQLite; maxBytes remains accepted for older file-backed run logs."
         },
         "failureAlert": {
           "type": "object",
@@ -24665,6 +24772,36 @@
                 "allowlist"
               ]
             },
+            "mentionPatterns": {
+              "type": "object",
+              "properties": {
+                "mode": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "const": "allow"
+                    },
+                    {
+                      "type": "string",
+                      "const": "deny"
+                    }
+                  ]
+                },
+                "allowIn": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "denyIn": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "additionalProperties": false
+            },
             "contextVisibility": {
               "type": "string",
               "enum": [
@@ -24821,6 +24958,9 @@
                         "raw",
                         "status"
                       ]
+                    },
+                    "commentary": {
+                      "type": "boolean"
                     }
                   },
                   "additionalProperties": false
@@ -25470,6 +25610,14 @@
                       "minLength": 1
                     },
                     "model": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "speakerVoice": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "speakerVoiceId": {
                       "type": "string",
                       "minLength": 1
                     },
@@ -26434,6 +26582,36 @@
                       "allowlist"
                     ]
                   },
+                  "mentionPatterns": {
+                    "type": "object",
+                    "properties": {
+                      "mode": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "const": "allow"
+                          },
+                          {
+                            "type": "string",
+                            "const": "deny"
+                          }
+                        ]
+                      },
+                      "allowIn": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "denyIn": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "additionalProperties": false
+                  },
                   "contextVisibility": {
                     "type": "string",
                     "enum": [
@@ -26590,6 +26768,9 @@
                               "raw",
                               "status"
                             ]
+                          },
+                          "commentary": {
+                            "type": "boolean"
                           }
                         },
                         "additionalProperties": false
@@ -27239,6 +27420,14 @@
                             "minLength": 1
                           },
                           "model": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "speakerVoice": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "speakerVoiceId": {
                             "type": "string",
                             "minLength": 1
                           },
@@ -28578,6 +28767,12 @@
                 },
                 "scopes": {
                   "type": "boolean"
+                },
+                "bitable": {
+                  "type": "boolean"
+                },
+                "base": {
+                  "type": "boolean"
                 }
               },
               "additionalProperties": false
@@ -29310,6 +29505,12 @@
                         "type": "boolean"
                       },
                       "scopes": {
+                        "type": "boolean"
+                      },
+                      "bitable": {
+                        "type": "boolean"
+                      },
+                      "base": {
                         "type": "boolean"
                       }
                     },
@@ -32433,6 +32634,36 @@
                 "allowlist"
               ]
             },
+            "mentionPatterns": {
+              "type": "object",
+              "properties": {
+                "mode": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "const": "allow"
+                    },
+                    {
+                      "type": "string",
+                      "const": "deny"
+                    }
+                  ]
+                },
+                "allowIn": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "denyIn": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "additionalProperties": false
+            },
             "contextVisibility": {
               "type": "string",
               "enum": [
@@ -34017,6 +34248,19 @@
             },
             "tenantId": {
               "type": "string"
+            },
+            "cloud": {
+              "type": "string",
+              "enum": [
+                "Public",
+                "USGov",
+                "USGovDoD",
+                "China"
+              ]
+            },
+            "serviceUrl": {
+              "type": "string",
+              "format": "uri"
             },
             "authType": {
               "type": "string",
@@ -37632,6 +37876,36 @@
                 "allowlist"
               ]
             },
+            "mentionPatterns": {
+              "type": "object",
+              "properties": {
+                "mode": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "const": "allow"
+                    },
+                    {
+                      "type": "string",
+                      "const": "deny"
+                    }
+                  ]
+                },
+                "allowIn": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "denyIn": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "additionalProperties": false
+            },
             "contextVisibility": {
               "type": "string",
               "enum": [
@@ -37791,6 +38065,9 @@
                         "raw",
                         "status"
                       ]
+                    },
+                    "nativeTaskCards": {
+                      "type": "boolean"
                     }
                   },
                   "additionalProperties": false
@@ -38792,6 +39069,36 @@
                       "allowlist"
                     ]
                   },
+                  "mentionPatterns": {
+                    "type": "object",
+                    "properties": {
+                      "mode": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "const": "allow"
+                          },
+                          {
+                            "type": "string",
+                            "const": "deny"
+                          }
+                        ]
+                      },
+                      "allowIn": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "denyIn": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "additionalProperties": false
+                  },
                   "contextVisibility": {
                     "type": "string",
                     "enum": [
@@ -38951,6 +39258,9 @@
                               "raw",
                               "status"
                             ]
+                          },
+                          "nativeTaskCards": {
+                            "type": "boolean"
                           }
                         },
                         "additionalProperties": false
@@ -39445,6 +39755,300 @@
             "webhookPath",
             "userTokenReadOnly",
             "groupPolicy"
+          ],
+          "additionalProperties": false
+        },
+        "sms": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "enabled": {
+              "type": "boolean"
+            },
+            "accountSid": {
+              "type": "string"
+            },
+            "authToken": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "source": {
+                          "type": "string",
+                          "const": "env"
+                        },
+                        "provider": {
+                          "type": "string",
+                          "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+                        },
+                        "id": {
+                          "type": "string",
+                          "pattern": "^[A-Z][A-Z0-9_]{0,127}$"
+                        }
+                      },
+                      "required": [
+                        "source",
+                        "provider",
+                        "id"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "source": {
+                          "type": "string",
+                          "const": "file"
+                        },
+                        "provider": {
+                          "type": "string",
+                          "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+                        },
+                        "id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "source",
+                        "provider",
+                        "id"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "source": {
+                          "type": "string",
+                          "const": "exec"
+                        },
+                        "provider": {
+                          "type": "string",
+                          "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+                        },
+                        "id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "source",
+                        "provider",
+                        "id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              ]
+            },
+            "fromNumber": {
+              "type": "string"
+            },
+            "messagingServiceSid": {
+              "type": "string"
+            },
+            "defaultTo": {
+              "type": "string"
+            },
+            "webhookPath": {
+              "type": "string"
+            },
+            "publicWebhookUrl": {
+              "type": "string"
+            },
+            "dangerouslyDisableSignatureValidation": {
+              "type": "boolean"
+            },
+            "dmPolicy": {
+              "default": "pairing",
+              "type": "string",
+              "enum": [
+                "pairing",
+                "allowlist",
+                "open",
+                "disabled"
+              ]
+            },
+            "allowFrom": {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              }
+            },
+            "textChunkLimit": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "accounts": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string"
+              },
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "enabled": {
+                    "type": "boolean"
+                  },
+                  "accountSid": {
+                    "type": "string"
+                  },
+                  "authToken": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "oneOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "source": {
+                                "type": "string",
+                                "const": "env"
+                              },
+                              "provider": {
+                                "type": "string",
+                                "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+                              },
+                              "id": {
+                                "type": "string",
+                                "pattern": "^[A-Z][A-Z0-9_]{0,127}$"
+                              }
+                            },
+                            "required": [
+                              "source",
+                              "provider",
+                              "id"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "source": {
+                                "type": "string",
+                                "const": "file"
+                              },
+                              "provider": {
+                                "type": "string",
+                                "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+                              },
+                              "id": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "source",
+                              "provider",
+                              "id"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "source": {
+                                "type": "string",
+                                "const": "exec"
+                              },
+                              "provider": {
+                                "type": "string",
+                                "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+                              },
+                              "id": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "source",
+                              "provider",
+                              "id"
+                            ],
+                            "additionalProperties": false
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  "fromNumber": {
+                    "type": "string"
+                  },
+                  "messagingServiceSid": {
+                    "type": "string"
+                  },
+                  "defaultTo": {
+                    "type": "string"
+                  },
+                  "webhookPath": {
+                    "type": "string"
+                  },
+                  "publicWebhookUrl": {
+                    "type": "string"
+                  },
+                  "dangerouslyDisableSignatureValidation": {
+                    "type": "boolean"
+                  },
+                  "dmPolicy": {
+                    "default": "pairing",
+                    "type": "string",
+                    "enum": [
+                      "pairing",
+                      "allowlist",
+                      "open",
+                      "disabled"
+                    ]
+                  },
+                  "allowFrom": {
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    }
+                  },
+                  "textChunkLimit": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "dmPolicy"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "defaultAccount": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "dmPolicy"
           ],
           "additionalProperties": false
         },
@@ -39958,6 +40562,36 @@
                 "disabled",
                 "allowlist"
               ]
+            },
+            "mentionPatterns": {
+              "type": "object",
+              "properties": {
+                "mode": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "const": "allow"
+                    },
+                    {
+                      "type": "string",
+                      "const": "deny"
+                    }
+                  ]
+                },
+                "allowIn": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "denyIn": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "additionalProperties": false
             },
             "contextVisibility": {
               "type": "string",
@@ -41201,6 +41835,36 @@
                       "allowlist"
                     ]
                   },
+                  "mentionPatterns": {
+                    "type": "object",
+                    "properties": {
+                      "mode": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "const": "allow"
+                          },
+                          {
+                            "type": "string",
+                            "const": "deny"
+                          }
+                        ]
+                      },
+                      "allowIn": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "denyIn": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "additionalProperties": false
+                  },
                   "contextVisibility": {
                     "type": "string",
                     "enum": [
@@ -42431,6 +43095,36 @@
                 "allowlist"
               ]
             },
+            "mentionPatterns": {
+              "type": "object",
+              "properties": {
+                "mode": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "const": "allow"
+                    },
+                    {
+                      "type": "string",
+                      "const": "deny"
+                    }
+                  ]
+                },
+                "allowIn": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "denyIn": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "additionalProperties": false
+            },
             "contextVisibility": {
               "type": "string",
               "enum": [
@@ -42674,6 +43368,15 @@
               },
               "additionalProperties": false
             },
+            "pluginHooks": {
+              "type": "object",
+              "properties": {
+                "messageReceived": {
+                  "type": "boolean"
+                }
+              },
+              "additionalProperties": false
+            },
             "accounts": {
               "type": "object",
               "propertyNames": {
@@ -42752,6 +43455,36 @@
                       "disabled",
                       "allowlist"
                     ]
+                  },
+                  "mentionPatterns": {
+                    "type": "object",
+                    "properties": {
+                      "mode": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "const": "allow"
+                          },
+                          {
+                            "type": "string",
+                            "const": "deny"
+                          }
+                        ]
+                      },
+                      "allowIn": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "denyIn": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "additionalProperties": false
                   },
                   "contextVisibility": {
                     "type": "string",
@@ -42990,6 +43723,15 @@
                     "type": "object",
                     "properties": {
                       "enabled": {
+                        "type": "boolean"
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  "pluginHooks": {
+                    "type": "object",
+                    "properties": {
+                      "messageReceived": {
                         "type": "boolean"
                       }
                     },
@@ -44072,10 +44814,20 @@
               "title": "Talk Realtime Model",
               "description": "Realtime provider model id override for browser or Gateway-owned Talk sessions."
             },
+            "speakerVoice": {
+              "type": "string",
+              "title": "Talk Realtime Speaker Voice",
+              "description": "Realtime provider speaker voice name override for browser or Gateway-owned Talk sessions."
+            },
+            "speakerVoiceId": {
+              "type": "string",
+              "title": "Talk Realtime Speaker Voice ID",
+              "description": "Realtime provider speaker voice id override for browser or Gateway-owned Talk sessions."
+            },
             "voice": {
               "type": "string",
-              "title": "Talk Realtime Voice",
-              "description": "Realtime provider voice id override for browser or Gateway-owned Talk sessions."
+              "title": "Talk Realtime Voice (Deprecated)",
+              "description": "Deprecated realtime provider voice override. Use talk.realtime.speakerVoice."
             },
             "instructions": {
               "type": "string",
@@ -44580,19 +45332,6 @@
           "title": "Gateway Tool Exposure Policy",
           "description": "Gateway-level tool exposure allow/deny policy that can restrict runtime tool availability independent of agent/tool profiles. Use this for coarse emergency controls and production hardening."
         },
-        "webchat": {
-          "type": "object",
-          "properties": {
-            "chatHistoryMaxChars": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "maximum": 500000,
-              "title": "WebChat History Max Chars",
-              "description": "Max characters per text field in chat.history responses before truncation (default: 12000)."
-            }
-          },
-          "additionalProperties": false
-        },
         "handshakeTimeoutMs": {
           "type": "integer",
           "minimum": 1,
@@ -44646,6 +45385,12 @@
               "type": "boolean",
               "title": "Gateway Tailscale Reset on Exit",
               "description": "Resets Tailscale Serve/Funnel state on gateway exit to avoid stale published routes after shutdown. Keep enabled unless another controller manages publish lifecycle outside the gateway."
+            },
+            "serviceName": {
+              "type": "string",
+              "pattern": "^svc:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$",
+              "title": "Gateway Tailscale Service Name",
+              "description": "Optional Tailscale Service name for Serve mode, such as \"svc:openclaw\". The value must use Tailscale's svc:<dns-label> format. When set, OpenClaw passes it to tailscale serve --service and reports the derived Service URL."
             },
             "preserveFunnel": {
               "type": "boolean",
@@ -45191,7 +45936,7 @@
                     "baseUrl": {
                       "type": "string",
                       "title": "Gateway APNs Relay Base URL",
-                      "description": "Base HTTPS URL for the external APNs relay service used by official/TestFlight iOS builds. Keep this aligned with the relay URL baked into the iOS build so registration and send traffic hit the same deployment."
+                      "description": "Optional custom base HTTPS URL for the external APNs relay service used by official/TestFlight iOS builds. Keep this aligned with the relay URL baked into the iOS build so registration and send traffic hit the same deployment."
                     },
                     "timeoutMs": {
                       "type": "integer",
@@ -45203,7 +45948,7 @@
                   },
                   "additionalProperties": false,
                   "title": "Gateway APNs Relay",
-                  "description": "External relay settings for relay-backed APNs sends. The gateway uses this relay for push.test, wake nudges, and reconnect wakes after a paired official iOS build publishes a relay-backed registration."
+                  "description": "External relay settings for relay-backed APNs sends. The gateway uses the hosted OpenClaw relay by default, or this custom relay for push.test, wake nudges, and reconnect wakes after a paired official iOS build publishes a relay-backed registration."
                 }
               },
               "additionalProperties": false,
@@ -45631,6 +46376,10 @@
           "additionalProperties": {
             "type": "object",
             "properties": {
+              "enabled": {
+                "type": "boolean",
+                "title": "MCP Server Enabled"
+              },
               "command": {
                 "type": "string"
               },
@@ -45700,6 +46449,118 @@
                   ]
                 }
               },
+              "connectionTimeoutMs": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "title": "MCP Connect Timeout (ms)"
+              },
+              "connectTimeout": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "title": "MCP Connect Timeout"
+              },
+              "connect_timeout": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "title": "MCP Connect Timeout"
+              },
+              "requestTimeoutMs": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "title": "MCP Request Timeout (ms)"
+              },
+              "timeout": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "title": "MCP Request Timeout"
+              },
+              "supportsParallelToolCalls": {
+                "type": "boolean",
+                "title": "MCP Parallel Tool Calls"
+              },
+              "supports_parallel_tool_calls": {
+                "type": "boolean",
+                "title": "MCP Parallel Tool Calls"
+              },
+              "auth": {
+                "type": "string",
+                "const": "oauth",
+                "title": "MCP Server Auth"
+              },
+              "oauth": {
+                "type": "object",
+                "properties": {
+                  "scope": {
+                    "type": "string",
+                    "minLength": 1,
+                    "title": "MCP OAuth Scope"
+                  },
+                  "redirectUrl": {
+                    "type": "string",
+                    "format": "uri",
+                    "title": "MCP OAuth Redirect URL"
+                  },
+                  "clientMetadataUrl": {
+                    "type": "string",
+                    "format": "uri",
+                    "title": "MCP OAuth Client Metadata URL"
+                  }
+                },
+                "additionalProperties": false,
+                "title": "MCP OAuth"
+              },
+              "sslVerify": {
+                "type": "boolean",
+                "title": "MCP TLS Verification"
+              },
+              "ssl_verify": {
+                "type": "boolean",
+                "title": "MCP TLS Verification"
+              },
+              "clientCert": {
+                "type": "string",
+                "title": "MCP Client Certificate"
+              },
+              "client_cert": {
+                "type": "string",
+                "title": "MCP Client Certificate"
+              },
+              "clientKey": {
+                "type": "string",
+                "title": "MCP Client Key"
+              },
+              "client_key": {
+                "type": "string",
+                "title": "MCP Client Key"
+              },
+              "toolFilter": {
+                "type": "object",
+                "properties": {
+                  "include": {
+                    "minItems": 1,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "title": "Included MCP Tools",
+                    "description": "Exact MCP tool names or simple '*' globs to expose from this server. When omitted, all server tools remain eligible unless excluded."
+                  },
+                  "exclude": {
+                    "minItems": 1,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "title": "Excluded MCP Tools",
+                    "description": "Exact MCP tool names or simple '*' globs to hide from this server."
+                  }
+                },
+                "additionalProperties": false,
+                "title": "MCP Tool Selection",
+                "description": "Per-server MCP tool selection. Use include to expose only selected MCP tool names, or exclude to hide selected MCP tool names. Entries accept exact names and simple '*' globs."
+              },
               "codex": {
                 "type": "object",
                 "properties": {
@@ -45753,7 +46614,7 @@
       },
       "additionalProperties": false,
       "title": "MCP",
-      "description": "Global MCP server definitions managed by OpenClaw. Embedded Pi and other runtime adapters can consume these servers without storing them inside Pi-owned project settings."
+      "description": "Global MCP server definitions managed by OpenClaw. Embedded OpenClaw and other runtime adapters can consume these servers without storing them inside runtime-owned project settings."
     },
     "skills": {
       "type": "object",
@@ -45856,6 +46717,43 @@
             "maxSkillFileBytes": {
               "type": "integer",
               "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          },
+          "additionalProperties": false
+        },
+        "workshop": {
+          "type": "object",
+          "properties": {
+            "autonomous": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                }
+              },
+              "additionalProperties": false
+            },
+            "approvalPolicy": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "const": "pending"
+                },
+                {
+                  "type": "string",
+                  "const": "auto"
+                }
+              ]
+            },
+            "maxPending": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "maxSkillBytes": {
+              "type": "integer",
+              "minimum": 1,
               "maximum": 9007199254740991
             }
           },
@@ -48038,7 +48936,9 @@
                               "marketplaceName": {
                                 "type": "string",
                                 "enum": [
-                                  "openai-curated"
+                                  "openai-curated",
+                                  "openai-bundled",
+                                  "openai-primary-runtime"
                                 ]
                               },
                               "pluginName": {
@@ -48061,8 +48961,7 @@
                           "enum": [
                             "yolo",
                             "guardian"
-                          ],
-                          "default": "yolo"
+                          ]
                         },
                         "transport": {
                           "type": "string",
@@ -48120,6 +49019,11 @@
                           "minimum": 1,
                           "default": 60000
                         },
+                        "postToolRawAssistantCompletionIdleTimeoutMs": {
+                          "type": "number",
+                          "minimum": 1,
+                          "default": 300000
+                        },
                         "approvalPolicy": {
                           "type": "string",
                           "enum": [
@@ -48153,8 +49057,192 @@
                         },
                         "defaultWorkspaceDir": {
                           "type": "string"
+                        },
+                        "experimental": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "sandboxExecServer": {
+                              "type": "boolean",
+                              "default": false
+                            }
+                          }
                         }
                       }
+                    }
+                  }
+                }
+              },
+              "additionalProperties": false
+            },
+            "codex-supervisor": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "title": "Plugin Enabled",
+                  "description": "Per-plugin enablement override for a specific entry, applied on top of global plugin policy (restart required). Use this to stage plugin rollout gradually across environments."
+                },
+                "hooks": {
+                  "type": "object",
+                  "properties": {
+                    "allowPromptInjection": {
+                      "type": "boolean",
+                      "title": "Allow Prompt Injection Hooks",
+                      "description": "Controls whether this plugin may mutate prompts through typed hooks. Set false to block `before_prompt_build` and ignore prompt-mutating fields from legacy `before_agent_start`, while preserving legacy `modelOverride` and `providerOverride` behavior."
+                    },
+                    "allowConversationAccess": {
+                      "type": "boolean",
+                      "title": "Allow Conversation Access Hooks",
+                      "description": "Controls whether this plugin may read raw conversation content from typed hooks such as `before_agent_run`, `before_model_resolve`, `before_agent_reply`, `llm_input`, `llm_output`, `before_agent_finalize`, and `agent_end`. Non-bundled plugins must opt in explicitly."
+                    },
+                    "timeoutMs": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 600000,
+                      "title": "Plugin Hook Timeout (ms)",
+                      "description": "Default timeout in milliseconds for this plugin's typed hooks, capped at 600000. Use this to bound slow plugin hooks without changing plugin code; per-hook values in hooks.timeouts take precedence."
+                    },
+                    "timeouts": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 600000
+                      },
+                      "title": "Plugin Hook Timeout Overrides",
+                      "description": "Per-hook timeout overrides in milliseconds keyed by typed hook name, capped at 600000. Use narrow overrides for known slow hooks such as before_prompt_build or agent_end instead of raising every hook timeout."
+                    }
+                  },
+                  "additionalProperties": false,
+                  "title": "Plugin Hook Policy",
+                  "description": "Per-plugin typed hook policy controls for core-enforced safety gates. Use this to constrain high-impact hook categories without disabling the entire plugin."
+                },
+                "subagent": {
+                  "type": "object",
+                  "properties": {
+                    "allowModelOverride": {
+                      "type": "boolean",
+                      "title": "Allow Plugin Subagent Model Override",
+                      "description": "Explicitly allows this plugin to request provider/model overrides in background subagent runs. Keep false unless the plugin is trusted to steer model selection."
+                    },
+                    "allowedModels": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "title": "Plugin Subagent Allowed Models",
+                      "description": "Allowed override targets for trusted plugin subagent runs as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
+                    }
+                  },
+                  "additionalProperties": false,
+                  "title": "Plugin Subagent Policy",
+                  "description": "Per-plugin subagent runtime controls for model override trust and allowlists. Keep this unset unless a plugin must explicitly steer subagent model selection."
+                },
+                "llm": {
+                  "type": "object",
+                  "properties": {
+                    "allowModelOverride": {
+                      "type": "boolean",
+                      "title": "Allow Plugin LLM Model Override",
+                      "description": "Explicitly allows this plugin to request model overrides in api.runtime.llm.complete. Keep false unless the plugin is trusted to steer model selection."
+                    },
+                    "allowedModels": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "title": "Plugin LLM Allowed Models",
+                      "description": "Allowed override targets for trusted plugin LLM completions as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
+                    },
+                    "allowAgentIdOverride": {
+                      "type": "boolean",
+                      "title": "Allow Plugin LLM Agent Override",
+                      "description": "Explicitly allows this plugin to request api.runtime.llm.complete against a non-default agent id. Keep false unless the plugin is trusted for cross-agent model access."
+                    }
+                  },
+                  "additionalProperties": false,
+                  "title": "Plugin LLM Policy",
+                  "description": "Per-plugin api.runtime.llm.complete controls for model and agent override trust. Keep this unset unless a plugin must explicitly steer host-owned completion calls."
+                },
+                "config": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": false,
+                  "title": "Plugin Config",
+                  "description": "Plugin-defined configuration payload interpreted by that plugin's own schema and validation rules. Use only documented fields from the plugin to prevent ignored or invalid settings.",
+                  "properties": {
+                    "endpoints": {
+                      "type": "array",
+                      "items": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "label": {
+                                "type": "string"
+                              },
+                              "transport": {
+                                "const": "stdio-proxy"
+                              },
+                              "command": {
+                                "type": "string"
+                              },
+                              "args": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "cwd": {
+                                "type": "string"
+                              }
+                            }
+                          },
+                          {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "transport",
+                              "url"
+                            ],
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "label": {
+                                "type": "string"
+                              },
+                              "transport": {
+                                "const": "websocket"
+                              },
+                              "url": {
+                                "type": "string"
+                              },
+                              "authTokenEnv": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    "allowRawTranscripts": {
+                      "type": "boolean",
+                      "default": false
+                    },
+                    "allowWriteControls": {
+                      "type": "boolean",
+                      "default": false
                     }
                   }
                 }
@@ -50030,6 +51118,112 @@
               },
               "additionalProperties": false
             },
+            "gmi": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "title": "Plugin Enabled",
+                  "description": "Per-plugin enablement override for a specific entry, applied on top of global plugin policy (restart required). Use this to stage plugin rollout gradually across environments."
+                },
+                "hooks": {
+                  "type": "object",
+                  "properties": {
+                    "allowPromptInjection": {
+                      "type": "boolean",
+                      "title": "Allow Prompt Injection Hooks",
+                      "description": "Controls whether this plugin may mutate prompts through typed hooks. Set false to block `before_prompt_build` and ignore prompt-mutating fields from legacy `before_agent_start`, while preserving legacy `modelOverride` and `providerOverride` behavior."
+                    },
+                    "allowConversationAccess": {
+                      "type": "boolean",
+                      "title": "Allow Conversation Access Hooks",
+                      "description": "Controls whether this plugin may read raw conversation content from typed hooks such as `before_agent_run`, `before_model_resolve`, `before_agent_reply`, `llm_input`, `llm_output`, `before_agent_finalize`, and `agent_end`. Non-bundled plugins must opt in explicitly."
+                    },
+                    "timeoutMs": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 600000,
+                      "title": "Plugin Hook Timeout (ms)",
+                      "description": "Default timeout in milliseconds for this plugin's typed hooks, capped at 600000. Use this to bound slow plugin hooks without changing plugin code; per-hook values in hooks.timeouts take precedence."
+                    },
+                    "timeouts": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 600000
+                      },
+                      "title": "Plugin Hook Timeout Overrides",
+                      "description": "Per-hook timeout overrides in milliseconds keyed by typed hook name, capped at 600000. Use narrow overrides for known slow hooks such as before_prompt_build or agent_end instead of raising every hook timeout."
+                    }
+                  },
+                  "additionalProperties": false,
+                  "title": "Plugin Hook Policy",
+                  "description": "Per-plugin typed hook policy controls for core-enforced safety gates. Use this to constrain high-impact hook categories without disabling the entire plugin."
+                },
+                "subagent": {
+                  "type": "object",
+                  "properties": {
+                    "allowModelOverride": {
+                      "type": "boolean",
+                      "title": "Allow Plugin Subagent Model Override",
+                      "description": "Explicitly allows this plugin to request provider/model overrides in background subagent runs. Keep false unless the plugin is trusted to steer model selection."
+                    },
+                    "allowedModels": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "title": "Plugin Subagent Allowed Models",
+                      "description": "Allowed override targets for trusted plugin subagent runs as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
+                    }
+                  },
+                  "additionalProperties": false,
+                  "title": "Plugin Subagent Policy",
+                  "description": "Per-plugin subagent runtime controls for model override trust and allowlists. Keep this unset unless a plugin must explicitly steer subagent model selection."
+                },
+                "llm": {
+                  "type": "object",
+                  "properties": {
+                    "allowModelOverride": {
+                      "type": "boolean",
+                      "title": "Allow Plugin LLM Model Override",
+                      "description": "Explicitly allows this plugin to request model overrides in api.runtime.llm.complete. Keep false unless the plugin is trusted to steer model selection."
+                    },
+                    "allowedModels": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "title": "Plugin LLM Allowed Models",
+                      "description": "Allowed override targets for trusted plugin LLM completions as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
+                    },
+                    "allowAgentIdOverride": {
+                      "type": "boolean",
+                      "title": "Allow Plugin LLM Agent Override",
+                      "description": "Explicitly allows this plugin to request api.runtime.llm.complete against a non-default agent id. Keep false unless the plugin is trusted for cross-agent model access."
+                    }
+                  },
+                  "additionalProperties": false,
+                  "title": "Plugin LLM Policy",
+                  "description": "Per-plugin api.runtime.llm.complete controls for model and agent override trust. Keep this unset unless a plugin must explicitly steer host-owned completion calls."
+                },
+                "config": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": false,
+                  "title": "Plugin Config",
+                  "description": "Plugin-defined configuration payload interpreted by that plugin's own schema and validation rules. Use only documented fields from the plugin to prevent ignored or invalid settings.",
+                  "properties": {}
+                }
+              },
+              "additionalProperties": false
+            },
             "google": {
               "type": "object",
               "properties": {
@@ -51258,13 +52452,15 @@
                       "items": {
                         "type": "string"
                       },
-                      "description": "Allowlist of provider/model keys like openai-codex/gpt-5.2."
+                      "description": "Allowlist of provider/model keys like openai/gpt-5.2."
                     },
                     "maxTokens": {
-                      "type": "number"
+                      "type": "integer",
+                      "minimum": 1
                     },
                     "timeoutMs": {
-                      "type": "number"
+                      "type": "integer",
+                      "minimum": 1
                     }
                   }
                 }
@@ -51702,6 +52898,11 @@
                                 "maxAgeDays": {
                                   "type": "integer",
                                   "minimum": 1
+                                },
+                                "maxPromotedSnippetTokens": {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "description": "Maximum estimated token count for each short-term recall snippet promoted into MEMORY.md. Provenance metadata remains attached to the entry."
                                 },
                                 "execution": {
                                   "type": "object",
@@ -52780,6 +53981,112 @@
                       }
                     }
                   }
+                }
+              },
+              "additionalProperties": false
+            },
+            "novita": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "title": "Plugin Enabled",
+                  "description": "Per-plugin enablement override for a specific entry, applied on top of global plugin policy (restart required). Use this to stage plugin rollout gradually across environments."
+                },
+                "hooks": {
+                  "type": "object",
+                  "properties": {
+                    "allowPromptInjection": {
+                      "type": "boolean",
+                      "title": "Allow Prompt Injection Hooks",
+                      "description": "Controls whether this plugin may mutate prompts through typed hooks. Set false to block `before_prompt_build` and ignore prompt-mutating fields from legacy `before_agent_start`, while preserving legacy `modelOverride` and `providerOverride` behavior."
+                    },
+                    "allowConversationAccess": {
+                      "type": "boolean",
+                      "title": "Allow Conversation Access Hooks",
+                      "description": "Controls whether this plugin may read raw conversation content from typed hooks such as `before_agent_run`, `before_model_resolve`, `before_agent_reply`, `llm_input`, `llm_output`, `before_agent_finalize`, and `agent_end`. Non-bundled plugins must opt in explicitly."
+                    },
+                    "timeoutMs": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 600000,
+                      "title": "Plugin Hook Timeout (ms)",
+                      "description": "Default timeout in milliseconds for this plugin's typed hooks, capped at 600000. Use this to bound slow plugin hooks without changing plugin code; per-hook values in hooks.timeouts take precedence."
+                    },
+                    "timeouts": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 600000
+                      },
+                      "title": "Plugin Hook Timeout Overrides",
+                      "description": "Per-hook timeout overrides in milliseconds keyed by typed hook name, capped at 600000. Use narrow overrides for known slow hooks such as before_prompt_build or agent_end instead of raising every hook timeout."
+                    }
+                  },
+                  "additionalProperties": false,
+                  "title": "Plugin Hook Policy",
+                  "description": "Per-plugin typed hook policy controls for core-enforced safety gates. Use this to constrain high-impact hook categories without disabling the entire plugin."
+                },
+                "subagent": {
+                  "type": "object",
+                  "properties": {
+                    "allowModelOverride": {
+                      "type": "boolean",
+                      "title": "Allow Plugin Subagent Model Override",
+                      "description": "Explicitly allows this plugin to request provider/model overrides in background subagent runs. Keep false unless the plugin is trusted to steer model selection."
+                    },
+                    "allowedModels": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "title": "Plugin Subagent Allowed Models",
+                      "description": "Allowed override targets for trusted plugin subagent runs as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
+                    }
+                  },
+                  "additionalProperties": false,
+                  "title": "Plugin Subagent Policy",
+                  "description": "Per-plugin subagent runtime controls for model override trust and allowlists. Keep this unset unless a plugin must explicitly steer subagent model selection."
+                },
+                "llm": {
+                  "type": "object",
+                  "properties": {
+                    "allowModelOverride": {
+                      "type": "boolean",
+                      "title": "Allow Plugin LLM Model Override",
+                      "description": "Explicitly allows this plugin to request model overrides in api.runtime.llm.complete. Keep false unless the plugin is trusted to steer model selection."
+                    },
+                    "allowedModels": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "title": "Plugin LLM Allowed Models",
+                      "description": "Allowed override targets for trusted plugin LLM completions as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
+                    },
+                    "allowAgentIdOverride": {
+                      "type": "boolean",
+                      "title": "Allow Plugin LLM Agent Override",
+                      "description": "Explicitly allows this plugin to request api.runtime.llm.complete against a non-default agent id. Keep false unless the plugin is trusted for cross-agent model access."
+                    }
+                  },
+                  "additionalProperties": false,
+                  "title": "Plugin LLM Policy",
+                  "description": "Per-plugin api.runtime.llm.complete controls for model and agent override trust. Keep this unset unless a plugin must explicitly steer host-owned completion calls."
+                },
+                "config": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": false,
+                  "title": "Plugin Config",
+                  "description": "Plugin-defined configuration payload interpreted by that plugin's own schema and validation rules. Use only documented fields from the plugin to prevent ignored or invalid settings.",
+                  "properties": {}
                 }
               },
               "additionalProperties": false
@@ -54772,7 +56079,7 @@
               },
               "additionalProperties": false
             },
-            "skill-workshop": {
+            "sms": {
               "type": "object",
               "properties": {
                 "enabled": {
@@ -54873,64 +56180,7 @@
                   "additionalProperties": false,
                   "title": "Plugin Config",
                   "description": "Plugin-defined configuration payload interpreted by that plugin's own schema and validation rules. Use only documented fields from the plugin to prevent ignored or invalid settings.",
-                  "properties": {
-                    "enabled": {
-                      "type": "boolean",
-                      "default": true
-                    },
-                    "autoCapture": {
-                      "type": "boolean",
-                      "default": true
-                    },
-                    "approvalPolicy": {
-                      "type": "string",
-                      "enum": [
-                        "pending",
-                        "auto"
-                      ],
-                      "default": "pending"
-                    },
-                    "reviewMode": {
-                      "type": "string",
-                      "enum": [
-                        "off",
-                        "heuristic",
-                        "llm",
-                        "hybrid"
-                      ],
-                      "default": "hybrid"
-                    },
-                    "reviewInterval": {
-                      "type": "integer",
-                      "minimum": 1,
-                      "maximum": 200,
-                      "default": 15
-                    },
-                    "reviewMinToolCalls": {
-                      "type": "integer",
-                      "minimum": 1,
-                      "maximum": 500,
-                      "default": 8
-                    },
-                    "reviewTimeoutMs": {
-                      "type": "integer",
-                      "minimum": 5000,
-                      "maximum": 180000,
-                      "default": 45000
-                    },
-                    "maxPending": {
-                      "type": "integer",
-                      "minimum": 1,
-                      "maximum": 200,
-                      "default": 50
-                    },
-                    "maxSkillBytes": {
-                      "type": "integer",
-                      "minimum": 1024,
-                      "maximum": 200000,
-                      "default": 40000
-                    }
-                  }
+                  "properties": {}
                 }
               },
               "additionalProperties": false
@@ -55704,112 +56954,6 @@
               "additionalProperties": false
             },
             "together": {
-              "type": "object",
-              "properties": {
-                "enabled": {
-                  "type": "boolean",
-                  "title": "Plugin Enabled",
-                  "description": "Per-plugin enablement override for a specific entry, applied on top of global plugin policy (restart required). Use this to stage plugin rollout gradually across environments."
-                },
-                "hooks": {
-                  "type": "object",
-                  "properties": {
-                    "allowPromptInjection": {
-                      "type": "boolean",
-                      "title": "Allow Prompt Injection Hooks",
-                      "description": "Controls whether this plugin may mutate prompts through typed hooks. Set false to block `before_prompt_build` and ignore prompt-mutating fields from legacy `before_agent_start`, while preserving legacy `modelOverride` and `providerOverride` behavior."
-                    },
-                    "allowConversationAccess": {
-                      "type": "boolean",
-                      "title": "Allow Conversation Access Hooks",
-                      "description": "Controls whether this plugin may read raw conversation content from typed hooks such as `before_agent_run`, `before_model_resolve`, `before_agent_reply`, `llm_input`, `llm_output`, `before_agent_finalize`, and `agent_end`. Non-bundled plugins must opt in explicitly."
-                    },
-                    "timeoutMs": {
-                      "type": "integer",
-                      "exclusiveMinimum": 0,
-                      "maximum": 600000,
-                      "title": "Plugin Hook Timeout (ms)",
-                      "description": "Default timeout in milliseconds for this plugin's typed hooks, capped at 600000. Use this to bound slow plugin hooks without changing plugin code; per-hook values in hooks.timeouts take precedence."
-                    },
-                    "timeouts": {
-                      "type": "object",
-                      "propertyNames": {
-                        "type": "string"
-                      },
-                      "additionalProperties": {
-                        "type": "integer",
-                        "exclusiveMinimum": 0,
-                        "maximum": 600000
-                      },
-                      "title": "Plugin Hook Timeout Overrides",
-                      "description": "Per-hook timeout overrides in milliseconds keyed by typed hook name, capped at 600000. Use narrow overrides for known slow hooks such as before_prompt_build or agent_end instead of raising every hook timeout."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Hook Policy",
-                  "description": "Per-plugin typed hook policy controls for core-enforced safety gates. Use this to constrain high-impact hook categories without disabling the entire plugin."
-                },
-                "subagent": {
-                  "type": "object",
-                  "properties": {
-                    "allowModelOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin Subagent Model Override",
-                      "description": "Explicitly allows this plugin to request provider/model overrides in background subagent runs. Keep false unless the plugin is trusted to steer model selection."
-                    },
-                    "allowedModels": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "title": "Plugin Subagent Allowed Models",
-                      "description": "Allowed override targets for trusted plugin subagent runs as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Subagent Policy",
-                  "description": "Per-plugin subagent runtime controls for model override trust and allowlists. Keep this unset unless a plugin must explicitly steer subagent model selection."
-                },
-                "llm": {
-                  "type": "object",
-                  "properties": {
-                    "allowModelOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin LLM Model Override",
-                      "description": "Explicitly allows this plugin to request model overrides in api.runtime.llm.complete. Keep false unless the plugin is trusted to steer model selection."
-                    },
-                    "allowedModels": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "title": "Plugin LLM Allowed Models",
-                      "description": "Allowed override targets for trusted plugin LLM completions as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
-                    },
-                    "allowAgentIdOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin LLM Agent Override",
-                      "description": "Explicitly allows this plugin to request api.runtime.llm.complete against a non-default agent id. Keep false unless the plugin is trusted for cross-agent model access."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin LLM Policy",
-                  "description": "Per-plugin api.runtime.llm.complete controls for model and agent override trust. Keep this unset unless a plugin must explicitly steer host-owned completion calls."
-                },
-                "config": {
-                  "type": "object",
-                  "propertyNames": {
-                    "type": "string"
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Config",
-                  "description": "Plugin-defined configuration payload interpreted by that plugin's own schema and validation rules. Use only documented fields from the plugin to prevent ignored or invalid settings.",
-                  "properties": {}
-                }
-              },
-              "additionalProperties": false
-            },
-            "tokenjuice": {
               "type": "object",
               "properties": {
                 "enabled": {
@@ -56945,6 +58089,112 @@
               },
               "additionalProperties": false
             },
+            "workboard": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "title": "Plugin Enabled",
+                  "description": "Per-plugin enablement override for a specific entry, applied on top of global plugin policy (restart required). Use this to stage plugin rollout gradually across environments."
+                },
+                "hooks": {
+                  "type": "object",
+                  "properties": {
+                    "allowPromptInjection": {
+                      "type": "boolean",
+                      "title": "Allow Prompt Injection Hooks",
+                      "description": "Controls whether this plugin may mutate prompts through typed hooks. Set false to block `before_prompt_build` and ignore prompt-mutating fields from legacy `before_agent_start`, while preserving legacy `modelOverride` and `providerOverride` behavior."
+                    },
+                    "allowConversationAccess": {
+                      "type": "boolean",
+                      "title": "Allow Conversation Access Hooks",
+                      "description": "Controls whether this plugin may read raw conversation content from typed hooks such as `before_agent_run`, `before_model_resolve`, `before_agent_reply`, `llm_input`, `llm_output`, `before_agent_finalize`, and `agent_end`. Non-bundled plugins must opt in explicitly."
+                    },
+                    "timeoutMs": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 600000,
+                      "title": "Plugin Hook Timeout (ms)",
+                      "description": "Default timeout in milliseconds for this plugin's typed hooks, capped at 600000. Use this to bound slow plugin hooks without changing plugin code; per-hook values in hooks.timeouts take precedence."
+                    },
+                    "timeouts": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 600000
+                      },
+                      "title": "Plugin Hook Timeout Overrides",
+                      "description": "Per-hook timeout overrides in milliseconds keyed by typed hook name, capped at 600000. Use narrow overrides for known slow hooks such as before_prompt_build or agent_end instead of raising every hook timeout."
+                    }
+                  },
+                  "additionalProperties": false,
+                  "title": "Plugin Hook Policy",
+                  "description": "Per-plugin typed hook policy controls for core-enforced safety gates. Use this to constrain high-impact hook categories without disabling the entire plugin."
+                },
+                "subagent": {
+                  "type": "object",
+                  "properties": {
+                    "allowModelOverride": {
+                      "type": "boolean",
+                      "title": "Allow Plugin Subagent Model Override",
+                      "description": "Explicitly allows this plugin to request provider/model overrides in background subagent runs. Keep false unless the plugin is trusted to steer model selection."
+                    },
+                    "allowedModels": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "title": "Plugin Subagent Allowed Models",
+                      "description": "Allowed override targets for trusted plugin subagent runs as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
+                    }
+                  },
+                  "additionalProperties": false,
+                  "title": "Plugin Subagent Policy",
+                  "description": "Per-plugin subagent runtime controls for model override trust and allowlists. Keep this unset unless a plugin must explicitly steer subagent model selection."
+                },
+                "llm": {
+                  "type": "object",
+                  "properties": {
+                    "allowModelOverride": {
+                      "type": "boolean",
+                      "title": "Allow Plugin LLM Model Override",
+                      "description": "Explicitly allows this plugin to request model overrides in api.runtime.llm.complete. Keep false unless the plugin is trusted to steer model selection."
+                    },
+                    "allowedModels": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "title": "Plugin LLM Allowed Models",
+                      "description": "Allowed override targets for trusted plugin LLM completions as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
+                    },
+                    "allowAgentIdOverride": {
+                      "type": "boolean",
+                      "title": "Allow Plugin LLM Agent Override",
+                      "description": "Explicitly allows this plugin to request api.runtime.llm.complete against a non-default agent id. Keep false unless the plugin is trusted for cross-agent model access."
+                    }
+                  },
+                  "additionalProperties": false,
+                  "title": "Plugin LLM Policy",
+                  "description": "Per-plugin api.runtime.llm.complete controls for model and agent override trust. Keep this unset unless a plugin must explicitly steer host-owned completion calls."
+                },
+                "config": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": false,
+                  "title": "Plugin Config",
+                  "description": "Plugin-defined configuration payload interpreted by that plugin's own schema and validation rules. Use only documented fields from the plugin to prevent ignored or invalid settings.",
+                  "properties": {}
+                }
+              },
+              "additionalProperties": false
+            },
             "xai": {
               "type": "object",
               "properties": {
@@ -57337,9 +58587,7 @@
           "enum": [
             "compat",
             "allowlist"
-          ],
-          "title": "Bundled Plugin Discovery",
-          "description": "Controls bundled plugin runtime discovery when plugins.allow is configured. \"allowlist\" (default) gates bundled provider plugins by plugins.allow like third-party plugins. \"compat\" preserves legacy behavior where bundled provider plugins can be force-loaded on every chat turn."
+          ]
         }
       },
       "additionalProperties": false,

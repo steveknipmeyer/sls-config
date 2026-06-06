@@ -1,7 +1,7 @@
 # OpenClaw Environment Snapshot
 
-**Generated:** 2026-05-30T16:34:34Z
-**OpenClaw Version:** 2026.5.27
+**Generated:** 2026-06-06T21:27:11Z
+**OpenClaw Version:** 2026.6.1
 **Host:** sls (DigitalOcean Droplet, NYC1, 2vCPU/4GB)
 **Tailscale URL:** https://sls.tail1cd974.ts.net
 **Access:** Tailscale-only (zero public ports)
