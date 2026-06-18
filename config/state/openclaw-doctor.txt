@@ -33,34 +33,19 @@
 │                                                             │
 ├─────────────────────────────────────────────────────────────╯
 │
-◇  State integrity ───────────────────────────────────────────────────────╮
-│                                                                         │
-│  - State directory permissions are too open (~/.openclaw). Recommend    │
-│    chmod 700.                                                           │
-│  - Found explicit Anthropic model overrides in 1 session outside the    │
-│    current configured route.                                            │
-│    Doctor leaves explicit or legacy user selections untouched; switch   │
-│    them with /model or reset the session if that provider is no longer  │
-│    intended.                                                            │
-│    Examples: agent:main:subagent:86f56276-f362-4514-b50d-aebdffd10e3b   │
-│    (anthropic/claude-sonnet-4-6, user)                                  │
-│  - Found 164 orphan transcript files in                                 │
-│    ~/.openclaw/agents/main/sessions.                                    │
-│    These .jsonl files are no longer referenced by sessions.json, so     │
-│    they are not part of any active session history.                     │
-│    Doctor can archive them safely by renaming each file to              │
-│    *.deleted.<timestamp>.                                               │
-│    Examples: 05d6ff9a-9dc4-459d-806c-75c064818421.jsonl,                │
-│    06a78567-ca9e-447a-973d-d7c5bcd3ff4c.jsonl,                          │
-│    07f7ce57-2a45-4e0f-ac18-3e1f6f5eaad3.jsonl, and 161 more             │
-│                                                                         │
-├─────────────────────────────────────────────────────────────────────────╯
-│
-◇  Doctor changes ────────────────────────────────╮
-│                                                 │
-│  - Tightened permissions on ~/.openclaw to 700  │
-│                                                 │
-├─────────────────────────────────────────────────╯
+◇  State integrity ────────────────────────────────────────────────────╮
+│                                                                      │
+│  - Found 434 orphan transcript files in                              │
+│    ~/.openclaw/agents/main/sessions.                                 │
+│    These .jsonl files are no longer referenced by sessions.json, so  │
+│    they are not part of any active session history.                  │
+│    Doctor can archive them safely by renaming each file to           │
+│    *.deleted.<timestamp>.                                            │
+│    Examples: 0160c6ea-ea3e-4e47-b1b0-c87858d7c579.jsonl,             │
+│    0170d87b-db53-43eb-a1e8-137f2a9d1c8b.jsonl,                       │
+│    01913226-493f-4c52-bd94-00f23832da23.jsonl, and 431 more          │
+│                                                                      │
+├──────────────────────────────────────────────────────────────────────╯
 │
 ◇  Cron ───────────────────────────────────────────────────────────────────╮
 │                                                                          │
