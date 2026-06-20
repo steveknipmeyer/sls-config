@@ -39,10 +39,10 @@
 # any 7:30 script touches them.
 25 7 * * * bash /home/openclaw/.openclaw/cron/prepare-daily-brief-paths.sh
 
-# [7:29] sls-system: audit workspace file protection (chattr +i) before security checks run.
-# Reads the immutable bit on all protected skill/identity files via lsattr (no root needed).
-# Writes working/sls-system/immutable-check.json; merged into security checks by build.py at 7:45.
-29 7 * * * bash /opt/protect-workspace.sh check >> /var/log/sls-immutable-check.log 2>&1
+# [7:29] sls-system: audit workspace file protection, auto-restore drift, and preserve notification.
+# If protected files were left writable overnight, writes a warning artifact naming them,
+# then re-enables chattr +i before the 7:30 root preflight scripts run.
+29 7 * * * bash /opt/protect-workspace.sh check-reset >> /var/log/sls-immutable-check.log 2>&1
 
 # [7:30] sls-system: run security audit and system health checks as root.
 # Writes working/sls-system/security.json and health.json.

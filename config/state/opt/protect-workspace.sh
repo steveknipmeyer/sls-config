@@ -11,6 +11,7 @@
 #   on-skill  <skillname> set +i on one skill's files only       (root required)
 #   off-skill <skillname> remove +i from one skill's files only  (root required)
 #   check                 audit state; write JSON artifact        (no root needed)
+#   check-reset           audit, auto-restore, preserve warning   (root required)
 #
 # PROTECTED FILE SCOPE:
 #   - workspace root identity files: SOUL.md, USER.md, IDENTITY.md, AGENTS.md, SECURITY.md
@@ -34,6 +35,11 @@ set -uo pipefail
 WORKSPACE=/home/openclaw/.openclaw/workspace
 ARTIFACT_DIR="$WORKSPACE/working/sls-system"
 ARTIFACT="$ARTIFACT_DIR/immutable-check.json"
+
+total=0
+immutable_count=0
+mutable_count=0
+mutable=()
 
 # ---------------------------------------------------------------------------
 # root guard — required for any chattr operation
@@ -98,6 +104,87 @@ apply_chattr() {
 }
 
 # ---------------------------------------------------------------------------
+# audit current immutable-bit state into global counters/arrays
+# ---------------------------------------------------------------------------
+audit_protection_state() {
+        total=0
+        mutable=()
+
+        while IFS= read -r f; do
+                ((total++)) || true
+                attrs=$(lsattr "$f" 2>/dev/null | awk '{print $1}')
+                if [[ "$attrs" != *i* ]]; then
+                        mutable+=("$f")
+                fi
+        done < <(list_protected "$WORKSPACE")
+
+        mutable_count=${#mutable[@]}
+        immutable_count=$((total - mutable_count))
+}
+
+# ---------------------------------------------------------------------------
+# write immutable-check artifact from global counters/arrays
+# ---------------------------------------------------------------------------
+write_artifact() {
+        local artifact_status="$1"
+        local check_status="$2"
+        local actual_text="$3"
+        local issue_severity="$4"
+        local issue_prefix="$5"
+
+        mkdir -p "$ARTIFACT_DIR"
+
+        if [[ $mutable_count -eq 0 ]]; then
+                cat > "$ARTIFACT" <<EOF
+{
+    "status": "$artifact_status",
+    "total": $total,
+    "mutable_count": 0,
+    "checks": [
+        {
+            "name": "Workspace file protection",
+            "expected": "$total/$total immutable",
+            "actual": "$actual_text",
+            "status": "$check_status"
+        }
+    ],
+    "issues": []
+}
+EOF
+                return
+        fi
+
+        local issues_json="["
+        local first=1
+        local f rel
+        for f in "${mutable[@]}"; do
+                rel="${f#"$WORKSPACE"/}"
+                rel="${rel//\"/\\\"}"
+                [[ $first -eq 0 ]] && issues_json+=","
+                issues_json+="{\"severity\":\"$issue_severity\",\"category\":\"file-protection\",\"message\":\"$issue_prefix: $rel\"}"
+                first=0
+        done
+        issues_json+="]"
+
+        cat > "$ARTIFACT" <<EOF
+{
+    "status": "$artifact_status",
+    "total": $total,
+    "mutable_count": $mutable_count,
+    "checks": [
+        {
+            "name": "Workspace file protection",
+            "expected": "$total/$total immutable",
+            "actual": "$actual_text",
+            "status": "$check_status"
+        }
+    ],
+    "issues": $issues_json
+}
+EOF
+}
+
+# ---------------------------------------------------------------------------
 # main dispatch
 # ---------------------------------------------------------------------------
 cmd="${1:-}"
@@ -130,76 +217,68 @@ case "$cmd" in
 
     check)
         # No root required — lsattr is readable by any user
-        mkdir -p "$ARTIFACT_DIR"
-
-        total=0
-        mutable=()
-        while IFS= read -r f; do
-            ((total++)) || true
-            attrs=$(lsattr "$f" 2>/dev/null | awk '{print $1}')
-            if [[ "$attrs" != *i* ]]; then
-                mutable+=("$f")
-            fi
-        done < <(list_protected "$WORKSPACE")
-
-        mutable_count=${#mutable[@]}
-        immutable_count=$((total - mutable_count))
+                audit_protection_state
 
         if [[ $mutable_count -eq 0 ]]; then
-            cat > "$ARTIFACT" <<EOF
-{
-  "status": "ok",
-  "total": $total,
-  "mutable_count": 0,
-  "checks": [
-    {
-      "name": "Workspace file protection",
-      "expected": "$total/$total immutable",
-      "actual": "$total/$total immutable",
-      "status": "ok"
-    }
-  ],
-  "issues": []
-}
-EOF
+                        write_artifact "ok" "ok" "$total/$total immutable" "warning" "Protected file is writable"
             echo "All $total protected files are immutable."
             exit 0
         fi
 
-        # Build issues array
-        issues_json="["
-        first=1
-        for f in "${mutable[@]}"; do
-            rel="${f#"$WORKSPACE"/}"
-            rel="${rel//\"/\\\"}"
-            [[ $first -eq 0 ]] && issues_json+=","
-            issues_json+="{\"severity\":\"critical\",\"category\":\"file-protection\",\"message\":\"Protected file is writable: $rel\"}"
-            first=0
-        done
-        issues_json+="]"
-
-        cat > "$ARTIFACT" <<EOF
-{
-  "status": "critical",
-  "total": $total,
-  "mutable_count": $mutable_count,
-  "checks": [
-    {
-      "name": "Workspace file protection",
-      "expected": "$total/$total immutable",
-      "actual": "$immutable_count/$total immutable — $mutable_count writable",
-      "status": "critical"
-    }
-  ],
-  "issues": $issues_json
-}
-EOF
+                write_artifact \
+                        "critical" \
+                        "critical" \
+                        "$immutable_count/$total immutable — $mutable_count writable" \
+                        "critical" \
+                        "Protected file is writable"
         echo "VIOLATION: $mutable_count/$total protected files are writable." >&2
         exit 1
         ;;
 
+        check-reset)
+                root_guard check-reset
+
+                audit_protection_state
+                if [[ $mutable_count -eq 0 ]]; then
+                        write_artifact "ok" "ok" "$total/$total immutable" "warning" "Protected file is writable"
+                        echo "All $total protected files are immutable."
+                        exit 0
+                fi
+
+                original_total=$total
+                original_mutable_count=$mutable_count
+                original_mutable=("${mutable[@]}")
+
+                list_protected "$WORKSPACE" | apply_chattr +i "auto-restored"
+
+                audit_protection_state
+                if [[ $mutable_count -eq 0 ]]; then
+                        mutable=("${original_mutable[@]}")
+                        mutable_count=$original_mutable_count
+                        immutable_count=$((original_total - original_mutable_count))
+                        total=$original_total
+                        write_artifact \
+                                "warning" \
+                                "warning" \
+                                "$original_total/$original_total immutable — auto-restored after finding $original_mutable_count writable" \
+                                "warning" \
+                                "Protected file was writable before auto-restore"
+                        echo "AUTO-RESTORED: protection was re-enabled after finding $original_mutable_count writable file(s)." >&2
+                        exit 0
+                fi
+
+                write_artifact \
+                        "critical" \
+                        "critical" \
+                        "$immutable_count/$total immutable — auto-restore failed; $mutable_count still writable" \
+                        "critical" \
+                        "Protected file remained writable after auto-restore"
+                echo "VIOLATION: auto-restore failed; $mutable_count/$total protected files are still writable." >&2
+                exit 1
+                ;;
+
     *)
-        echo "Usage: protect-workspace.sh on | off | on-skill <name> | off-skill <name> | check" >&2
+                echo "Usage: protect-workspace.sh on | off | on-skill <name> | off-skill <name> | check | check-reset" >&2
         exit 1
         ;;
 esac
