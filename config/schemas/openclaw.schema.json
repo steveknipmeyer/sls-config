@@ -221,6 +221,24 @@
               "title": "OpenTelemetry Logs Enabled",
               "description": "Enable log signal export through OpenTelemetry in addition to local logging sinks. Use this when centralized log correlation is required across services and agents."
             },
+            "logsExporter": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "const": "otlp"
+                },
+                {
+                  "type": "string",
+                  "const": "stdout"
+                },
+                {
+                  "type": "string",
+                  "const": "both"
+                }
+              ],
+              "title": "OpenTelemetry Logs Exporter",
+              "description": "Log export sink for diagnostics.otel.logs. Use \"otlp\" for the configured OTLP logs endpoint, \"stdout\" for one JSON record per stdout line in container log pipelines, and \"both\" when both sinks are required."
+            },
             "sampleRate": {
               "type": "number",
               "minimum": 0,
@@ -598,7 +616,7 @@
         "cdpUrl": {
           "type": "string",
           "title": "Browser CDP URL",
-          "description": "Remote CDP websocket URL used to attach to an externally managed browser instance. Use this for centralized browser hosts and keep URL access restricted to trusted network paths."
+          "description": "CDP/DevTools endpoint URL used to attach to an externally managed browser instance. Use this for centralized browser hosts, tunnels, or existing-session attachment, and keep URL access restricted to trusted network paths."
         },
         "remoteCdpTimeoutMs": {
           "type": "integer",
@@ -734,7 +752,7 @@
               "cdpUrl": {
                 "type": "string",
                 "title": "Browser Profile CDP URL",
-                "description": "Per-profile CDP websocket URL used for explicit remote browser routing by profile name. Use this when profile connections terminate on remote hosts or tunnels."
+                "description": "Per-profile CDP/DevTools endpoint URL used for explicit browser routing by profile name. Use this for remote CDP hosts, tunnels, or existing-session profiles that should attach through a running Chrome DevTools endpoint."
               },
               "userDataDir": {
                 "type": "string",
@@ -880,6 +898,27 @@
       "additionalProperties": false,
       "title": "UI",
       "description": "UI presentation settings for accenting and assistant identity shown in control surfaces. Use this for branding and readability customization without changing runtime behavior."
+    },
+    "tui": {
+      "type": "object",
+      "properties": {
+        "footer": {
+          "type": "object",
+          "properties": {
+            "showRemoteHost": {
+              "type": "boolean",
+              "title": "Show Remote Host in TUI Footer",
+              "description": "Show the remote Gateway hostname in the TUI footer for non-local URL-backed connections. Default: false. Loopback and embedded local connections never show a host label."
+            }
+          },
+          "additionalProperties": false,
+          "title": "Terminal UI Footer",
+          "description": "Terminal UI footer display settings. Keep optional context compact so session, model, goal, and token information stay readable."
+        }
+      },
+      "additionalProperties": false,
+      "title": "Terminal UI",
+      "description": "Terminal UI display settings. Use this section for terminal-only presentation preferences without changing Gateway or other UI behavior."
     },
     "secrets": {
       "type": "object",
@@ -3363,6 +3402,82 @@
                       "type": "number",
                       "exclusiveMinimum": 0
                     },
+                    "thinkingLevelMap": {
+                      "type": "object",
+                      "properties": {
+                        "off": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "minimal": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "low": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "medium": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "high": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "xhigh": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "max": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
                     "params": {
                       "type": "object",
                       "propertyNames": {
@@ -3478,6 +3593,9 @@
                           "type": "boolean"
                         },
                         "requiresThinkingAsText": {
+                          "type": "boolean"
+                        },
+                        "requiresReasoningContentOnAssistantMessages": {
                           "type": "boolean"
                         },
                         "toolSchemaProfile": {
@@ -4215,7 +4333,7 @@
                 }
               ],
               "title": "Envelope Timestamp",
-              "description": "Include absolute timestamps in message envelopes (\"on\" or \"off\")."
+              "description": "Include absolute timestamps in message envelopes, direct agent prompt prefixes, and embedded model-input prefixes (\"on\" or \"off\")."
             },
             "envelopeElapsed": {
               "anyOf": [
@@ -4286,8 +4404,16 @@
                     ]
                   },
                   "jsonlDialect": {
-                    "type": "string",
-                    "const": "claude-stream-json"
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "const": "claude-stream-json"
+                      },
+                      {
+                        "type": "string",
+                        "const": "gemini-stream-json"
+                      }
+                    ]
                   },
                   "liveSession": {
                     "type": "string",
@@ -4874,11 +5000,6 @@
                       "type": "string",
                       "const": "sqlite"
                     },
-                    "path": {
-                      "type": "string",
-                      "title": "Memory Search Index Path",
-                      "description": "Sets where the SQLite memory index is stored on disk for each agent. Keep the default `~/.openclaw/memory/{agentId}.sqlite` unless you need custom storage placement or backup policy alignment."
-                    },
                     "fts": {
                       "type": "object",
                       "properties": {
@@ -5341,14 +5462,14 @@
                 "model": {
                   "type": "string",
                   "title": "Compaction Model Override",
-                  "description": "Optional provider/model override used only for compaction summarization. Set this when you want compaction to run on a different model than the session default, and leave it unset to keep using the primary agent model."
+                  "description": "Optional provider/model or configured bare alias used only for compaction summarization. Bare aliases resolve before dispatch; a configured literal model ID wins if it collides with an alias. Leave unset to keep using the primary agent model."
                 },
                 "timeoutSeconds": {
                   "type": "integer",
                   "exclusiveMinimum": 0,
                   "maximum": 9007199254740991,
                   "title": "Compaction Timeout (Seconds)",
-                  "description": "Maximum time in seconds allowed for a single compaction operation before it is aborted (default: 900). Increase this for very large sessions that need more time to summarize, or decrease it to fail faster on unresponsive models."
+                  "description": "Maximum time in seconds allowed for a single compaction operation before it is aborted (default: 180). Increase this for very large sessions that need more time to summarize, or decrease it to fail faster on unresponsive models."
                 },
                 "memoryFlush": {
                   "type": "object",
@@ -5497,7 +5618,7 @@
                     }
                   ],
                   "title": "Embedded OpenClaw Execution Contract",
-                  "description": "Embedded OpenClaw execution contract: \"default\" keeps the standard runner behavior, while \"strict-agentic\" keeps OpenAI/OpenAI Codex GPT-5-family runs acting until they hit a real blocker instead of stopping at plans or filler."
+                  "description": "Embedded OpenClaw execution contract: \"default\" keeps the standard runner behavior, while \"strict-agentic\" enables structured plan tracking and non-visible turn recovery for supported OpenAI/OpenAI Codex GPT-5-family runs."
                 }
               },
               "additionalProperties": false,
@@ -7001,9 +7122,6 @@
                         "type": "string",
                         "const": "sqlite"
                       },
-                      "path": {
-                        "type": "string"
-                      },
                       "fts": {
                         "type": "object",
                         "properties": {
@@ -7903,7 +8021,7 @@
                       }
                     ],
                     "title": "Agent Embedded OpenClaw Execution Contract",
-                    "description": "Optional per-agent embedded OpenClaw execution contract override. Set \"strict-agentic\" to keep that agent acting through plan-only turns on OpenAI/OpenAI Codex GPT-5-family runs, or \"default\" to inherit the standard runner behavior."
+                    "description": "Optional per-agent embedded OpenClaw execution contract override. Set \"strict-agentic\" to enable structured plan tracking and non-visible turn recovery for that agent on supported OpenAI/OpenAI Codex GPT-5-family runs, or \"default\" to inherit the standard runner behavior."
                   }
                 },
                 "additionalProperties": false,
@@ -9421,7 +9539,7 @@
                         }
                       ],
                       "title": "Codex Web Search Mode",
-                      "description": "Native Codex web search mode: \"cached\" (default) or \"live\"."
+                      "description": "Native Codex web search preference: \"cached\" (default; unrestricted Codex turns resolve it to live) or \"live\"."
                     },
                     "allowedDomains": {
                       "type": "array",
@@ -20375,10 +20493,11 @@
                   "type": "string",
                   "enum": [
                     "code",
-                    "tools"
+                    "tools",
+                    "directory"
                   ],
                   "title": "Tool Search Surface",
-                  "description": "Choose the model-facing surface: \"code\" exposes `tool_search_code`; \"tools\" exposes structured search/describe/call fallback tools."
+                  "description": "Choose the model-facing surface: \"code\" exposes `tool_search_code`; \"tools\" exposes structured search/describe/call fallback tools; \"directory\" keeps a bounded tool directory visible, exposes a bounded set of likely or required schemas, and defers the rest behind search/describe/call."
                 },
                 "codeTimeoutMs": {
                   "type": "integer",
@@ -20406,7 +20525,7 @@
             }
           ],
           "title": "Tool Search",
-          "description": "Compact large OpenClaw, MCP, and client tool catalogs behind one search/call surface. Set to true for the default code bridge or use the object form to choose the structured fallback."
+          "description": "Compact large OpenClaw, MCP, and client tool catalogs. Set to true for the default code bridge or use the object form to choose structured controls or a compact visible tool directory."
         },
         "codeMode": {
           "anyOf": [
@@ -21010,6 +21129,97 @@
             }
           },
           "additionalProperties": false
+        },
+        "installPolicy": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "targets": {
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "const": "skill"
+                  },
+                  {
+                    "type": "string",
+                    "const": "plugin"
+                  }
+                ]
+              }
+            },
+            "exec": {
+              "type": "object",
+              "properties": {
+                "source": {
+                  "type": "string",
+                  "const": "exec"
+                },
+                "command": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "args": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "timeoutMs": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "noOutputTimeoutMs": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "maxOutputBytes": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "env": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                "passEnv": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "trustedDirs": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "allowInsecurePath": {
+                  "type": "boolean"
+                },
+                "allowSymlinkCommand": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "source",
+                "command"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
         }
       },
       "additionalProperties": false
@@ -21361,7 +21571,7 @@
           "minimum": 1,
           "maximum": 168,
           "title": "Media Retention TTL (hours)",
-          "description": "Optional retention window in hours for persisted inbound media cleanup across the full media tree. Leave unset to preserve legacy behavior, or set values like 24 (1 day) or 168 (7 days) when you want automatic cleanup."
+          "description": "Optional retention window in hours for persisted media cleanup across the full media tree. Leave unset to disable automatic cleanup (media writes never prune), or set values like 24 (1 day) or 168 (7 days) to periodically remove media older than the window."
         }
       },
       "additionalProperties": false,
@@ -21396,6 +21606,22 @@
           "type": "string",
           "title": "Outbound Response Prefix",
           "description": "Prefix text prepended to outbound assistant replies before sending to channels. Use for lightweight branding/context tags and avoid long prefixes that reduce content density."
+        },
+        "usageTemplate": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "object",
+              "propertyNames": {
+                "type": "string"
+              },
+              "additionalProperties": {}
+            }
+          ],
+          "title": "Usage Footer Template",
+          "description": "Custom /usage full footer template, either an inline object or a JSON file path. Invalid or unavailable templates fall back to the built-in usage line."
         },
         "groupChat": {
           "type": "object",
@@ -24246,13 +24472,13 @@
               "type": "integer",
               "exclusiveMinimum": 0,
               "maximum": 9007199254740991,
-              "title": "WhatsApp Web Query Timeout (ms)",
-              "description": "Default Baileys query timeout in milliseconds for WhatsApp Web requests. Keep aligned with upstream unless a network-specific investigation shows queries need longer."
+              "title": "WhatsApp Web Query/Operation Timeout (ms)",
+              "description": "Default Baileys query timeout and OpenClaw outbound send/presence and inbound read-receipt operation bound in milliseconds for WhatsApp Web requests. Keep aligned with upstream unless a network-specific investigation shows socket operations need longer."
             }
           },
           "additionalProperties": false,
           "title": "WhatsApp Web Socket Timing",
-          "description": "WhatsApp Web socket timing controls passed directly to Baileys. Tune these when network edges, proxies, or NATs are closing otherwise healthy WhatsApp Web sessions."
+          "description": "WhatsApp Web socket timing controls used by Baileys and OpenClaw's local outbound and inbound read-receipt operation bounds. Tune these when network edges, proxies, or NATs are closing otherwise healthy WhatsApp Web sessions."
         }
       },
       "additionalProperties": false,
@@ -30711,6 +30937,14 @@
                 }
               ]
             },
+            "sendTransport": {
+              "type": "string",
+              "enum": [
+                "auto",
+                "bridge",
+                "applescript"
+              ]
+            },
             "region": {
               "type": "string"
             },
@@ -30834,6 +31068,49 @@
                 "newline"
               ]
             },
+            "streaming": {
+              "type": "object",
+              "properties": {
+                "chunkMode": {
+                  "type": "string",
+                  "enum": [
+                    "length",
+                    "newline"
+                  ]
+                },
+                "block": {
+                  "type": "object",
+                  "properties": {
+                    "enabled": {
+                      "type": "boolean"
+                    },
+                    "coalesce": {
+                      "type": "object",
+                      "properties": {
+                        "minChars": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "maxChars": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "idleMs": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "additionalProperties": false
+            },
             "blockStreaming": {
               "type": "boolean"
             },
@@ -30871,6 +31148,35 @@
             },
             "coalesceSameSenderDms": {
               "type": "boolean"
+            },
+            "catchup": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                },
+                "maxAgeMinutes": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 720
+                },
+                "perRunLimit": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 500
+                },
+                "firstRunLookbackMinutes": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 720
+                },
+                "maxFailureRetries": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 1000
+                }
+              },
+              "additionalProperties": false
             },
             "groups": {
               "type": "object",
@@ -30943,35 +31249,6 @@
                 },
                 "additionalProperties": false
               }
-            },
-            "catchup": {
-              "type": "object",
-              "properties": {
-                "enabled": {
-                  "type": "boolean"
-                },
-                "maxAgeMinutes": {
-                  "type": "integer",
-                  "minimum": 1,
-                  "maximum": 720
-                },
-                "perRunLimit": {
-                  "type": "integer",
-                  "minimum": 1,
-                  "maximum": 500
-                },
-                "firstRunLookbackMinutes": {
-                  "type": "integer",
-                  "minimum": 1,
-                  "maximum": 720
-                },
-                "maxFailureRetries": {
-                  "type": "integer",
-                  "minimum": 1,
-                  "maximum": 1000
-                }
-              },
-              "additionalProperties": false
             },
             "heartbeat": {
               "type": "object",
@@ -31102,6 +31379,14 @@
                       }
                     ]
                   },
+                  "sendTransport": {
+                    "type": "string",
+                    "enum": [
+                      "auto",
+                      "bridge",
+                      "applescript"
+                    ]
+                  },
                   "region": {
                     "type": "string"
                   },
@@ -31225,6 +31510,49 @@
                       "newline"
                     ]
                   },
+                  "streaming": {
+                    "type": "object",
+                    "properties": {
+                      "chunkMode": {
+                        "type": "string",
+                        "enum": [
+                          "length",
+                          "newline"
+                        ]
+                      },
+                      "block": {
+                        "type": "object",
+                        "properties": {
+                          "enabled": {
+                            "type": "boolean"
+                          },
+                          "coalesce": {
+                            "type": "object",
+                            "properties": {
+                              "minChars": {
+                                "type": "integer",
+                                "exclusiveMinimum": 0,
+                                "maximum": 9007199254740991
+                              },
+                              "maxChars": {
+                                "type": "integer",
+                                "exclusiveMinimum": 0,
+                                "maximum": 9007199254740991
+                              },
+                              "idleMs": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991
+                              }
+                            },
+                            "additionalProperties": false
+                          }
+                        },
+                        "additionalProperties": false
+                      }
+                    },
+                    "additionalProperties": false
+                  },
                   "blockStreaming": {
                     "type": "boolean"
                   },
@@ -31262,6 +31590,35 @@
                   },
                   "coalesceSameSenderDms": {
                     "type": "boolean"
+                  },
+                  "catchup": {
+                    "type": "object",
+                    "properties": {
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "maxAgeMinutes": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 720
+                      },
+                      "perRunLimit": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 500
+                      },
+                      "firstRunLookbackMinutes": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 720
+                      },
+                      "maxFailureRetries": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 1000
+                      }
+                    },
+                    "additionalProperties": false
                   },
                   "groups": {
                     "type": "object",
@@ -31334,35 +31691,6 @@
                       },
                       "additionalProperties": false
                     }
-                  },
-                  "catchup": {
-                    "type": "object",
-                    "properties": {
-                      "enabled": {
-                        "type": "boolean"
-                      },
-                      "maxAgeMinutes": {
-                        "type": "integer",
-                        "minimum": 1,
-                        "maximum": 720
-                      },
-                      "perRunLimit": {
-                        "type": "integer",
-                        "minimum": 1,
-                        "maximum": 500
-                      },
-                      "firstRunLookbackMinutes": {
-                        "type": "integer",
-                        "minimum": 1,
-                        "maximum": 720
-                      },
-                      "maxFailureRetries": {
-                        "type": "integer",
-                        "minimum": 1,
-                        "maximum": 1000
-                      }
-                    },
-                    "additionalProperties": false
                   },
                   "heartbeat": {
                     "type": "object",
@@ -34462,6 +34790,9 @@
                         "raw",
                         "status"
                       ]
+                    },
+                    "commentary": {
+                      "type": "boolean"
                     }
                   },
                   "additionalProperties": false
@@ -36341,6 +36672,87 @@
               },
               "additionalProperties": false
             },
+            "groups": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string"
+              },
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "requireMention": {
+                    "type": "boolean"
+                  },
+                  "ignoreOtherMentions": {
+                    "type": "boolean"
+                  },
+                  "historyLimit": {
+                    "type": "number"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "prompt": {
+                    "type": "string"
+                  },
+                  "tools": {
+                    "type": "object",
+                    "properties": {
+                      "allow": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "alsoAllow": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "deny": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  "toolsBySender": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string"
+                    },
+                    "additionalProperties": {
+                      "type": "object",
+                      "properties": {
+                        "allow": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "alsoAllow": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "deny": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
             "stt": {
               "type": "object",
               "properties": {
@@ -36615,6 +37027,87 @@
                       }
                     },
                     "additionalProperties": false
+                  },
+                  "groups": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string"
+                    },
+                    "additionalProperties": {
+                      "type": "object",
+                      "properties": {
+                        "requireMention": {
+                          "type": "boolean"
+                        },
+                        "ignoreOtherMentions": {
+                          "type": "boolean"
+                        },
+                        "historyLimit": {
+                          "type": "number"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "prompt": {
+                          "type": "string"
+                        },
+                        "tools": {
+                          "type": "object",
+                          "properties": {
+                            "allow": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "alsoAllow": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "deny": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        "toolsBySender": {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "object",
+                            "properties": {
+                              "allow": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "alsoAllow": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "deny": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "additionalProperties": false
+                    }
                   }
                 },
                 "additionalProperties": {}
@@ -38066,6 +38559,9 @@
                         "status"
                       ]
                     },
+                    "commentary": {
+                      "type": "boolean"
+                    },
                     "nativeTaskCards": {
                       "type": "boolean"
                     }
@@ -39258,6 +39754,9 @@
                               "raw",
                               "status"
                             ]
+                          },
+                          "commentary": {
+                            "type": "boolean"
                           },
                           "nativeTaskCards": {
                             "type": "boolean"
@@ -40601,6 +41100,14 @@
                 "allowlist_quote"
               ]
             },
+            "includeGroupHistoryContext": {
+              "type": "string",
+              "enum": [
+                "none",
+                "mention-only",
+                "recent"
+              ]
+            },
             "historyLimit": {
               "type": "integer",
               "minimum": 0,
@@ -40838,6 +41345,9 @@
               "exclusiveMinimum": 0,
               "maximum": 9007199254740991
             },
+            "richMessages": {
+              "type": "boolean"
+            },
             "streaming": {
               "type": "object",
               "properties": {
@@ -40901,22 +41411,6 @@
                         "raw",
                         "status"
                       ]
-                    },
-                    "nativeToolProgress": {
-                      "type": "boolean"
-                    },
-                    "nativeToolProgressAllowFrom": {
-                      "type": "array",
-                      "items": {
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "number"
-                          }
-                        ]
-                      }
                     }
                   },
                   "additionalProperties": false
@@ -40967,6 +41461,9 @@
                         "raw",
                         "status"
                       ]
+                    },
+                    "commentary": {
+                      "type": "boolean"
                     }
                   },
                   "additionalProperties": false
@@ -41873,6 +42370,14 @@
                       "allowlist_quote"
                     ]
                   },
+                  "includeGroupHistoryContext": {
+                    "type": "string",
+                    "enum": [
+                      "none",
+                      "mention-only",
+                      "recent"
+                    ]
+                  },
                   "historyLimit": {
                     "type": "integer",
                     "minimum": 0,
@@ -42110,6 +42615,9 @@
                     "exclusiveMinimum": 0,
                     "maximum": 9007199254740991
                   },
+                  "richMessages": {
+                    "type": "boolean"
+                  },
                   "streaming": {
                     "type": "object",
                     "properties": {
@@ -42173,22 +42681,6 @@
                               "raw",
                               "status"
                             ]
-                          },
-                          "nativeToolProgress": {
-                            "type": "boolean"
-                          },
-                          "nativeToolProgressAllowFrom": {
-                            "type": "array",
-                            "items": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "number"
-                                }
-                              ]
-                            }
                           }
                         },
                         "additionalProperties": false
@@ -42239,6 +42731,9 @@
                               "raw",
                               "status"
                             ]
+                          },
+                          "commentary": {
+                            "type": "boolean"
                           }
                         },
                         "additionalProperties": false
@@ -46116,6 +46611,11 @@
               "title": "QMD Search Mode",
               "description": "Selects the QMD retrieval path: \"query\" uses standard query flow, \"search\" uses search-oriented retrieval, and \"vsearch\" emphasizes vector retrieval. Keep default unless tuning relevance quality."
             },
+            "rerank": {
+              "type": "boolean",
+              "title": "QMD Rerank",
+              "description": "Controls QMD query reranking. Set to false with searchMode \"query\" and QMD 2.1+ to skip QMD reranking for faster hybrid results; leave unset for QMD defaults."
+            },
             "searchTool": {
               "type": "string",
               "minLength": 1,
@@ -46191,7 +46691,7 @@
                 "onBoot": {
                   "type": "boolean",
                   "title": "QMD Update on Manager Start",
-                  "description": "Runs an initial QMD update when the long-lived QMD manager opens (default: true). Set false to disable manager-start updates and legacy/opt-in startup refreshes."
+                  "description": "Runs an initial QMD update when the long-lived QMD manager opens (default: true). Set false to skip manager-start boot updates while keeping configured interval/embed maintenance."
                 },
                 "startup": {
                   "type": "string",
@@ -46201,7 +46701,7 @@
                     "immediate"
                   ],
                   "title": "QMD Gateway Startup Refresh",
-                  "description": "Controls whether Gateway startup schedules a QMD refresh before memory is first used (`off`, `idle`, or `immediate`; default: off). Keep off for fastest startup and lazy memory initialization."
+                  "description": "Controls whether Gateway startup initializes QMD before memory is first used (`off`, `idle`, or `immediate`; default: off). With onBoot disabled, startup only arms configured interval/embed maintenance."
                 },
                 "startupDelayMs": {
                   "type": "integer",
@@ -46745,6 +47245,11 @@
                   "const": "auto"
                 }
               ]
+            },
+            "allowSymlinkTargetWrites": {
+              "type": "boolean",
+              "title": "Allow Skill Workshop Symlink Writes",
+              "description": "Allows Skill Workshop apply to write through symlinked workspace skill paths whose real target is already trusted by skills.load.allowSymlinkTargets. Keep disabled unless operators intentionally want generated proposal applies to mutate those shared skill roots."
             },
             "maxPending": {
               "type": "integer",
@@ -47632,112 +48137,6 @@
               },
               "additionalProperties": false
             },
-            "arcee": {
-              "type": "object",
-              "properties": {
-                "enabled": {
-                  "type": "boolean",
-                  "title": "Plugin Enabled",
-                  "description": "Per-plugin enablement override for a specific entry, applied on top of global plugin policy (restart required). Use this to stage plugin rollout gradually across environments."
-                },
-                "hooks": {
-                  "type": "object",
-                  "properties": {
-                    "allowPromptInjection": {
-                      "type": "boolean",
-                      "title": "Allow Prompt Injection Hooks",
-                      "description": "Controls whether this plugin may mutate prompts through typed hooks. Set false to block `before_prompt_build` and ignore prompt-mutating fields from legacy `before_agent_start`, while preserving legacy `modelOverride` and `providerOverride` behavior."
-                    },
-                    "allowConversationAccess": {
-                      "type": "boolean",
-                      "title": "Allow Conversation Access Hooks",
-                      "description": "Controls whether this plugin may read raw conversation content from typed hooks such as `before_agent_run`, `before_model_resolve`, `before_agent_reply`, `llm_input`, `llm_output`, `before_agent_finalize`, and `agent_end`. Non-bundled plugins must opt in explicitly."
-                    },
-                    "timeoutMs": {
-                      "type": "integer",
-                      "exclusiveMinimum": 0,
-                      "maximum": 600000,
-                      "title": "Plugin Hook Timeout (ms)",
-                      "description": "Default timeout in milliseconds for this plugin's typed hooks, capped at 600000. Use this to bound slow plugin hooks without changing plugin code; per-hook values in hooks.timeouts take precedence."
-                    },
-                    "timeouts": {
-                      "type": "object",
-                      "propertyNames": {
-                        "type": "string"
-                      },
-                      "additionalProperties": {
-                        "type": "integer",
-                        "exclusiveMinimum": 0,
-                        "maximum": 600000
-                      },
-                      "title": "Plugin Hook Timeout Overrides",
-                      "description": "Per-hook timeout overrides in milliseconds keyed by typed hook name, capped at 600000. Use narrow overrides for known slow hooks such as before_prompt_build or agent_end instead of raising every hook timeout."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Hook Policy",
-                  "description": "Per-plugin typed hook policy controls for core-enforced safety gates. Use this to constrain high-impact hook categories without disabling the entire plugin."
-                },
-                "subagent": {
-                  "type": "object",
-                  "properties": {
-                    "allowModelOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin Subagent Model Override",
-                      "description": "Explicitly allows this plugin to request provider/model overrides in background subagent runs. Keep false unless the plugin is trusted to steer model selection."
-                    },
-                    "allowedModels": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "title": "Plugin Subagent Allowed Models",
-                      "description": "Allowed override targets for trusted plugin subagent runs as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Subagent Policy",
-                  "description": "Per-plugin subagent runtime controls for model override trust and allowlists. Keep this unset unless a plugin must explicitly steer subagent model selection."
-                },
-                "llm": {
-                  "type": "object",
-                  "properties": {
-                    "allowModelOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin LLM Model Override",
-                      "description": "Explicitly allows this plugin to request model overrides in api.runtime.llm.complete. Keep false unless the plugin is trusted to steer model selection."
-                    },
-                    "allowedModels": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "title": "Plugin LLM Allowed Models",
-                      "description": "Allowed override targets for trusted plugin LLM completions as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
-                    },
-                    "allowAgentIdOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin LLM Agent Override",
-                      "description": "Explicitly allows this plugin to request api.runtime.llm.complete against a non-default agent id. Keep false unless the plugin is trusted for cross-agent model access."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin LLM Policy",
-                  "description": "Per-plugin api.runtime.llm.complete controls for model and agent override trust. Keep this unset unless a plugin must explicitly steer host-owned completion calls."
-                },
-                "config": {
-                  "type": "object",
-                  "propertyNames": {
-                    "type": "string"
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Config",
-                  "description": "Plugin-defined configuration payload interpreted by that plugin's own schema and validation rules. Use only documented fields from the plugin to prevent ignored or invalid settings.",
-                  "properties": {}
-                }
-              },
-              "additionalProperties": false
-            },
             "azure-speech": {
               "type": "object",
               "properties": {
@@ -48321,325 +48720,7 @@
               },
               "additionalProperties": false
             },
-            "cerebras": {
-              "type": "object",
-              "properties": {
-                "enabled": {
-                  "type": "boolean",
-                  "title": "Plugin Enabled",
-                  "description": "Per-plugin enablement override for a specific entry, applied on top of global plugin policy (restart required). Use this to stage plugin rollout gradually across environments."
-                },
-                "hooks": {
-                  "type": "object",
-                  "properties": {
-                    "allowPromptInjection": {
-                      "type": "boolean",
-                      "title": "Allow Prompt Injection Hooks",
-                      "description": "Controls whether this plugin may mutate prompts through typed hooks. Set false to block `before_prompt_build` and ignore prompt-mutating fields from legacy `before_agent_start`, while preserving legacy `modelOverride` and `providerOverride` behavior."
-                    },
-                    "allowConversationAccess": {
-                      "type": "boolean",
-                      "title": "Allow Conversation Access Hooks",
-                      "description": "Controls whether this plugin may read raw conversation content from typed hooks such as `before_agent_run`, `before_model_resolve`, `before_agent_reply`, `llm_input`, `llm_output`, `before_agent_finalize`, and `agent_end`. Non-bundled plugins must opt in explicitly."
-                    },
-                    "timeoutMs": {
-                      "type": "integer",
-                      "exclusiveMinimum": 0,
-                      "maximum": 600000,
-                      "title": "Plugin Hook Timeout (ms)",
-                      "description": "Default timeout in milliseconds for this plugin's typed hooks, capped at 600000. Use this to bound slow plugin hooks without changing plugin code; per-hook values in hooks.timeouts take precedence."
-                    },
-                    "timeouts": {
-                      "type": "object",
-                      "propertyNames": {
-                        "type": "string"
-                      },
-                      "additionalProperties": {
-                        "type": "integer",
-                        "exclusiveMinimum": 0,
-                        "maximum": 600000
-                      },
-                      "title": "Plugin Hook Timeout Overrides",
-                      "description": "Per-hook timeout overrides in milliseconds keyed by typed hook name, capped at 600000. Use narrow overrides for known slow hooks such as before_prompt_build or agent_end instead of raising every hook timeout."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Hook Policy",
-                  "description": "Per-plugin typed hook policy controls for core-enforced safety gates. Use this to constrain high-impact hook categories without disabling the entire plugin."
-                },
-                "subagent": {
-                  "type": "object",
-                  "properties": {
-                    "allowModelOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin Subagent Model Override",
-                      "description": "Explicitly allows this plugin to request provider/model overrides in background subagent runs. Keep false unless the plugin is trusted to steer model selection."
-                    },
-                    "allowedModels": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "title": "Plugin Subagent Allowed Models",
-                      "description": "Allowed override targets for trusted plugin subagent runs as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Subagent Policy",
-                  "description": "Per-plugin subagent runtime controls for model override trust and allowlists. Keep this unset unless a plugin must explicitly steer subagent model selection."
-                },
-                "llm": {
-                  "type": "object",
-                  "properties": {
-                    "allowModelOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin LLM Model Override",
-                      "description": "Explicitly allows this plugin to request model overrides in api.runtime.llm.complete. Keep false unless the plugin is trusted to steer model selection."
-                    },
-                    "allowedModels": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "title": "Plugin LLM Allowed Models",
-                      "description": "Allowed override targets for trusted plugin LLM completions as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
-                    },
-                    "allowAgentIdOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin LLM Agent Override",
-                      "description": "Explicitly allows this plugin to request api.runtime.llm.complete against a non-default agent id. Keep false unless the plugin is trusted for cross-agent model access."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin LLM Policy",
-                  "description": "Per-plugin api.runtime.llm.complete controls for model and agent override trust. Keep this unset unless a plugin must explicitly steer host-owned completion calls."
-                },
-                "config": {
-                  "type": "object",
-                  "propertyNames": {
-                    "type": "string"
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Config",
-                  "description": "Plugin-defined configuration payload interpreted by that plugin's own schema and validation rules. Use only documented fields from the plugin to prevent ignored or invalid settings.",
-                  "properties": {}
-                }
-              },
-              "additionalProperties": false
-            },
-            "chutes": {
-              "type": "object",
-              "properties": {
-                "enabled": {
-                  "type": "boolean",
-                  "title": "Plugin Enabled",
-                  "description": "Per-plugin enablement override for a specific entry, applied on top of global plugin policy (restart required). Use this to stage plugin rollout gradually across environments."
-                },
-                "hooks": {
-                  "type": "object",
-                  "properties": {
-                    "allowPromptInjection": {
-                      "type": "boolean",
-                      "title": "Allow Prompt Injection Hooks",
-                      "description": "Controls whether this plugin may mutate prompts through typed hooks. Set false to block `before_prompt_build` and ignore prompt-mutating fields from legacy `before_agent_start`, while preserving legacy `modelOverride` and `providerOverride` behavior."
-                    },
-                    "allowConversationAccess": {
-                      "type": "boolean",
-                      "title": "Allow Conversation Access Hooks",
-                      "description": "Controls whether this plugin may read raw conversation content from typed hooks such as `before_agent_run`, `before_model_resolve`, `before_agent_reply`, `llm_input`, `llm_output`, `before_agent_finalize`, and `agent_end`. Non-bundled plugins must opt in explicitly."
-                    },
-                    "timeoutMs": {
-                      "type": "integer",
-                      "exclusiveMinimum": 0,
-                      "maximum": 600000,
-                      "title": "Plugin Hook Timeout (ms)",
-                      "description": "Default timeout in milliseconds for this plugin's typed hooks, capped at 600000. Use this to bound slow plugin hooks without changing plugin code; per-hook values in hooks.timeouts take precedence."
-                    },
-                    "timeouts": {
-                      "type": "object",
-                      "propertyNames": {
-                        "type": "string"
-                      },
-                      "additionalProperties": {
-                        "type": "integer",
-                        "exclusiveMinimum": 0,
-                        "maximum": 600000
-                      },
-                      "title": "Plugin Hook Timeout Overrides",
-                      "description": "Per-hook timeout overrides in milliseconds keyed by typed hook name, capped at 600000. Use narrow overrides for known slow hooks such as before_prompt_build or agent_end instead of raising every hook timeout."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Hook Policy",
-                  "description": "Per-plugin typed hook policy controls for core-enforced safety gates. Use this to constrain high-impact hook categories without disabling the entire plugin."
-                },
-                "subagent": {
-                  "type": "object",
-                  "properties": {
-                    "allowModelOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin Subagent Model Override",
-                      "description": "Explicitly allows this plugin to request provider/model overrides in background subagent runs. Keep false unless the plugin is trusted to steer model selection."
-                    },
-                    "allowedModels": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "title": "Plugin Subagent Allowed Models",
-                      "description": "Allowed override targets for trusted plugin subagent runs as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Subagent Policy",
-                  "description": "Per-plugin subagent runtime controls for model override trust and allowlists. Keep this unset unless a plugin must explicitly steer subagent model selection."
-                },
-                "llm": {
-                  "type": "object",
-                  "properties": {
-                    "allowModelOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin LLM Model Override",
-                      "description": "Explicitly allows this plugin to request model overrides in api.runtime.llm.complete. Keep false unless the plugin is trusted to steer model selection."
-                    },
-                    "allowedModels": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "title": "Plugin LLM Allowed Models",
-                      "description": "Allowed override targets for trusted plugin LLM completions as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
-                    },
-                    "allowAgentIdOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin LLM Agent Override",
-                      "description": "Explicitly allows this plugin to request api.runtime.llm.complete against a non-default agent id. Keep false unless the plugin is trusted for cross-agent model access."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin LLM Policy",
-                  "description": "Per-plugin api.runtime.llm.complete controls for model and agent override trust. Keep this unset unless a plugin must explicitly steer host-owned completion calls."
-                },
-                "config": {
-                  "type": "object",
-                  "propertyNames": {
-                    "type": "string"
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Config",
-                  "description": "Plugin-defined configuration payload interpreted by that plugin's own schema and validation rules. Use only documented fields from the plugin to prevent ignored or invalid settings.",
-                  "properties": {}
-                }
-              },
-              "additionalProperties": false
-            },
             "clickclack": {
-              "type": "object",
-              "properties": {
-                "enabled": {
-                  "type": "boolean",
-                  "title": "Plugin Enabled",
-                  "description": "Per-plugin enablement override for a specific entry, applied on top of global plugin policy (restart required). Use this to stage plugin rollout gradually across environments."
-                },
-                "hooks": {
-                  "type": "object",
-                  "properties": {
-                    "allowPromptInjection": {
-                      "type": "boolean",
-                      "title": "Allow Prompt Injection Hooks",
-                      "description": "Controls whether this plugin may mutate prompts through typed hooks. Set false to block `before_prompt_build` and ignore prompt-mutating fields from legacy `before_agent_start`, while preserving legacy `modelOverride` and `providerOverride` behavior."
-                    },
-                    "allowConversationAccess": {
-                      "type": "boolean",
-                      "title": "Allow Conversation Access Hooks",
-                      "description": "Controls whether this plugin may read raw conversation content from typed hooks such as `before_agent_run`, `before_model_resolve`, `before_agent_reply`, `llm_input`, `llm_output`, `before_agent_finalize`, and `agent_end`. Non-bundled plugins must opt in explicitly."
-                    },
-                    "timeoutMs": {
-                      "type": "integer",
-                      "exclusiveMinimum": 0,
-                      "maximum": 600000,
-                      "title": "Plugin Hook Timeout (ms)",
-                      "description": "Default timeout in milliseconds for this plugin's typed hooks, capped at 600000. Use this to bound slow plugin hooks without changing plugin code; per-hook values in hooks.timeouts take precedence."
-                    },
-                    "timeouts": {
-                      "type": "object",
-                      "propertyNames": {
-                        "type": "string"
-                      },
-                      "additionalProperties": {
-                        "type": "integer",
-                        "exclusiveMinimum": 0,
-                        "maximum": 600000
-                      },
-                      "title": "Plugin Hook Timeout Overrides",
-                      "description": "Per-hook timeout overrides in milliseconds keyed by typed hook name, capped at 600000. Use narrow overrides for known slow hooks such as before_prompt_build or agent_end instead of raising every hook timeout."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Hook Policy",
-                  "description": "Per-plugin typed hook policy controls for core-enforced safety gates. Use this to constrain high-impact hook categories without disabling the entire plugin."
-                },
-                "subagent": {
-                  "type": "object",
-                  "properties": {
-                    "allowModelOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin Subagent Model Override",
-                      "description": "Explicitly allows this plugin to request provider/model overrides in background subagent runs. Keep false unless the plugin is trusted to steer model selection."
-                    },
-                    "allowedModels": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "title": "Plugin Subagent Allowed Models",
-                      "description": "Allowed override targets for trusted plugin subagent runs as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Subagent Policy",
-                  "description": "Per-plugin subagent runtime controls for model override trust and allowlists. Keep this unset unless a plugin must explicitly steer subagent model selection."
-                },
-                "llm": {
-                  "type": "object",
-                  "properties": {
-                    "allowModelOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin LLM Model Override",
-                      "description": "Explicitly allows this plugin to request model overrides in api.runtime.llm.complete. Keep false unless the plugin is trusted to steer model selection."
-                    },
-                    "allowedModels": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "title": "Plugin LLM Allowed Models",
-                      "description": "Allowed override targets for trusted plugin LLM completions as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
-                    },
-                    "allowAgentIdOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin LLM Agent Override",
-                      "description": "Explicitly allows this plugin to request api.runtime.llm.complete against a non-default agent id. Keep false unless the plugin is trusted for cross-agent model access."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin LLM Policy",
-                  "description": "Per-plugin api.runtime.llm.complete controls for model and agent override trust. Keep this unset unless a plugin must explicitly steer host-owned completion calls."
-                },
-                "config": {
-                  "type": "object",
-                  "propertyNames": {
-                    "type": "string"
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Config",
-                  "description": "Plugin-defined configuration payload interpreted by that plugin's own schema and validation rules. Use only documented fields from the plugin to prevent ignored or invalid settings.",
-                  "properties": {}
-                }
-              },
-              "additionalProperties": false
-            },
-            "cloudflare-ai-gateway": {
               "type": "object",
               "properties": {
                 "enabled": {
@@ -48921,7 +49002,14 @@
                           "default": false
                         },
                         "allow_destructive_actions": {
-                          "type": "boolean",
+                          "oneOf": [
+                            {
+                              "type": "boolean"
+                            },
+                            {
+                              "const": "auto"
+                            }
+                          ],
                           "default": true
                         },
                         "plugins": {
@@ -48936,16 +49024,21 @@
                               "marketplaceName": {
                                 "type": "string",
                                 "enum": [
-                                  "openai-curated",
-                                  "openai-bundled",
-                                  "openai-primary-runtime"
+                                  "openai-curated"
                                 ]
                               },
                               "pluginName": {
                                 "type": "string"
                               },
                               "allow_destructive_actions": {
-                                "type": "boolean"
+                                "oneOf": [
+                                  {
+                                    "type": "boolean"
+                                  },
+                                  {
+                                    "const": "auto"
+                                  }
+                                ]
                               }
                             }
                           }
@@ -48991,12 +49084,18 @@
                           "type": "string"
                         },
                         "authToken": {
-                          "type": "string"
+                          "type": [
+                            "string",
+                            "object"
+                          ]
                         },
                         "headers": {
                           "type": "object",
                           "additionalProperties": {
-                            "type": "string"
+                            "type": [
+                              "string",
+                              "object"
+                            ]
                           }
                         },
                         "clearEnv": {
@@ -49004,6 +49103,9 @@
                           "items": {
                             "type": "string"
                           }
+                        },
+                        "remoteWorkspaceRoot": {
+                          "type": "string"
                         },
                         "codeModeOnly": {
                           "type": "boolean",
@@ -49054,6 +49156,77 @@
                             "string",
                             "null"
                           ]
+                        },
+                        "networkProxy": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "enabled": {
+                              "type": "boolean",
+                              "default": false
+                            },
+                            "profileName": {
+                              "type": "string"
+                            },
+                            "baseProfile": {
+                              "type": "string",
+                              "enum": [
+                                "read-only",
+                                "workspace"
+                              ]
+                            },
+                            "mode": {
+                              "type": "string",
+                              "enum": [
+                                "limited",
+                                "full"
+                              ]
+                            },
+                            "domains": {
+                              "type": "object",
+                              "additionalProperties": {
+                                "type": "string",
+                                "enum": [
+                                  "allow",
+                                  "deny"
+                                ]
+                              }
+                            },
+                            "unixSockets": {
+                              "type": "object",
+                              "additionalProperties": {
+                                "type": "string",
+                                "enum": [
+                                  "allow",
+                                  "none"
+                                ]
+                              }
+                            },
+                            "proxyUrl": {
+                              "type": "string"
+                            },
+                            "socksUrl": {
+                              "type": "string"
+                            },
+                            "enableSocks5": {
+                              "type": "boolean"
+                            },
+                            "enableSocks5Udp": {
+                              "type": "boolean"
+                            },
+                            "allowUpstreamProxy": {
+                              "type": "boolean"
+                            },
+                            "allowLocalBinding": {
+                              "type": "boolean"
+                            },
+                            "dangerouslyAllowNonLoopbackProxy": {
+                              "type": "boolean"
+                            },
+                            "dangerouslyAllowAllUnixSockets": {
+                              "type": "boolean"
+                            }
+                          }
                         },
                         "defaultWorkspaceDir": {
                           "type": "string"
@@ -49245,6 +49418,112 @@
                       "default": false
                     }
                   }
+                }
+              },
+              "additionalProperties": false
+            },
+            "cohere": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "title": "Plugin Enabled",
+                  "description": "Per-plugin enablement override for a specific entry, applied on top of global plugin policy (restart required). Use this to stage plugin rollout gradually across environments."
+                },
+                "hooks": {
+                  "type": "object",
+                  "properties": {
+                    "allowPromptInjection": {
+                      "type": "boolean",
+                      "title": "Allow Prompt Injection Hooks",
+                      "description": "Controls whether this plugin may mutate prompts through typed hooks. Set false to block `before_prompt_build` and ignore prompt-mutating fields from legacy `before_agent_start`, while preserving legacy `modelOverride` and `providerOverride` behavior."
+                    },
+                    "allowConversationAccess": {
+                      "type": "boolean",
+                      "title": "Allow Conversation Access Hooks",
+                      "description": "Controls whether this plugin may read raw conversation content from typed hooks such as `before_agent_run`, `before_model_resolve`, `before_agent_reply`, `llm_input`, `llm_output`, `before_agent_finalize`, and `agent_end`. Non-bundled plugins must opt in explicitly."
+                    },
+                    "timeoutMs": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 600000,
+                      "title": "Plugin Hook Timeout (ms)",
+                      "description": "Default timeout in milliseconds for this plugin's typed hooks, capped at 600000. Use this to bound slow plugin hooks without changing plugin code; per-hook values in hooks.timeouts take precedence."
+                    },
+                    "timeouts": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 600000
+                      },
+                      "title": "Plugin Hook Timeout Overrides",
+                      "description": "Per-hook timeout overrides in milliseconds keyed by typed hook name, capped at 600000. Use narrow overrides for known slow hooks such as before_prompt_build or agent_end instead of raising every hook timeout."
+                    }
+                  },
+                  "additionalProperties": false,
+                  "title": "Plugin Hook Policy",
+                  "description": "Per-plugin typed hook policy controls for core-enforced safety gates. Use this to constrain high-impact hook categories without disabling the entire plugin."
+                },
+                "subagent": {
+                  "type": "object",
+                  "properties": {
+                    "allowModelOverride": {
+                      "type": "boolean",
+                      "title": "Allow Plugin Subagent Model Override",
+                      "description": "Explicitly allows this plugin to request provider/model overrides in background subagent runs. Keep false unless the plugin is trusted to steer model selection."
+                    },
+                    "allowedModels": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "title": "Plugin Subagent Allowed Models",
+                      "description": "Allowed override targets for trusted plugin subagent runs as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
+                    }
+                  },
+                  "additionalProperties": false,
+                  "title": "Plugin Subagent Policy",
+                  "description": "Per-plugin subagent runtime controls for model override trust and allowlists. Keep this unset unless a plugin must explicitly steer subagent model selection."
+                },
+                "llm": {
+                  "type": "object",
+                  "properties": {
+                    "allowModelOverride": {
+                      "type": "boolean",
+                      "title": "Allow Plugin LLM Model Override",
+                      "description": "Explicitly allows this plugin to request model overrides in api.runtime.llm.complete. Keep false unless the plugin is trusted to steer model selection."
+                    },
+                    "allowedModels": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "title": "Plugin LLM Allowed Models",
+                      "description": "Allowed override targets for trusted plugin LLM completions as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
+                    },
+                    "allowAgentIdOverride": {
+                      "type": "boolean",
+                      "title": "Allow Plugin LLM Agent Override",
+                      "description": "Explicitly allows this plugin to request api.runtime.llm.complete against a non-default agent id. Keep false unless the plugin is trusted for cross-agent model access."
+                    }
+                  },
+                  "additionalProperties": false,
+                  "title": "Plugin LLM Policy",
+                  "description": "Per-plugin api.runtime.llm.complete controls for model and agent override trust. Keep this unset unless a plugin must explicitly steer host-owned completion calls."
+                },
+                "config": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": false,
+                  "title": "Plugin Config",
+                  "description": "Plugin-defined configuration payload interpreted by that plugin's own schema and validation rules. Use only documented fields from the plugin to prevent ignored or invalid settings.",
+                  "properties": {}
                 }
               },
               "additionalProperties": false
@@ -49610,218 +49889,6 @@
               "additionalProperties": false
             },
             "deepgram": {
-              "type": "object",
-              "properties": {
-                "enabled": {
-                  "type": "boolean",
-                  "title": "Plugin Enabled",
-                  "description": "Per-plugin enablement override for a specific entry, applied on top of global plugin policy (restart required). Use this to stage plugin rollout gradually across environments."
-                },
-                "hooks": {
-                  "type": "object",
-                  "properties": {
-                    "allowPromptInjection": {
-                      "type": "boolean",
-                      "title": "Allow Prompt Injection Hooks",
-                      "description": "Controls whether this plugin may mutate prompts through typed hooks. Set false to block `before_prompt_build` and ignore prompt-mutating fields from legacy `before_agent_start`, while preserving legacy `modelOverride` and `providerOverride` behavior."
-                    },
-                    "allowConversationAccess": {
-                      "type": "boolean",
-                      "title": "Allow Conversation Access Hooks",
-                      "description": "Controls whether this plugin may read raw conversation content from typed hooks such as `before_agent_run`, `before_model_resolve`, `before_agent_reply`, `llm_input`, `llm_output`, `before_agent_finalize`, and `agent_end`. Non-bundled plugins must opt in explicitly."
-                    },
-                    "timeoutMs": {
-                      "type": "integer",
-                      "exclusiveMinimum": 0,
-                      "maximum": 600000,
-                      "title": "Plugin Hook Timeout (ms)",
-                      "description": "Default timeout in milliseconds for this plugin's typed hooks, capped at 600000. Use this to bound slow plugin hooks without changing plugin code; per-hook values in hooks.timeouts take precedence."
-                    },
-                    "timeouts": {
-                      "type": "object",
-                      "propertyNames": {
-                        "type": "string"
-                      },
-                      "additionalProperties": {
-                        "type": "integer",
-                        "exclusiveMinimum": 0,
-                        "maximum": 600000
-                      },
-                      "title": "Plugin Hook Timeout Overrides",
-                      "description": "Per-hook timeout overrides in milliseconds keyed by typed hook name, capped at 600000. Use narrow overrides for known slow hooks such as before_prompt_build or agent_end instead of raising every hook timeout."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Hook Policy",
-                  "description": "Per-plugin typed hook policy controls for core-enforced safety gates. Use this to constrain high-impact hook categories without disabling the entire plugin."
-                },
-                "subagent": {
-                  "type": "object",
-                  "properties": {
-                    "allowModelOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin Subagent Model Override",
-                      "description": "Explicitly allows this plugin to request provider/model overrides in background subagent runs. Keep false unless the plugin is trusted to steer model selection."
-                    },
-                    "allowedModels": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "title": "Plugin Subagent Allowed Models",
-                      "description": "Allowed override targets for trusted plugin subagent runs as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Subagent Policy",
-                  "description": "Per-plugin subagent runtime controls for model override trust and allowlists. Keep this unset unless a plugin must explicitly steer subagent model selection."
-                },
-                "llm": {
-                  "type": "object",
-                  "properties": {
-                    "allowModelOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin LLM Model Override",
-                      "description": "Explicitly allows this plugin to request model overrides in api.runtime.llm.complete. Keep false unless the plugin is trusted to steer model selection."
-                    },
-                    "allowedModels": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "title": "Plugin LLM Allowed Models",
-                      "description": "Allowed override targets for trusted plugin LLM completions as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
-                    },
-                    "allowAgentIdOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin LLM Agent Override",
-                      "description": "Explicitly allows this plugin to request api.runtime.llm.complete against a non-default agent id. Keep false unless the plugin is trusted for cross-agent model access."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin LLM Policy",
-                  "description": "Per-plugin api.runtime.llm.complete controls for model and agent override trust. Keep this unset unless a plugin must explicitly steer host-owned completion calls."
-                },
-                "config": {
-                  "type": "object",
-                  "propertyNames": {
-                    "type": "string"
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Config",
-                  "description": "Plugin-defined configuration payload interpreted by that plugin's own schema and validation rules. Use only documented fields from the plugin to prevent ignored or invalid settings.",
-                  "properties": {}
-                }
-              },
-              "additionalProperties": false
-            },
-            "deepinfra": {
-              "type": "object",
-              "properties": {
-                "enabled": {
-                  "type": "boolean",
-                  "title": "Plugin Enabled",
-                  "description": "Per-plugin enablement override for a specific entry, applied on top of global plugin policy (restart required). Use this to stage plugin rollout gradually across environments."
-                },
-                "hooks": {
-                  "type": "object",
-                  "properties": {
-                    "allowPromptInjection": {
-                      "type": "boolean",
-                      "title": "Allow Prompt Injection Hooks",
-                      "description": "Controls whether this plugin may mutate prompts through typed hooks. Set false to block `before_prompt_build` and ignore prompt-mutating fields from legacy `before_agent_start`, while preserving legacy `modelOverride` and `providerOverride` behavior."
-                    },
-                    "allowConversationAccess": {
-                      "type": "boolean",
-                      "title": "Allow Conversation Access Hooks",
-                      "description": "Controls whether this plugin may read raw conversation content from typed hooks such as `before_agent_run`, `before_model_resolve`, `before_agent_reply`, `llm_input`, `llm_output`, `before_agent_finalize`, and `agent_end`. Non-bundled plugins must opt in explicitly."
-                    },
-                    "timeoutMs": {
-                      "type": "integer",
-                      "exclusiveMinimum": 0,
-                      "maximum": 600000,
-                      "title": "Plugin Hook Timeout (ms)",
-                      "description": "Default timeout in milliseconds for this plugin's typed hooks, capped at 600000. Use this to bound slow plugin hooks without changing plugin code; per-hook values in hooks.timeouts take precedence."
-                    },
-                    "timeouts": {
-                      "type": "object",
-                      "propertyNames": {
-                        "type": "string"
-                      },
-                      "additionalProperties": {
-                        "type": "integer",
-                        "exclusiveMinimum": 0,
-                        "maximum": 600000
-                      },
-                      "title": "Plugin Hook Timeout Overrides",
-                      "description": "Per-hook timeout overrides in milliseconds keyed by typed hook name, capped at 600000. Use narrow overrides for known slow hooks such as before_prompt_build or agent_end instead of raising every hook timeout."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Hook Policy",
-                  "description": "Per-plugin typed hook policy controls for core-enforced safety gates. Use this to constrain high-impact hook categories without disabling the entire plugin."
-                },
-                "subagent": {
-                  "type": "object",
-                  "properties": {
-                    "allowModelOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin Subagent Model Override",
-                      "description": "Explicitly allows this plugin to request provider/model overrides in background subagent runs. Keep false unless the plugin is trusted to steer model selection."
-                    },
-                    "allowedModels": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "title": "Plugin Subagent Allowed Models",
-                      "description": "Allowed override targets for trusted plugin subagent runs as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Subagent Policy",
-                  "description": "Per-plugin subagent runtime controls for model override trust and allowlists. Keep this unset unless a plugin must explicitly steer subagent model selection."
-                },
-                "llm": {
-                  "type": "object",
-                  "properties": {
-                    "allowModelOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin LLM Model Override",
-                      "description": "Explicitly allows this plugin to request model overrides in api.runtime.llm.complete. Keep false unless the plugin is trusted to steer model selection."
-                    },
-                    "allowedModels": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "title": "Plugin LLM Allowed Models",
-                      "description": "Allowed override targets for trusted plugin LLM completions as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
-                    },
-                    "allowAgentIdOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin LLM Agent Override",
-                      "description": "Explicitly allows this plugin to request api.runtime.llm.complete against a non-default agent id. Keep false unless the plugin is trusted for cross-agent model access."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin LLM Policy",
-                  "description": "Per-plugin api.runtime.llm.complete controls for model and agent override trust. Keep this unset unless a plugin must explicitly steer host-owned completion calls."
-                },
-                "config": {
-                  "type": "object",
-                  "propertyNames": {
-                    "type": "string"
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Config",
-                  "description": "Plugin-defined configuration payload interpreted by that plugin's own schema and validation rules. Use only documented fields from the plugin to prevent ignored or invalid settings.",
-                  "properties": {}
-                }
-              },
-              "additionalProperties": false
-            },
-            "deepseek": {
               "type": "object",
               "properties": {
                 "enabled": {
@@ -50373,128 +50440,6 @@
               },
               "additionalProperties": false
             },
-            "exa": {
-              "type": "object",
-              "properties": {
-                "enabled": {
-                  "type": "boolean",
-                  "title": "Plugin Enabled",
-                  "description": "Per-plugin enablement override for a specific entry, applied on top of global plugin policy (restart required). Use this to stage plugin rollout gradually across environments."
-                },
-                "hooks": {
-                  "type": "object",
-                  "properties": {
-                    "allowPromptInjection": {
-                      "type": "boolean",
-                      "title": "Allow Prompt Injection Hooks",
-                      "description": "Controls whether this plugin may mutate prompts through typed hooks. Set false to block `before_prompt_build` and ignore prompt-mutating fields from legacy `before_agent_start`, while preserving legacy `modelOverride` and `providerOverride` behavior."
-                    },
-                    "allowConversationAccess": {
-                      "type": "boolean",
-                      "title": "Allow Conversation Access Hooks",
-                      "description": "Controls whether this plugin may read raw conversation content from typed hooks such as `before_agent_run`, `before_model_resolve`, `before_agent_reply`, `llm_input`, `llm_output`, `before_agent_finalize`, and `agent_end`. Non-bundled plugins must opt in explicitly."
-                    },
-                    "timeoutMs": {
-                      "type": "integer",
-                      "exclusiveMinimum": 0,
-                      "maximum": 600000,
-                      "title": "Plugin Hook Timeout (ms)",
-                      "description": "Default timeout in milliseconds for this plugin's typed hooks, capped at 600000. Use this to bound slow plugin hooks without changing plugin code; per-hook values in hooks.timeouts take precedence."
-                    },
-                    "timeouts": {
-                      "type": "object",
-                      "propertyNames": {
-                        "type": "string"
-                      },
-                      "additionalProperties": {
-                        "type": "integer",
-                        "exclusiveMinimum": 0,
-                        "maximum": 600000
-                      },
-                      "title": "Plugin Hook Timeout Overrides",
-                      "description": "Per-hook timeout overrides in milliseconds keyed by typed hook name, capped at 600000. Use narrow overrides for known slow hooks such as before_prompt_build or agent_end instead of raising every hook timeout."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Hook Policy",
-                  "description": "Per-plugin typed hook policy controls for core-enforced safety gates. Use this to constrain high-impact hook categories without disabling the entire plugin."
-                },
-                "subagent": {
-                  "type": "object",
-                  "properties": {
-                    "allowModelOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin Subagent Model Override",
-                      "description": "Explicitly allows this plugin to request provider/model overrides in background subagent runs. Keep false unless the plugin is trusted to steer model selection."
-                    },
-                    "allowedModels": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "title": "Plugin Subagent Allowed Models",
-                      "description": "Allowed override targets for trusted plugin subagent runs as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Subagent Policy",
-                  "description": "Per-plugin subagent runtime controls for model override trust and allowlists. Keep this unset unless a plugin must explicitly steer subagent model selection."
-                },
-                "llm": {
-                  "type": "object",
-                  "properties": {
-                    "allowModelOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin LLM Model Override",
-                      "description": "Explicitly allows this plugin to request model overrides in api.runtime.llm.complete. Keep false unless the plugin is trusted to steer model selection."
-                    },
-                    "allowedModels": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "title": "Plugin LLM Allowed Models",
-                      "description": "Allowed override targets for trusted plugin LLM completions as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
-                    },
-                    "allowAgentIdOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin LLM Agent Override",
-                      "description": "Explicitly allows this plugin to request api.runtime.llm.complete against a non-default agent id. Keep false unless the plugin is trusted for cross-agent model access."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin LLM Policy",
-                  "description": "Per-plugin api.runtime.llm.complete controls for model and agent override trust. Keep this unset unless a plugin must explicitly steer host-owned completion calls."
-                },
-                "config": {
-                  "type": "object",
-                  "propertyNames": {
-                    "type": "string"
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Config",
-                  "description": "Plugin-defined configuration payload interpreted by that plugin's own schema and validation rules. Use only documented fields from the plugin to prevent ignored or invalid settings.",
-                  "properties": {
-                    "webSearch": {
-                      "type": "object",
-                      "additionalProperties": false,
-                      "properties": {
-                        "apiKey": {
-                          "type": [
-                            "string",
-                            "object"
-                          ]
-                        },
-                        "baseUrl": {
-                          "type": "string"
-                        }
-                      }
-                    }
-                  }
-                }
-              },
-              "additionalProperties": false
-            },
             "fal": {
               "type": "object",
               "properties": {
@@ -50750,152 +50695,6 @@
               },
               "additionalProperties": false
             },
-            "firecrawl": {
-              "type": "object",
-              "properties": {
-                "enabled": {
-                  "type": "boolean",
-                  "title": "Plugin Enabled",
-                  "description": "Per-plugin enablement override for a specific entry, applied on top of global plugin policy (restart required). Use this to stage plugin rollout gradually across environments."
-                },
-                "hooks": {
-                  "type": "object",
-                  "properties": {
-                    "allowPromptInjection": {
-                      "type": "boolean",
-                      "title": "Allow Prompt Injection Hooks",
-                      "description": "Controls whether this plugin may mutate prompts through typed hooks. Set false to block `before_prompt_build` and ignore prompt-mutating fields from legacy `before_agent_start`, while preserving legacy `modelOverride` and `providerOverride` behavior."
-                    },
-                    "allowConversationAccess": {
-                      "type": "boolean",
-                      "title": "Allow Conversation Access Hooks",
-                      "description": "Controls whether this plugin may read raw conversation content from typed hooks such as `before_agent_run`, `before_model_resolve`, `before_agent_reply`, `llm_input`, `llm_output`, `before_agent_finalize`, and `agent_end`. Non-bundled plugins must opt in explicitly."
-                    },
-                    "timeoutMs": {
-                      "type": "integer",
-                      "exclusiveMinimum": 0,
-                      "maximum": 600000,
-                      "title": "Plugin Hook Timeout (ms)",
-                      "description": "Default timeout in milliseconds for this plugin's typed hooks, capped at 600000. Use this to bound slow plugin hooks without changing plugin code; per-hook values in hooks.timeouts take precedence."
-                    },
-                    "timeouts": {
-                      "type": "object",
-                      "propertyNames": {
-                        "type": "string"
-                      },
-                      "additionalProperties": {
-                        "type": "integer",
-                        "exclusiveMinimum": 0,
-                        "maximum": 600000
-                      },
-                      "title": "Plugin Hook Timeout Overrides",
-                      "description": "Per-hook timeout overrides in milliseconds keyed by typed hook name, capped at 600000. Use narrow overrides for known slow hooks such as before_prompt_build or agent_end instead of raising every hook timeout."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Hook Policy",
-                  "description": "Per-plugin typed hook policy controls for core-enforced safety gates. Use this to constrain high-impact hook categories without disabling the entire plugin."
-                },
-                "subagent": {
-                  "type": "object",
-                  "properties": {
-                    "allowModelOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin Subagent Model Override",
-                      "description": "Explicitly allows this plugin to request provider/model overrides in background subagent runs. Keep false unless the plugin is trusted to steer model selection."
-                    },
-                    "allowedModels": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "title": "Plugin Subagent Allowed Models",
-                      "description": "Allowed override targets for trusted plugin subagent runs as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Subagent Policy",
-                  "description": "Per-plugin subagent runtime controls for model override trust and allowlists. Keep this unset unless a plugin must explicitly steer subagent model selection."
-                },
-                "llm": {
-                  "type": "object",
-                  "properties": {
-                    "allowModelOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin LLM Model Override",
-                      "description": "Explicitly allows this plugin to request model overrides in api.runtime.llm.complete. Keep false unless the plugin is trusted to steer model selection."
-                    },
-                    "allowedModels": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "title": "Plugin LLM Allowed Models",
-                      "description": "Allowed override targets for trusted plugin LLM completions as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
-                    },
-                    "allowAgentIdOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin LLM Agent Override",
-                      "description": "Explicitly allows this plugin to request api.runtime.llm.complete against a non-default agent id. Keep false unless the plugin is trusted for cross-agent model access."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin LLM Policy",
-                  "description": "Per-plugin api.runtime.llm.complete controls for model and agent override trust. Keep this unset unless a plugin must explicitly steer host-owned completion calls."
-                },
-                "config": {
-                  "type": "object",
-                  "propertyNames": {
-                    "type": "string"
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Config",
-                  "description": "Plugin-defined configuration payload interpreted by that plugin's own schema and validation rules. Use only documented fields from the plugin to prevent ignored or invalid settings.",
-                  "properties": {
-                    "webSearch": {
-                      "type": "object",
-                      "additionalProperties": false,
-                      "properties": {
-                        "apiKey": {
-                          "type": [
-                            "string",
-                            "object"
-                          ]
-                        },
-                        "baseUrl": {
-                          "type": "string"
-                        }
-                      }
-                    },
-                    "webFetch": {
-                      "type": "object",
-                      "additionalProperties": false,
-                      "properties": {
-                        "apiKey": {
-                          "type": [
-                            "string",
-                            "object"
-                          ]
-                        },
-                        "baseUrl": {
-                          "type": "string"
-                        },
-                        "onlyMainContent": {
-                          "type": "boolean"
-                        },
-                        "maxAgeMs": {
-                          "type": "number"
-                        },
-                        "timeoutSeconds": {
-                          "type": "number"
-                        }
-                      }
-                    }
-                  }
-                }
-              },
-              "additionalProperties": false
-            },
             "fireworks": {
               "type": "object",
               "properties": {
@@ -51118,112 +50917,6 @@
               },
               "additionalProperties": false
             },
-            "gmi": {
-              "type": "object",
-              "properties": {
-                "enabled": {
-                  "type": "boolean",
-                  "title": "Plugin Enabled",
-                  "description": "Per-plugin enablement override for a specific entry, applied on top of global plugin policy (restart required). Use this to stage plugin rollout gradually across environments."
-                },
-                "hooks": {
-                  "type": "object",
-                  "properties": {
-                    "allowPromptInjection": {
-                      "type": "boolean",
-                      "title": "Allow Prompt Injection Hooks",
-                      "description": "Controls whether this plugin may mutate prompts through typed hooks. Set false to block `before_prompt_build` and ignore prompt-mutating fields from legacy `before_agent_start`, while preserving legacy `modelOverride` and `providerOverride` behavior."
-                    },
-                    "allowConversationAccess": {
-                      "type": "boolean",
-                      "title": "Allow Conversation Access Hooks",
-                      "description": "Controls whether this plugin may read raw conversation content from typed hooks such as `before_agent_run`, `before_model_resolve`, `before_agent_reply`, `llm_input`, `llm_output`, `before_agent_finalize`, and `agent_end`. Non-bundled plugins must opt in explicitly."
-                    },
-                    "timeoutMs": {
-                      "type": "integer",
-                      "exclusiveMinimum": 0,
-                      "maximum": 600000,
-                      "title": "Plugin Hook Timeout (ms)",
-                      "description": "Default timeout in milliseconds for this plugin's typed hooks, capped at 600000. Use this to bound slow plugin hooks without changing plugin code; per-hook values in hooks.timeouts take precedence."
-                    },
-                    "timeouts": {
-                      "type": "object",
-                      "propertyNames": {
-                        "type": "string"
-                      },
-                      "additionalProperties": {
-                        "type": "integer",
-                        "exclusiveMinimum": 0,
-                        "maximum": 600000
-                      },
-                      "title": "Plugin Hook Timeout Overrides",
-                      "description": "Per-hook timeout overrides in milliseconds keyed by typed hook name, capped at 600000. Use narrow overrides for known slow hooks such as before_prompt_build or agent_end instead of raising every hook timeout."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Hook Policy",
-                  "description": "Per-plugin typed hook policy controls for core-enforced safety gates. Use this to constrain high-impact hook categories without disabling the entire plugin."
-                },
-                "subagent": {
-                  "type": "object",
-                  "properties": {
-                    "allowModelOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin Subagent Model Override",
-                      "description": "Explicitly allows this plugin to request provider/model overrides in background subagent runs. Keep false unless the plugin is trusted to steer model selection."
-                    },
-                    "allowedModels": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "title": "Plugin Subagent Allowed Models",
-                      "description": "Allowed override targets for trusted plugin subagent runs as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Subagent Policy",
-                  "description": "Per-plugin subagent runtime controls for model override trust and allowlists. Keep this unset unless a plugin must explicitly steer subagent model selection."
-                },
-                "llm": {
-                  "type": "object",
-                  "properties": {
-                    "allowModelOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin LLM Model Override",
-                      "description": "Explicitly allows this plugin to request model overrides in api.runtime.llm.complete. Keep false unless the plugin is trusted to steer model selection."
-                    },
-                    "allowedModels": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "title": "Plugin LLM Allowed Models",
-                      "description": "Allowed override targets for trusted plugin LLM completions as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
-                    },
-                    "allowAgentIdOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin LLM Agent Override",
-                      "description": "Explicitly allows this plugin to request api.runtime.llm.complete against a non-default agent id. Keep false unless the plugin is trusted for cross-agent model access."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin LLM Policy",
-                  "description": "Per-plugin api.runtime.llm.complete controls for model and agent override trust. Keep this unset unless a plugin must explicitly steer host-owned completion calls."
-                },
-                "config": {
-                  "type": "object",
-                  "propertyNames": {
-                    "type": "string"
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Config",
-                  "description": "Plugin-defined configuration payload interpreted by that plugin's own schema and validation rules. Use only documented fields from the plugin to prevent ignored or invalid settings.",
-                  "properties": {}
-                }
-              },
-              "additionalProperties": false
-            },
             "google": {
               "type": "object",
               "properties": {
@@ -51345,218 +51038,6 @@
                       }
                     }
                   }
-                }
-              },
-              "additionalProperties": false
-            },
-            "gradium": {
-              "type": "object",
-              "properties": {
-                "enabled": {
-                  "type": "boolean",
-                  "title": "Plugin Enabled",
-                  "description": "Per-plugin enablement override for a specific entry, applied on top of global plugin policy (restart required). Use this to stage plugin rollout gradually across environments."
-                },
-                "hooks": {
-                  "type": "object",
-                  "properties": {
-                    "allowPromptInjection": {
-                      "type": "boolean",
-                      "title": "Allow Prompt Injection Hooks",
-                      "description": "Controls whether this plugin may mutate prompts through typed hooks. Set false to block `before_prompt_build` and ignore prompt-mutating fields from legacy `before_agent_start`, while preserving legacy `modelOverride` and `providerOverride` behavior."
-                    },
-                    "allowConversationAccess": {
-                      "type": "boolean",
-                      "title": "Allow Conversation Access Hooks",
-                      "description": "Controls whether this plugin may read raw conversation content from typed hooks such as `before_agent_run`, `before_model_resolve`, `before_agent_reply`, `llm_input`, `llm_output`, `before_agent_finalize`, and `agent_end`. Non-bundled plugins must opt in explicitly."
-                    },
-                    "timeoutMs": {
-                      "type": "integer",
-                      "exclusiveMinimum": 0,
-                      "maximum": 600000,
-                      "title": "Plugin Hook Timeout (ms)",
-                      "description": "Default timeout in milliseconds for this plugin's typed hooks, capped at 600000. Use this to bound slow plugin hooks without changing plugin code; per-hook values in hooks.timeouts take precedence."
-                    },
-                    "timeouts": {
-                      "type": "object",
-                      "propertyNames": {
-                        "type": "string"
-                      },
-                      "additionalProperties": {
-                        "type": "integer",
-                        "exclusiveMinimum": 0,
-                        "maximum": 600000
-                      },
-                      "title": "Plugin Hook Timeout Overrides",
-                      "description": "Per-hook timeout overrides in milliseconds keyed by typed hook name, capped at 600000. Use narrow overrides for known slow hooks such as before_prompt_build or agent_end instead of raising every hook timeout."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Hook Policy",
-                  "description": "Per-plugin typed hook policy controls for core-enforced safety gates. Use this to constrain high-impact hook categories without disabling the entire plugin."
-                },
-                "subagent": {
-                  "type": "object",
-                  "properties": {
-                    "allowModelOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin Subagent Model Override",
-                      "description": "Explicitly allows this plugin to request provider/model overrides in background subagent runs. Keep false unless the plugin is trusted to steer model selection."
-                    },
-                    "allowedModels": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "title": "Plugin Subagent Allowed Models",
-                      "description": "Allowed override targets for trusted plugin subagent runs as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Subagent Policy",
-                  "description": "Per-plugin subagent runtime controls for model override trust and allowlists. Keep this unset unless a plugin must explicitly steer subagent model selection."
-                },
-                "llm": {
-                  "type": "object",
-                  "properties": {
-                    "allowModelOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin LLM Model Override",
-                      "description": "Explicitly allows this plugin to request model overrides in api.runtime.llm.complete. Keep false unless the plugin is trusted to steer model selection."
-                    },
-                    "allowedModels": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "title": "Plugin LLM Allowed Models",
-                      "description": "Allowed override targets for trusted plugin LLM completions as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
-                    },
-                    "allowAgentIdOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin LLM Agent Override",
-                      "description": "Explicitly allows this plugin to request api.runtime.llm.complete against a non-default agent id. Keep false unless the plugin is trusted for cross-agent model access."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin LLM Policy",
-                  "description": "Per-plugin api.runtime.llm.complete controls for model and agent override trust. Keep this unset unless a plugin must explicitly steer host-owned completion calls."
-                },
-                "config": {
-                  "type": "object",
-                  "propertyNames": {
-                    "type": "string"
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Config",
-                  "description": "Plugin-defined configuration payload interpreted by that plugin's own schema and validation rules. Use only documented fields from the plugin to prevent ignored or invalid settings.",
-                  "properties": {}
-                }
-              },
-              "additionalProperties": false
-            },
-            "groq": {
-              "type": "object",
-              "properties": {
-                "enabled": {
-                  "type": "boolean",
-                  "title": "Plugin Enabled",
-                  "description": "Per-plugin enablement override for a specific entry, applied on top of global plugin policy (restart required). Use this to stage plugin rollout gradually across environments."
-                },
-                "hooks": {
-                  "type": "object",
-                  "properties": {
-                    "allowPromptInjection": {
-                      "type": "boolean",
-                      "title": "Allow Prompt Injection Hooks",
-                      "description": "Controls whether this plugin may mutate prompts through typed hooks. Set false to block `before_prompt_build` and ignore prompt-mutating fields from legacy `before_agent_start`, while preserving legacy `modelOverride` and `providerOverride` behavior."
-                    },
-                    "allowConversationAccess": {
-                      "type": "boolean",
-                      "title": "Allow Conversation Access Hooks",
-                      "description": "Controls whether this plugin may read raw conversation content from typed hooks such as `before_agent_run`, `before_model_resolve`, `before_agent_reply`, `llm_input`, `llm_output`, `before_agent_finalize`, and `agent_end`. Non-bundled plugins must opt in explicitly."
-                    },
-                    "timeoutMs": {
-                      "type": "integer",
-                      "exclusiveMinimum": 0,
-                      "maximum": 600000,
-                      "title": "Plugin Hook Timeout (ms)",
-                      "description": "Default timeout in milliseconds for this plugin's typed hooks, capped at 600000. Use this to bound slow plugin hooks without changing plugin code; per-hook values in hooks.timeouts take precedence."
-                    },
-                    "timeouts": {
-                      "type": "object",
-                      "propertyNames": {
-                        "type": "string"
-                      },
-                      "additionalProperties": {
-                        "type": "integer",
-                        "exclusiveMinimum": 0,
-                        "maximum": 600000
-                      },
-                      "title": "Plugin Hook Timeout Overrides",
-                      "description": "Per-hook timeout overrides in milliseconds keyed by typed hook name, capped at 600000. Use narrow overrides for known slow hooks such as before_prompt_build or agent_end instead of raising every hook timeout."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Hook Policy",
-                  "description": "Per-plugin typed hook policy controls for core-enforced safety gates. Use this to constrain high-impact hook categories without disabling the entire plugin."
-                },
-                "subagent": {
-                  "type": "object",
-                  "properties": {
-                    "allowModelOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin Subagent Model Override",
-                      "description": "Explicitly allows this plugin to request provider/model overrides in background subagent runs. Keep false unless the plugin is trusted to steer model selection."
-                    },
-                    "allowedModels": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "title": "Plugin Subagent Allowed Models",
-                      "description": "Allowed override targets for trusted plugin subagent runs as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Subagent Policy",
-                  "description": "Per-plugin subagent runtime controls for model override trust and allowlists. Keep this unset unless a plugin must explicitly steer subagent model selection."
-                },
-                "llm": {
-                  "type": "object",
-                  "properties": {
-                    "allowModelOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin LLM Model Override",
-                      "description": "Explicitly allows this plugin to request model overrides in api.runtime.llm.complete. Keep false unless the plugin is trusted to steer model selection."
-                    },
-                    "allowedModels": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "title": "Plugin LLM Allowed Models",
-                      "description": "Allowed override targets for trusted plugin LLM completions as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
-                    },
-                    "allowAgentIdOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin LLM Agent Override",
-                      "description": "Explicitly allows this plugin to request api.runtime.llm.complete against a non-default agent id. Keep false unless the plugin is trusted for cross-agent model access."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin LLM Policy",
-                  "description": "Per-plugin api.runtime.llm.complete controls for model and agent override trust. Keep this unset unless a plugin must explicitly steer host-owned completion calls."
-                },
-                "config": {
-                  "type": "object",
-                  "propertyNames": {
-                    "type": "string"
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Config",
-                  "description": "Plugin-defined configuration payload interpreted by that plugin's own schema and validation rules. Use only documented fields from the plugin to prevent ignored or invalid settings.",
-                  "properties": {}
                 }
               },
               "additionalProperties": false
@@ -51783,348 +51264,7 @@
               },
               "additionalProperties": false
             },
-            "inworld": {
-              "type": "object",
-              "properties": {
-                "enabled": {
-                  "type": "boolean",
-                  "title": "Plugin Enabled",
-                  "description": "Per-plugin enablement override for a specific entry, applied on top of global plugin policy (restart required). Use this to stage plugin rollout gradually across environments."
-                },
-                "hooks": {
-                  "type": "object",
-                  "properties": {
-                    "allowPromptInjection": {
-                      "type": "boolean",
-                      "title": "Allow Prompt Injection Hooks",
-                      "description": "Controls whether this plugin may mutate prompts through typed hooks. Set false to block `before_prompt_build` and ignore prompt-mutating fields from legacy `before_agent_start`, while preserving legacy `modelOverride` and `providerOverride` behavior."
-                    },
-                    "allowConversationAccess": {
-                      "type": "boolean",
-                      "title": "Allow Conversation Access Hooks",
-                      "description": "Controls whether this plugin may read raw conversation content from typed hooks such as `before_agent_run`, `before_model_resolve`, `before_agent_reply`, `llm_input`, `llm_output`, `before_agent_finalize`, and `agent_end`. Non-bundled plugins must opt in explicitly."
-                    },
-                    "timeoutMs": {
-                      "type": "integer",
-                      "exclusiveMinimum": 0,
-                      "maximum": 600000,
-                      "title": "Plugin Hook Timeout (ms)",
-                      "description": "Default timeout in milliseconds for this plugin's typed hooks, capped at 600000. Use this to bound slow plugin hooks without changing plugin code; per-hook values in hooks.timeouts take precedence."
-                    },
-                    "timeouts": {
-                      "type": "object",
-                      "propertyNames": {
-                        "type": "string"
-                      },
-                      "additionalProperties": {
-                        "type": "integer",
-                        "exclusiveMinimum": 0,
-                        "maximum": 600000
-                      },
-                      "title": "Plugin Hook Timeout Overrides",
-                      "description": "Per-hook timeout overrides in milliseconds keyed by typed hook name, capped at 600000. Use narrow overrides for known slow hooks such as before_prompt_build or agent_end instead of raising every hook timeout."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Hook Policy",
-                  "description": "Per-plugin typed hook policy controls for core-enforced safety gates. Use this to constrain high-impact hook categories without disabling the entire plugin."
-                },
-                "subagent": {
-                  "type": "object",
-                  "properties": {
-                    "allowModelOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin Subagent Model Override",
-                      "description": "Explicitly allows this plugin to request provider/model overrides in background subagent runs. Keep false unless the plugin is trusted to steer model selection."
-                    },
-                    "allowedModels": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "title": "Plugin Subagent Allowed Models",
-                      "description": "Allowed override targets for trusted plugin subagent runs as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Subagent Policy",
-                  "description": "Per-plugin subagent runtime controls for model override trust and allowlists. Keep this unset unless a plugin must explicitly steer subagent model selection."
-                },
-                "llm": {
-                  "type": "object",
-                  "properties": {
-                    "allowModelOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin LLM Model Override",
-                      "description": "Explicitly allows this plugin to request model overrides in api.runtime.llm.complete. Keep false unless the plugin is trusted to steer model selection."
-                    },
-                    "allowedModels": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "title": "Plugin LLM Allowed Models",
-                      "description": "Allowed override targets for trusted plugin LLM completions as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
-                    },
-                    "allowAgentIdOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin LLM Agent Override",
-                      "description": "Explicitly allows this plugin to request api.runtime.llm.complete against a non-default agent id. Keep false unless the plugin is trusted for cross-agent model access."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin LLM Policy",
-                  "description": "Per-plugin api.runtime.llm.complete controls for model and agent override trust. Keep this unset unless a plugin must explicitly steer host-owned completion calls."
-                },
-                "config": {
-                  "type": "object",
-                  "propertyNames": {
-                    "type": "string"
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Config",
-                  "description": "Plugin-defined configuration payload interpreted by that plugin's own schema and validation rules. Use only documented fields from the plugin to prevent ignored or invalid settings.",
-                  "properties": {
-                    "apiKey": {
-                      "type": "string",
-                      "description": "Inworld API key. Must be the Base64 credential string from the Inworld dashboard (used as Authorization: Basic <apiKey>). Falls back to INWORLD_API_KEY env var."
-                    },
-                    "baseUrl": {
-                      "type": "string",
-                      "description": "Override Inworld API base URL (default https://api.inworld.ai)."
-                    },
-                    "voiceId": {
-                      "type": "string",
-                      "description": "Voice identifier (default Sarah)."
-                    },
-                    "modelId": {
-                      "type": "string",
-                      "description": "TTS model id (default inworld-tts-1.5-max)."
-                    },
-                    "temperature": {
-                      "type": "number",
-                      "minimum": 0,
-                      "maximum": 2,
-                      "description": "Sampling temperature 0..2."
-                    }
-                  }
-                }
-              },
-              "additionalProperties": false
-            },
             "irc": {
-              "type": "object",
-              "properties": {
-                "enabled": {
-                  "type": "boolean",
-                  "title": "Plugin Enabled",
-                  "description": "Per-plugin enablement override for a specific entry, applied on top of global plugin policy (restart required). Use this to stage plugin rollout gradually across environments."
-                },
-                "hooks": {
-                  "type": "object",
-                  "properties": {
-                    "allowPromptInjection": {
-                      "type": "boolean",
-                      "title": "Allow Prompt Injection Hooks",
-                      "description": "Controls whether this plugin may mutate prompts through typed hooks. Set false to block `before_prompt_build` and ignore prompt-mutating fields from legacy `before_agent_start`, while preserving legacy `modelOverride` and `providerOverride` behavior."
-                    },
-                    "allowConversationAccess": {
-                      "type": "boolean",
-                      "title": "Allow Conversation Access Hooks",
-                      "description": "Controls whether this plugin may read raw conversation content from typed hooks such as `before_agent_run`, `before_model_resolve`, `before_agent_reply`, `llm_input`, `llm_output`, `before_agent_finalize`, and `agent_end`. Non-bundled plugins must opt in explicitly."
-                    },
-                    "timeoutMs": {
-                      "type": "integer",
-                      "exclusiveMinimum": 0,
-                      "maximum": 600000,
-                      "title": "Plugin Hook Timeout (ms)",
-                      "description": "Default timeout in milliseconds for this plugin's typed hooks, capped at 600000. Use this to bound slow plugin hooks without changing plugin code; per-hook values in hooks.timeouts take precedence."
-                    },
-                    "timeouts": {
-                      "type": "object",
-                      "propertyNames": {
-                        "type": "string"
-                      },
-                      "additionalProperties": {
-                        "type": "integer",
-                        "exclusiveMinimum": 0,
-                        "maximum": 600000
-                      },
-                      "title": "Plugin Hook Timeout Overrides",
-                      "description": "Per-hook timeout overrides in milliseconds keyed by typed hook name, capped at 600000. Use narrow overrides for known slow hooks such as before_prompt_build or agent_end instead of raising every hook timeout."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Hook Policy",
-                  "description": "Per-plugin typed hook policy controls for core-enforced safety gates. Use this to constrain high-impact hook categories without disabling the entire plugin."
-                },
-                "subagent": {
-                  "type": "object",
-                  "properties": {
-                    "allowModelOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin Subagent Model Override",
-                      "description": "Explicitly allows this plugin to request provider/model overrides in background subagent runs. Keep false unless the plugin is trusted to steer model selection."
-                    },
-                    "allowedModels": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "title": "Plugin Subagent Allowed Models",
-                      "description": "Allowed override targets for trusted plugin subagent runs as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Subagent Policy",
-                  "description": "Per-plugin subagent runtime controls for model override trust and allowlists. Keep this unset unless a plugin must explicitly steer subagent model selection."
-                },
-                "llm": {
-                  "type": "object",
-                  "properties": {
-                    "allowModelOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin LLM Model Override",
-                      "description": "Explicitly allows this plugin to request model overrides in api.runtime.llm.complete. Keep false unless the plugin is trusted to steer model selection."
-                    },
-                    "allowedModels": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "title": "Plugin LLM Allowed Models",
-                      "description": "Allowed override targets for trusted plugin LLM completions as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
-                    },
-                    "allowAgentIdOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin LLM Agent Override",
-                      "description": "Explicitly allows this plugin to request api.runtime.llm.complete against a non-default agent id. Keep false unless the plugin is trusted for cross-agent model access."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin LLM Policy",
-                  "description": "Per-plugin api.runtime.llm.complete controls for model and agent override trust. Keep this unset unless a plugin must explicitly steer host-owned completion calls."
-                },
-                "config": {
-                  "type": "object",
-                  "propertyNames": {
-                    "type": "string"
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Config",
-                  "description": "Plugin-defined configuration payload interpreted by that plugin's own schema and validation rules. Use only documented fields from the plugin to prevent ignored or invalid settings.",
-                  "properties": {}
-                }
-              },
-              "additionalProperties": false
-            },
-            "kilocode": {
-              "type": "object",
-              "properties": {
-                "enabled": {
-                  "type": "boolean",
-                  "title": "Plugin Enabled",
-                  "description": "Per-plugin enablement override for a specific entry, applied on top of global plugin policy (restart required). Use this to stage plugin rollout gradually across environments."
-                },
-                "hooks": {
-                  "type": "object",
-                  "properties": {
-                    "allowPromptInjection": {
-                      "type": "boolean",
-                      "title": "Allow Prompt Injection Hooks",
-                      "description": "Controls whether this plugin may mutate prompts through typed hooks. Set false to block `before_prompt_build` and ignore prompt-mutating fields from legacy `before_agent_start`, while preserving legacy `modelOverride` and `providerOverride` behavior."
-                    },
-                    "allowConversationAccess": {
-                      "type": "boolean",
-                      "title": "Allow Conversation Access Hooks",
-                      "description": "Controls whether this plugin may read raw conversation content from typed hooks such as `before_agent_run`, `before_model_resolve`, `before_agent_reply`, `llm_input`, `llm_output`, `before_agent_finalize`, and `agent_end`. Non-bundled plugins must opt in explicitly."
-                    },
-                    "timeoutMs": {
-                      "type": "integer",
-                      "exclusiveMinimum": 0,
-                      "maximum": 600000,
-                      "title": "Plugin Hook Timeout (ms)",
-                      "description": "Default timeout in milliseconds for this plugin's typed hooks, capped at 600000. Use this to bound slow plugin hooks without changing plugin code; per-hook values in hooks.timeouts take precedence."
-                    },
-                    "timeouts": {
-                      "type": "object",
-                      "propertyNames": {
-                        "type": "string"
-                      },
-                      "additionalProperties": {
-                        "type": "integer",
-                        "exclusiveMinimum": 0,
-                        "maximum": 600000
-                      },
-                      "title": "Plugin Hook Timeout Overrides",
-                      "description": "Per-hook timeout overrides in milliseconds keyed by typed hook name, capped at 600000. Use narrow overrides for known slow hooks such as before_prompt_build or agent_end instead of raising every hook timeout."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Hook Policy",
-                  "description": "Per-plugin typed hook policy controls for core-enforced safety gates. Use this to constrain high-impact hook categories without disabling the entire plugin."
-                },
-                "subagent": {
-                  "type": "object",
-                  "properties": {
-                    "allowModelOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin Subagent Model Override",
-                      "description": "Explicitly allows this plugin to request provider/model overrides in background subagent runs. Keep false unless the plugin is trusted to steer model selection."
-                    },
-                    "allowedModels": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "title": "Plugin Subagent Allowed Models",
-                      "description": "Allowed override targets for trusted plugin subagent runs as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Subagent Policy",
-                  "description": "Per-plugin subagent runtime controls for model override trust and allowlists. Keep this unset unless a plugin must explicitly steer subagent model selection."
-                },
-                "llm": {
-                  "type": "object",
-                  "properties": {
-                    "allowModelOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin LLM Model Override",
-                      "description": "Explicitly allows this plugin to request model overrides in api.runtime.llm.complete. Keep false unless the plugin is trusted to steer model selection."
-                    },
-                    "allowedModels": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "title": "Plugin LLM Allowed Models",
-                      "description": "Allowed override targets for trusted plugin LLM completions as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
-                    },
-                    "allowAgentIdOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin LLM Agent Override",
-                      "description": "Explicitly allows this plugin to request api.runtime.llm.complete against a non-default agent id. Keep false unless the plugin is trusted for cross-agent model access."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin LLM Policy",
-                  "description": "Per-plugin api.runtime.llm.complete controls for model and agent override trust. Keep this unset unless a plugin must explicitly steer host-owned completion calls."
-                },
-                "config": {
-                  "type": "object",
-                  "propertyNames": {
-                    "type": "string"
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Config",
-                  "description": "Plugin-defined configuration payload interpreted by that plugin's own schema and validation rules. Use only documented fields from the plugin to prevent ignored or invalid settings.",
-                  "properties": {}
-                }
-              },
-              "additionalProperties": false
-            },
-            "kimi": {
               "type": "object",
               "properties": {
                 "enabled": {
@@ -54960,131 +54100,6 @@
               },
               "additionalProperties": false
             },
-            "perplexity": {
-              "type": "object",
-              "properties": {
-                "enabled": {
-                  "type": "boolean",
-                  "title": "Plugin Enabled",
-                  "description": "Per-plugin enablement override for a specific entry, applied on top of global plugin policy (restart required). Use this to stage plugin rollout gradually across environments."
-                },
-                "hooks": {
-                  "type": "object",
-                  "properties": {
-                    "allowPromptInjection": {
-                      "type": "boolean",
-                      "title": "Allow Prompt Injection Hooks",
-                      "description": "Controls whether this plugin may mutate prompts through typed hooks. Set false to block `before_prompt_build` and ignore prompt-mutating fields from legacy `before_agent_start`, while preserving legacy `modelOverride` and `providerOverride` behavior."
-                    },
-                    "allowConversationAccess": {
-                      "type": "boolean",
-                      "title": "Allow Conversation Access Hooks",
-                      "description": "Controls whether this plugin may read raw conversation content from typed hooks such as `before_agent_run`, `before_model_resolve`, `before_agent_reply`, `llm_input`, `llm_output`, `before_agent_finalize`, and `agent_end`. Non-bundled plugins must opt in explicitly."
-                    },
-                    "timeoutMs": {
-                      "type": "integer",
-                      "exclusiveMinimum": 0,
-                      "maximum": 600000,
-                      "title": "Plugin Hook Timeout (ms)",
-                      "description": "Default timeout in milliseconds for this plugin's typed hooks, capped at 600000. Use this to bound slow plugin hooks without changing plugin code; per-hook values in hooks.timeouts take precedence."
-                    },
-                    "timeouts": {
-                      "type": "object",
-                      "propertyNames": {
-                        "type": "string"
-                      },
-                      "additionalProperties": {
-                        "type": "integer",
-                        "exclusiveMinimum": 0,
-                        "maximum": 600000
-                      },
-                      "title": "Plugin Hook Timeout Overrides",
-                      "description": "Per-hook timeout overrides in milliseconds keyed by typed hook name, capped at 600000. Use narrow overrides for known slow hooks such as before_prompt_build or agent_end instead of raising every hook timeout."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Hook Policy",
-                  "description": "Per-plugin typed hook policy controls for core-enforced safety gates. Use this to constrain high-impact hook categories without disabling the entire plugin."
-                },
-                "subagent": {
-                  "type": "object",
-                  "properties": {
-                    "allowModelOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin Subagent Model Override",
-                      "description": "Explicitly allows this plugin to request provider/model overrides in background subagent runs. Keep false unless the plugin is trusted to steer model selection."
-                    },
-                    "allowedModels": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "title": "Plugin Subagent Allowed Models",
-                      "description": "Allowed override targets for trusted plugin subagent runs as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Subagent Policy",
-                  "description": "Per-plugin subagent runtime controls for model override trust and allowlists. Keep this unset unless a plugin must explicitly steer subagent model selection."
-                },
-                "llm": {
-                  "type": "object",
-                  "properties": {
-                    "allowModelOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin LLM Model Override",
-                      "description": "Explicitly allows this plugin to request model overrides in api.runtime.llm.complete. Keep false unless the plugin is trusted to steer model selection."
-                    },
-                    "allowedModels": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "title": "Plugin LLM Allowed Models",
-                      "description": "Allowed override targets for trusted plugin LLM completions as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
-                    },
-                    "allowAgentIdOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin LLM Agent Override",
-                      "description": "Explicitly allows this plugin to request api.runtime.llm.complete against a non-default agent id. Keep false unless the plugin is trusted for cross-agent model access."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin LLM Policy",
-                  "description": "Per-plugin api.runtime.llm.complete controls for model and agent override trust. Keep this unset unless a plugin must explicitly steer host-owned completion calls."
-                },
-                "config": {
-                  "type": "object",
-                  "propertyNames": {
-                    "type": "string"
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Config",
-                  "description": "Plugin-defined configuration payload interpreted by that plugin's own schema and validation rules. Use only documented fields from the plugin to prevent ignored or invalid settings.",
-                  "properties": {
-                    "webSearch": {
-                      "type": "object",
-                      "additionalProperties": false,
-                      "properties": {
-                        "apiKey": {
-                          "type": [
-                            "string",
-                            "object"
-                          ]
-                        },
-                        "baseUrl": {
-                          "type": "string"
-                        },
-                        "model": {
-                          "type": "string"
-                        }
-                      }
-                    }
-                  }
-                }
-              },
-              "additionalProperties": false
-            },
             "phone-control": {
               "type": "object",
               "properties": {
@@ -55314,218 +54329,6 @@
                       "description": "Optional policy.jsonc path. Relative paths resolve from the active workspace."
                     }
                   }
-                }
-              },
-              "additionalProperties": false
-            },
-            "qianfan": {
-              "type": "object",
-              "properties": {
-                "enabled": {
-                  "type": "boolean",
-                  "title": "Plugin Enabled",
-                  "description": "Per-plugin enablement override for a specific entry, applied on top of global plugin policy (restart required). Use this to stage plugin rollout gradually across environments."
-                },
-                "hooks": {
-                  "type": "object",
-                  "properties": {
-                    "allowPromptInjection": {
-                      "type": "boolean",
-                      "title": "Allow Prompt Injection Hooks",
-                      "description": "Controls whether this plugin may mutate prompts through typed hooks. Set false to block `before_prompt_build` and ignore prompt-mutating fields from legacy `before_agent_start`, while preserving legacy `modelOverride` and `providerOverride` behavior."
-                    },
-                    "allowConversationAccess": {
-                      "type": "boolean",
-                      "title": "Allow Conversation Access Hooks",
-                      "description": "Controls whether this plugin may read raw conversation content from typed hooks such as `before_agent_run`, `before_model_resolve`, `before_agent_reply`, `llm_input`, `llm_output`, `before_agent_finalize`, and `agent_end`. Non-bundled plugins must opt in explicitly."
-                    },
-                    "timeoutMs": {
-                      "type": "integer",
-                      "exclusiveMinimum": 0,
-                      "maximum": 600000,
-                      "title": "Plugin Hook Timeout (ms)",
-                      "description": "Default timeout in milliseconds for this plugin's typed hooks, capped at 600000. Use this to bound slow plugin hooks without changing plugin code; per-hook values in hooks.timeouts take precedence."
-                    },
-                    "timeouts": {
-                      "type": "object",
-                      "propertyNames": {
-                        "type": "string"
-                      },
-                      "additionalProperties": {
-                        "type": "integer",
-                        "exclusiveMinimum": 0,
-                        "maximum": 600000
-                      },
-                      "title": "Plugin Hook Timeout Overrides",
-                      "description": "Per-hook timeout overrides in milliseconds keyed by typed hook name, capped at 600000. Use narrow overrides for known slow hooks such as before_prompt_build or agent_end instead of raising every hook timeout."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Hook Policy",
-                  "description": "Per-plugin typed hook policy controls for core-enforced safety gates. Use this to constrain high-impact hook categories without disabling the entire plugin."
-                },
-                "subagent": {
-                  "type": "object",
-                  "properties": {
-                    "allowModelOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin Subagent Model Override",
-                      "description": "Explicitly allows this plugin to request provider/model overrides in background subagent runs. Keep false unless the plugin is trusted to steer model selection."
-                    },
-                    "allowedModels": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "title": "Plugin Subagent Allowed Models",
-                      "description": "Allowed override targets for trusted plugin subagent runs as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Subagent Policy",
-                  "description": "Per-plugin subagent runtime controls for model override trust and allowlists. Keep this unset unless a plugin must explicitly steer subagent model selection."
-                },
-                "llm": {
-                  "type": "object",
-                  "properties": {
-                    "allowModelOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin LLM Model Override",
-                      "description": "Explicitly allows this plugin to request model overrides in api.runtime.llm.complete. Keep false unless the plugin is trusted to steer model selection."
-                    },
-                    "allowedModels": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "title": "Plugin LLM Allowed Models",
-                      "description": "Allowed override targets for trusted plugin LLM completions as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
-                    },
-                    "allowAgentIdOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin LLM Agent Override",
-                      "description": "Explicitly allows this plugin to request api.runtime.llm.complete against a non-default agent id. Keep false unless the plugin is trusted for cross-agent model access."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin LLM Policy",
-                  "description": "Per-plugin api.runtime.llm.complete controls for model and agent override trust. Keep this unset unless a plugin must explicitly steer host-owned completion calls."
-                },
-                "config": {
-                  "type": "object",
-                  "propertyNames": {
-                    "type": "string"
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Config",
-                  "description": "Plugin-defined configuration payload interpreted by that plugin's own schema and validation rules. Use only documented fields from the plugin to prevent ignored or invalid settings.",
-                  "properties": {}
-                }
-              },
-              "additionalProperties": false
-            },
-            "qwen": {
-              "type": "object",
-              "properties": {
-                "enabled": {
-                  "type": "boolean",
-                  "title": "Plugin Enabled",
-                  "description": "Per-plugin enablement override for a specific entry, applied on top of global plugin policy (restart required). Use this to stage plugin rollout gradually across environments."
-                },
-                "hooks": {
-                  "type": "object",
-                  "properties": {
-                    "allowPromptInjection": {
-                      "type": "boolean",
-                      "title": "Allow Prompt Injection Hooks",
-                      "description": "Controls whether this plugin may mutate prompts through typed hooks. Set false to block `before_prompt_build` and ignore prompt-mutating fields from legacy `before_agent_start`, while preserving legacy `modelOverride` and `providerOverride` behavior."
-                    },
-                    "allowConversationAccess": {
-                      "type": "boolean",
-                      "title": "Allow Conversation Access Hooks",
-                      "description": "Controls whether this plugin may read raw conversation content from typed hooks such as `before_agent_run`, `before_model_resolve`, `before_agent_reply`, `llm_input`, `llm_output`, `before_agent_finalize`, and `agent_end`. Non-bundled plugins must opt in explicitly."
-                    },
-                    "timeoutMs": {
-                      "type": "integer",
-                      "exclusiveMinimum": 0,
-                      "maximum": 600000,
-                      "title": "Plugin Hook Timeout (ms)",
-                      "description": "Default timeout in milliseconds for this plugin's typed hooks, capped at 600000. Use this to bound slow plugin hooks without changing plugin code; per-hook values in hooks.timeouts take precedence."
-                    },
-                    "timeouts": {
-                      "type": "object",
-                      "propertyNames": {
-                        "type": "string"
-                      },
-                      "additionalProperties": {
-                        "type": "integer",
-                        "exclusiveMinimum": 0,
-                        "maximum": 600000
-                      },
-                      "title": "Plugin Hook Timeout Overrides",
-                      "description": "Per-hook timeout overrides in milliseconds keyed by typed hook name, capped at 600000. Use narrow overrides for known slow hooks such as before_prompt_build or agent_end instead of raising every hook timeout."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Hook Policy",
-                  "description": "Per-plugin typed hook policy controls for core-enforced safety gates. Use this to constrain high-impact hook categories without disabling the entire plugin."
-                },
-                "subagent": {
-                  "type": "object",
-                  "properties": {
-                    "allowModelOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin Subagent Model Override",
-                      "description": "Explicitly allows this plugin to request provider/model overrides in background subagent runs. Keep false unless the plugin is trusted to steer model selection."
-                    },
-                    "allowedModels": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "title": "Plugin Subagent Allowed Models",
-                      "description": "Allowed override targets for trusted plugin subagent runs as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Subagent Policy",
-                  "description": "Per-plugin subagent runtime controls for model override trust and allowlists. Keep this unset unless a plugin must explicitly steer subagent model selection."
-                },
-                "llm": {
-                  "type": "object",
-                  "properties": {
-                    "allowModelOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin LLM Model Override",
-                      "description": "Explicitly allows this plugin to request model overrides in api.runtime.llm.complete. Keep false unless the plugin is trusted to steer model selection."
-                    },
-                    "allowedModels": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "title": "Plugin LLM Allowed Models",
-                      "description": "Allowed override targets for trusted plugin LLM completions as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
-                    },
-                    "allowAgentIdOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin LLM Agent Override",
-                      "description": "Explicitly allows this plugin to request api.runtime.llm.complete against a non-default agent id. Keep false unless the plugin is trusted for cross-agent model access."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin LLM Policy",
-                  "description": "Per-plugin api.runtime.llm.complete controls for model and agent override trust. Keep this unset unless a plugin must explicitly steer host-owned completion calls."
-                },
-                "config": {
-                  "type": "object",
-                  "propertyNames": {
-                    "type": "string"
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Config",
-                  "description": "Plugin-defined configuration payload interpreted by that plugin's own schema and validation rules. Use only documented fields from the plugin to prevent ignored or invalid settings.",
-                  "properties": {}
                 }
               },
               "additionalProperties": false
@@ -56080,112 +54883,6 @@
               "additionalProperties": false
             },
             "sms": {
-              "type": "object",
-              "properties": {
-                "enabled": {
-                  "type": "boolean",
-                  "title": "Plugin Enabled",
-                  "description": "Per-plugin enablement override for a specific entry, applied on top of global plugin policy (restart required). Use this to stage plugin rollout gradually across environments."
-                },
-                "hooks": {
-                  "type": "object",
-                  "properties": {
-                    "allowPromptInjection": {
-                      "type": "boolean",
-                      "title": "Allow Prompt Injection Hooks",
-                      "description": "Controls whether this plugin may mutate prompts through typed hooks. Set false to block `before_prompt_build` and ignore prompt-mutating fields from legacy `before_agent_start`, while preserving legacy `modelOverride` and `providerOverride` behavior."
-                    },
-                    "allowConversationAccess": {
-                      "type": "boolean",
-                      "title": "Allow Conversation Access Hooks",
-                      "description": "Controls whether this plugin may read raw conversation content from typed hooks such as `before_agent_run`, `before_model_resolve`, `before_agent_reply`, `llm_input`, `llm_output`, `before_agent_finalize`, and `agent_end`. Non-bundled plugins must opt in explicitly."
-                    },
-                    "timeoutMs": {
-                      "type": "integer",
-                      "exclusiveMinimum": 0,
-                      "maximum": 600000,
-                      "title": "Plugin Hook Timeout (ms)",
-                      "description": "Default timeout in milliseconds for this plugin's typed hooks, capped at 600000. Use this to bound slow plugin hooks without changing plugin code; per-hook values in hooks.timeouts take precedence."
-                    },
-                    "timeouts": {
-                      "type": "object",
-                      "propertyNames": {
-                        "type": "string"
-                      },
-                      "additionalProperties": {
-                        "type": "integer",
-                        "exclusiveMinimum": 0,
-                        "maximum": 600000
-                      },
-                      "title": "Plugin Hook Timeout Overrides",
-                      "description": "Per-hook timeout overrides in milliseconds keyed by typed hook name, capped at 600000. Use narrow overrides for known slow hooks such as before_prompt_build or agent_end instead of raising every hook timeout."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Hook Policy",
-                  "description": "Per-plugin typed hook policy controls for core-enforced safety gates. Use this to constrain high-impact hook categories without disabling the entire plugin."
-                },
-                "subagent": {
-                  "type": "object",
-                  "properties": {
-                    "allowModelOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin Subagent Model Override",
-                      "description": "Explicitly allows this plugin to request provider/model overrides in background subagent runs. Keep false unless the plugin is trusted to steer model selection."
-                    },
-                    "allowedModels": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "title": "Plugin Subagent Allowed Models",
-                      "description": "Allowed override targets for trusted plugin subagent runs as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Subagent Policy",
-                  "description": "Per-plugin subagent runtime controls for model override trust and allowlists. Keep this unset unless a plugin must explicitly steer subagent model selection."
-                },
-                "llm": {
-                  "type": "object",
-                  "properties": {
-                    "allowModelOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin LLM Model Override",
-                      "description": "Explicitly allows this plugin to request model overrides in api.runtime.llm.complete. Keep false unless the plugin is trusted to steer model selection."
-                    },
-                    "allowedModels": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "title": "Plugin LLM Allowed Models",
-                      "description": "Allowed override targets for trusted plugin LLM completions as canonical \"provider/model\" refs. Use \"*\" only when you intentionally allow any model."
-                    },
-                    "allowAgentIdOverride": {
-                      "type": "boolean",
-                      "title": "Allow Plugin LLM Agent Override",
-                      "description": "Explicitly allows this plugin to request api.runtime.llm.complete against a non-default agent id. Keep false unless the plugin is trusted for cross-agent model access."
-                    }
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin LLM Policy",
-                  "description": "Per-plugin api.runtime.llm.complete controls for model and agent override trust. Keep this unset unless a plugin must explicitly steer host-owned completion calls."
-                },
-                "config": {
-                  "type": "object",
-                  "propertyNames": {
-                    "type": "string"
-                  },
-                  "additionalProperties": false,
-                  "title": "Plugin Config",
-                  "description": "Plugin-defined configuration payload interpreted by that plugin's own schema and validation rules. Use only documented fields from the plugin to prevent ignored or invalid settings.",
-                  "properties": {}
-                }
-              },
-              "additionalProperties": false
-            },
-            "stepfun": {
               "type": "object",
               "properties": {
                 "enabled": {
