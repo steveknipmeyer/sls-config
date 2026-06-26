@@ -1,5 +1,5 @@
 # Local workaround state
-# Generated: 2026-06-25T18:08:48Z
+# Generated: 2026-06-26T22:14:48Z
 #
 # This report records compatibility shims that are not fully preserved by the
 # normal git-tracked repos. Host files should still be harvested separately
@@ -9,7 +9,8 @@
 - /etc/apparmor.d/openclaw-codex-bwrap: file present
 
 ## Ignored runtime-tree artifacts
-- /home/openclaw/.openclaw/npm/node_modules/@openclaw/codex/node_modules/openclaw: absent
+- /home/openclaw/.openclaw/npm/node_modules/@openclaw/codex/node_modules/openclaw: symlink -> /usr/lib/node_modules/openclaw
+  resolved: /usr/lib/node_modules/openclaw
 - /home/openclaw/.openclaw/workspace/skills/sls-system/SKILL.md: file present
 
 ## Ignore boundaries

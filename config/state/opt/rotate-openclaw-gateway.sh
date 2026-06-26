@@ -12,7 +12,9 @@
 #     2. /opt/openclaw.env              — must NOT contain
 #        OPENCLAW_GATEWAY_TOKEN; should contain
 #        OPENCLAW_SERVICE_KIND=gateway
-#     3. ~/.openclaw/gateway-token.txt  — optional legacy convenience file;
+#     3. /etc/sls-web-server.env        — must contain
+#        OPENCLAW_GATEWAY_TOKEN for host POST /openclaw/exec
+#     4. ~/.openclaw/gateway-token.txt  — optional legacy convenience file;
 #        keep in sync only if you still intentionally use it
 #
 #   This changed after the 2026-05-13 Telegram outage, where a stale
@@ -68,6 +70,23 @@ su - openclaw -c "openclaw config set gateway.remote.token '${NEW_TOKEN}'"
 echo "✓ Updated gateway.auth.token in openclaw.json"
 echo "✓ Updated gateway.remote.token in openclaw.json"
 
+# Keep sls-web-server host exec token in sync for POST /openclaw/exec.
+WEB_ENV_FILE="/etc/sls-web-server.env"
+if [[ ! -f "${WEB_ENV_FILE}" ]]; then
+    echo "ERROR: ${WEB_ENV_FILE} not found"
+    exit 1
+fi
+if [[ ! -w "${WEB_ENV_FILE}" ]]; then
+    echo "ERROR: ${WEB_ENV_FILE} is not writable"
+    exit 1
+fi
+if grep -q '^OPENCLAW_GATEWAY_TOKEN=' "${WEB_ENV_FILE}"; then
+    sed -i "s|^OPENCLAW_GATEWAY_TOKEN=.*|OPENCLAW_GATEWAY_TOKEN=${NEW_TOKEN}|" "${WEB_ENV_FILE}"
+else
+    printf '\nOPENCLAW_GATEWAY_TOKEN=%s\n' "${NEW_TOKEN}" >> "${WEB_ENV_FILE}"
+fi
+echo "✓ Updated OPENCLAW_GATEWAY_TOKEN in /etc/sls-web-server.env"
+
 # Ensure /opt/openclaw.env does not override gateway auth and has service kind
 if grep -q '^OPENCLAW_GATEWAY_TOKEN=' /opt/openclaw.env; then
     sed -i '/^OPENCLAW_GATEWAY_TOKEN=/d' /opt/openclaw.env
@@ -101,6 +120,10 @@ echo "✓ Updated state/openclaw/gateway-token.json (rotation date recorded)"
 systemctl restart openclaw
 echo "✓ Gateway restarted"
 
+# Restart web server so /openclaw/exec picks up the new token
+systemctl restart sls-web-server
+echo "✓ sls-web-server restarted"
+
 # Verify the live process env did not pick up a stray gateway token
 MAIN_PID=$(systemctl show openclaw -p MainPID --value)
 if tr '\0' '\n' < "/proc/${MAIN_PID}/environ" | grep -q '^OPENCLAW_GATEWAY_TOKEN='; then
@@ -109,13 +132,27 @@ if tr '\0' '\n' < "/proc/${MAIN_PID}/environ" | grep -q '^OPENCLAW_GATEWAY_TOKEN
 fi
 echo "✓ Verified live process has no OPENCLAW_GATEWAY_TOKEN override"
 
+# Verify sls-web-server process received the new token
+WEB_PID=$(systemctl show sls-web-server -p MainPID --value)
+WEB_TOKEN="REDACTED"
+if [[ -z "${WEB_TOKEN}" ]]; then
+    echo "ERROR: sls-web-server process is missing OPENCLAW_GATEWAY_TOKEN"
+    exit 1
+fi
+if [[ "${WEB_TOKEN}" != "${NEW_TOKEN}" ]]; then
+    echo "ERROR: sls-web-server OPENCLAW_GATEWAY_TOKEN does not match rotated value"
+    exit 1
+fi
+echo "✓ Verified sls-web-server token is in sync"
+
 echo ""
 echo "============================================"
 echo "Token rotation complete."
 echo ""
 echo "NEXT STEPS:"
 echo "  1. Verify devices still connected: openclaw devices list"
-echo "  2. Run harvest to capture updated state:"
+echo "  2. Verify host exec route: /opt/openclaw-exec.sh devices list"
+echo "  3. Run harvest to capture updated state:"
 echo "     sudo bash /home/openclaw/.openclaw/projects/sls-config/config/scripts/harvest.sh"
-echo "  3. Commit the harvest snapshot"
+echo "  4. Commit the harvest snapshot"
 echo "============================================"

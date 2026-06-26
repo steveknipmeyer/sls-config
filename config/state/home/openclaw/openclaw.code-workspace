@@ -91,7 +91,15 @@
 			}
 		],
 		"chat.tools.terminal.autoApprove": {
-			"journalctl": true
+			"journalctl": true,
+			"/^cd /home/openclaw/\\.openclaw/projects/sls-web-server && node --check server\\.js$/": {
+				"approve": true,
+				"matchCommandLine": true
+			},
+			"/^node --check /home/openclaw/\\.openclaw/projects/sls-web-server/server\\.js$/": {
+				"approve": true,
+				"matchCommandLine": true
+			}
 		}
 	}
 }
