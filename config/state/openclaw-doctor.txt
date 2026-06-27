@@ -27,12 +27,14 @@
 │                                                  │
 ├──────────────────────────────────────────────────╯
 │
-◇  Plugin registry ──────────────────────────────────────────────╮
-│                                                                │
-│  Repaired OpenClaw host peer link(s) for 1 managed npm plugin  │
-│  package(s).                                                   │
-│                                                                │
-├────────────────────────────────────────────────────────────────╯
+◇  Gateway auth ─────────────────────────────────────────────────────────╮
+│                                                                        │
+│  Gateway token SecretRef could not be resolved: gateway.auth.token     │
+│  SecretRef is unresolved (env:default:OPENCLAW_GATEWAY_TOKEN).         │
+│  Doctor will not overwrite gateway.auth.token with a plaintext value.  │
+│  Resolve or rotate the external secret source, then rerun doctor.      │
+│                                                                        │
+├────────────────────────────────────────────────────────────────────────╯
 │
 ◇  Plugin registry ───────────────────────────────────────────╮
 │                                                             │
@@ -42,7 +44,7 @@
 │
 ◇  State integrity ────────────────────────────────────────────────────╮
 │                                                                      │
-│  - Found 726 orphan transcript files in                              │
+│  - Found 748 orphan transcript files in                              │
 │    ~/.openclaw/agents/main/sessions.                                 │
 │    These .jsonl files are no longer referenced by sessions.json, so  │
 │    they are not part of any active session history.                  │
@@ -50,7 +52,7 @@
 │    *.deleted.<timestamp>.                                            │
 │    Examples: 0103e56b-6658-4c7f-b432-ca574621a822.jsonl,             │
 │    0160c6ea-ea3e-4e47-b1b0-c87858d7c579.jsonl,                       │
-│    0170d87b-db53-43eb-a1e8-137f2a9d1c8b.jsonl, and 723 more          │
+│    0170d87b-db53-43eb-a1e8-137f2a9d1c8b.jsonl, and 745 more          │
 │                                                                      │
 ├──────────────────────────────────────────────────────────────────────╯
 │
@@ -96,19 +98,12 @@
 │                                                                         │
 ├─────────────────────────────────────────────────────────────────────────╯
 │
-◇  Security ─────────────────────────────────────────────────────────────╮
-│                                                                        │
-│  - WARNING: openclaw.json contains plaintext secret-bearing config     │
-│    fields.                                                             │
-│    Paths: gateway.auth.token, gateway.remote.token                     │
-│    Agents or workspace tools that can read config files may see these  │
-│    API keys/tokens.                                                    │
-│    Migrate them to SecretRefs with openclaw secrets configure or       │
-│    openclaw secrets apply, then verify with openclaw secrets audit     │
-│    --check.                                                            │
-│  - Run: openclaw security audit --deep                                 │
-│                                                                        │
-├────────────────────────────────────────────────────────────────────────╯
+◇  Security ─────────────────────────────────╮
+│                                            │
+│  - No channel security warnings detected.  │
+│  - Run: openclaw security audit --deep     │
+│                                            │
+├────────────────────────────────────────────╯
 │
 ◇  Skills status ───────────╮
 │                           │
@@ -144,6 +139,13 @@
 │  - Disabled nano-banana-pro  │
 │                              │
 ├──────────────────────────────╯
+│
+◇  Gateway credentials required ───────────────────────────────────────╮
+│                                                                      │
+│  Gateway is reachable, but this CLI has no token/password or paired  │
+│  device token for read-scope health RPCs.                            │
+│                                                                      │
+├──────────────────────────────────────────────────────────────────────╯
 │
 ◇  Memory search ──────────────────────────────────────────╮
 │                                                          │

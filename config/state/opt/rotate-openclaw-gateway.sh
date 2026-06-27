@@ -7,15 +7,13 @@
 #   Rotates the OpenClaw gateway authentication token.
 #
 #   Current sls policy:
-#     1. ~/.openclaw/openclaw.json      — canonical runtime config
-#        (gateway.auth.token and gateway.remote.token)
-#     2. /opt/openclaw.env              — must NOT contain
-#        OPENCLAW_GATEWAY_TOKEN; should contain
-#        OPENCLAW_SERVICE_KIND=gateway
-#     3. /etc/sls-web-server.env        — must contain
-#        OPENCLAW_GATEWAY_TOKEN for host POST /openclaw/exec
-#     4. ~/.openclaw/gateway-token.txt  — optional legacy convenience file;
-#        keep in sync only if you still intentionally use it
+#     1. ~/.openclaw/openclaw.json      — must keep SecretRef objects only
+#        for gateway.auth.token and gateway.remote.token
+#     2. /etc/openclaw-gateway.env      — sole file authority for
+#        OPENCLAW_GATEWAY_TOKEN and OPENCLAW_REMOTE_TOKEN
+#     3. /opt/openclaw.env              — must NOT contain gateway tokens;
+#        should contain OPENCLAW_SERVICE_KIND=gateway
+#     4. /etc/sls-web-server.env        — must NOT contain gateway tokens
 #
 #   This changed after the 2026-05-13 Telegram outage, where a stale
 #   OPENCLAW_GATEWAY_TOKEN in /opt/openclaw.env drifted from config and caused
@@ -41,6 +39,44 @@
 
 set -euo pipefail
 
+OPENCLAW_HOME="/home/openclaw/.openclaw"
+OPENCLAW_CONFIG_FILE="${OPENCLAW_HOME}/openclaw.json"
+GATEWAY_ENV_FILE="/etc/openclaw-gateway.env"
+WEB_ENV_FILE="/etc/sls-web-server.env"
+OPENCLAW_ENV_FILE="/opt/openclaw.env"
+LEGACY_TOKEN_FILE="REDACTED"
+STATE_DIR="${OPENCLAW_HOME}/workspace/state/openclaw"
+
+require_rw_file() {
+    local file="$1"
+    if [[ ! -f "$file" ]]; then
+        echo "ERROR: $file not found"
+        exit 1
+    fi
+    if [[ ! -r "$file" || ! -w "$file" ]]; then
+        echo "ERROR: $file must be readable and writable"
+        exit 1
+    fi
+}
+
+upsert_env_var() {
+    local file="$1" key="$2" value="$3"
+    if grep -q "^${key}=" "$file"; then
+        sed -i "s|^${key}=.*|${key}=${value}|" "$file"
+    else
+        printf '\n%s=%s\n' "$key" "$value" >> "$file"
+    fi
+}
+
+delete_env_var() {
+    local file="$1" key="$2"
+    if [[ -f "$file" ]] && grep -q "^${key}=" "$file"; then
+        sed -i "/^${key}=/d" "$file"
+        return 0
+    fi
+    return 1
+}
+
 # Generate a new cryptographically random token
 if command -v openssl >/dev/null 2>&1; then
     NEW_TOKEN="$(openssl rand -hex 32)"
@@ -55,61 +91,102 @@ fi
 
 echo "============================================"
 echo "New gateway token generated."
-echo "Save this token somewhere secure before proceeding:"
-echo ""
-echo "  ${NEW_TOKEN}"
-echo ""
+echo "Token value is not printed to reduce terminal exposure."
 echo "============================================"
 read -rp "Press Enter to apply the new token, or Ctrl+C to abort..."
 
-# Update openclaw.json via openclaw CLI
-# This updates the runtime config file at /home/openclaw/.openclaw/openclaw.json.
-# Set both fields explicitly; do not rely on implicit mirroring.
-su - openclaw -c "openclaw config set gateway.auth.token '${NEW_TOKEN}'"
-su - openclaw -c "openclaw config set gateway.remote.token '${NEW_TOKEN}'"
-echo "✓ Updated gateway.auth.token in openclaw.json"
-echo "✓ Updated gateway.remote.token in openclaw.json"
+require_rw_file "$GATEWAY_ENV_FILE"
+require_rw_file "$OPENCLAW_ENV_FILE"
 
-# Keep sls-web-server host exec token in sync for POST /openclaw/exec.
-WEB_ENV_FILE="/etc/sls-web-server.env"
-if [[ ! -f "${WEB_ENV_FILE}" ]]; then
-    echo "ERROR: ${WEB_ENV_FILE} not found"
-    exit 1
-fi
-if [[ ! -w "${WEB_ENV_FILE}" ]]; then
-    echo "ERROR: ${WEB_ENV_FILE} is not writable"
-    exit 1
-fi
-if grep -q '^OPENCLAW_GATEWAY_TOKEN=' "${WEB_ENV_FILE}"; then
-    sed -i "s|^OPENCLAW_GATEWAY_TOKEN=.*|OPENCLAW_GATEWAY_TOKEN=${NEW_TOKEN}|" "${WEB_ENV_FILE}"
+# Refuse to proceed if openclaw.json gateway fields are not SecretRefs.
+python3 - "$OPENCLAW_CONFIG_FILE" <<'PY'
+import json
+import sys
+
+config_path = sys.argv[1]
+
+with open(config_path, "r", encoding="utf-8") as f:
+    cfg = json.load(f)
+
+def read_path(obj, path):
+    cur = obj
+    for key in path:
+        if not isinstance(cur, dict) or key not in cur:
+            return None
+        cur = cur[key]
+    return cur
+
+def validate_secretref(name, value, expected_id):
+    if not isinstance(value, dict):
+        raise SystemExit(f"ERROR: {name} must be a SecretRef object")
+    source = str(value.get("source", "")).strip()
+    provider = str(value.get("provider", "")).strip()
+    secret_id = str(value.get("id", "")).strip()
+    if source != "env" or provider != "default" or secret_id != expected_id:
+        raise SystemExit(
+            f"ERROR: {name} must equal {{source:'env', provider:'default', id:'{expected_id}'}}"
+        )
+
+auth_token = read_path(cfg, ["gateway", "auth", "token"])
+remote_token = read_path(cfg, ["gateway", "remote", "token"])
+
+validate_secretref("gateway.auth.token", auth_token, "OPENCLAW_GATEWAY_TOKEN")
+validate_secretref("gateway.remote.token", remote_token, "OPENCLAW_REMOTE_TOKEN")
+PY
+echo "✓ Verified openclaw.json gateway token fields are SecretRefs"
+
+# Rotate canonical token authority in /etc/openclaw-gateway.env only.
+upsert_env_var "$GATEWAY_ENV_FILE" "OPENCLAW_GATEWAY_TOKEN" "$NEW_TOKEN"
+upsert_env_var "$GATEWAY_ENV_FILE" "OPENCLAW_REMOTE_TOKEN" "$NEW_TOKEN"
+echo "✓ Rotated OPENCLAW_GATEWAY_TOKEN and OPENCLAW_REMOTE_TOKEN in /etc/openclaw-gateway.env"
+
+# Remove gateway token duplication from web server env.
+if [[ -f "$WEB_ENV_FILE" ]]; then
+    removed_web=0
+    if delete_env_var "$WEB_ENV_FILE" "OPENCLAW_GATEWAY_TOKEN"; then
+        removed_web=1
+    fi
+    if delete_env_var "$WEB_ENV_FILE" "OPENCLAW_REMOTE_TOKEN"; then
+        removed_web=1
+    fi
+    if [[ "$removed_web" -eq 1 ]]; then
+        echo "✓ Removed gateway token entries from /etc/sls-web-server.env"
+    else
+        echo "✓ /etc/sls-web-server.env already has no gateway token entries"
+    fi
 else
-    printf '\nOPENCLAW_GATEWAY_TOKEN=%s\n' "${NEW_TOKEN}" >> "${WEB_ENV_FILE}"
+    echo "✓ /etc/sls-web-server.env not present; no gateway token cleanup needed"
 fi
-echo "✓ Updated OPENCLAW_GATEWAY_TOKEN in /etc/sls-web-server.env"
 
-# Ensure /opt/openclaw.env does not override gateway auth and has service kind
-if grep -q '^OPENCLAW_GATEWAY_TOKEN=' /opt/openclaw.env; then
-    sed -i '/^OPENCLAW_GATEWAY_TOKEN=/d' /opt/openclaw.env
+# Ensure /opt/openclaw.env does not override gateway auth and has service kind.
+if delete_env_var "$OPENCLAW_ENV_FILE" "OPENCLAW_GATEWAY_TOKEN"; then
     echo "✓ Removed OPENCLAW_GATEWAY_TOKEN from /opt/openclaw.env"
 else
     echo "✓ OPENCLAW_GATEWAY_TOKEN already absent from /opt/openclaw.env"
 fi
 
-if grep -q '^OPENCLAW_SERVICE_KIND=' /opt/openclaw.env; then
-    sed -i 's/^OPENCLAW_SERVICE_KIND=.*/OPENCLAW_SERVICE_KIND=gateway/' /opt/openclaw.env
+if delete_env_var "$OPENCLAW_ENV_FILE" "OPENCLAW_REMOTE_TOKEN"; then
+    echo "✓ Removed OPENCLAW_REMOTE_TOKEN from /opt/openclaw.env"
 else
-    echo 'OPENCLAW_SERVICE_KIND=gateway' >> /opt/openclaw.env
+    echo "✓ OPENCLAW_REMOTE_TOKEN already absent from /opt/openclaw.env"
+fi
+
+if grep -q '^OPENCLAW_SERVICE_KIND=' "$OPENCLAW_ENV_FILE"; then
+    sed -i 's/^OPENCLAW_SERVICE_KIND=.*/OPENCLAW_SERVICE_KIND=gateway/' "$OPENCLAW_ENV_FILE"
+else
+    echo 'OPENCLAW_SERVICE_KIND=gateway' >> "$OPENCLAW_ENV_FILE"
 fi
 echo "✓ Ensured OPENCLAW_SERVICE_KIND=gateway in /opt/openclaw.env"
 
-# Update gateway-token.txt only as a legacy convenience file.
-echo "${NEW_TOKEN}" > /home/openclaw/.openclaw/gateway-token.txt
-chmod 600 /home/openclaw/.openclaw/gateway-token.txt
-chown openclaw:openclaw /home/openclaw/.openclaw/gateway-token.txt
-echo "✓ Updated ~/.openclaw/gateway-token.txt (legacy convenience copy)"
+# Delete legacy convenience token file.
+if [[ -f "$LEGACY_TOKEN_FILE" ]]; then
+    rm -f "$LEGACY_TOKEN_FILE"
+    echo "✓ Deleted legacy token file ~/.openclaw/gateway-token.txt"
+else
+    echo "✓ Legacy token file ~/.openclaw/gateway-token.txt already absent"
+fi
 
 # Record rotation date for sls-openclaw-system age monitoring
-STATE_DIR="/home/openclaw/.openclaw/workspace/state/openclaw"
 mkdir -p "${STATE_DIR}"
 printf '{\n  "last_rotated": "%s",\n  "method": "rotate-openclaw-gateway.sh"\n}\n' \
     "$(date -u +%Y-%m-%d)" > "${STATE_DIR}/gateway-token.json"
@@ -124,17 +201,32 @@ echo "✓ Gateway restarted"
 systemctl restart sls-web-server
 echo "✓ sls-web-server restarted"
 
-# Verify the live process env did not pick up a stray gateway token
+# Verify gateway runtime picks up the rotated token from /etc/openclaw-gateway.env
 MAIN_PID=$(systemctl show openclaw -p MainPID --value)
-if tr '\0' '\n' < "/proc/${MAIN_PID}/environ" | grep -q '^OPENCLAW_GATEWAY_TOKEN='; then
-    echo "ERROR: live process still has OPENCLAW_GATEWAY_TOKEN in its environment"
+LIVE_GATEWAY_TOKEN=REDACTED
+if [[ -z "${LIVE_GATEWAY_TOKEN}" ]]; then
+    echo "ERROR: live openclaw process is missing OPENCLAW_GATEWAY_TOKEN"
     exit 1
 fi
-echo "✓ Verified live process has no OPENCLAW_GATEWAY_TOKEN override"
+if [[ "${LIVE_GATEWAY_TOKEN}" != "${NEW_TOKEN}" ]]; then
+    echo "ERROR: live openclaw OPENCLAW_GATEWAY_TOKEN does not match rotated value"
+    exit 1
+fi
 
-# Verify sls-web-server process received the new token
+LIVE_REMOTE_TOKEN=REDACTED
+if [[ -z "${LIVE_REMOTE_TOKEN}" ]]; then
+    echo "ERROR: live openclaw process is missing OPENCLAW_REMOTE_TOKEN"
+    exit 1
+fi
+if [[ "${LIVE_REMOTE_TOKEN}" != "${NEW_TOKEN}" ]]; then
+    echo "ERROR: live openclaw OPENCLAW_REMOTE_TOKEN does not match rotated value"
+    exit 1
+fi
+echo "✓ Verified live openclaw process tokens match /etc/openclaw-gateway.env"
+
+# Verify web server sees rotated token via /etc/openclaw-gateway.env
 WEB_PID=$(systemctl show sls-web-server -p MainPID --value)
-WEB_TOKEN="REDACTED"
+WEB_TOKEN=REDACTED
 if [[ -z "${WEB_TOKEN}" ]]; then
     echo "ERROR: sls-web-server process is missing OPENCLAW_GATEWAY_TOKEN"
     exit 1
@@ -143,7 +235,14 @@ if [[ "${WEB_TOKEN}" != "${NEW_TOKEN}" ]]; then
     echo "ERROR: sls-web-server OPENCLAW_GATEWAY_TOKEN does not match rotated value"
     exit 1
 fi
-echo "✓ Verified sls-web-server token is in sync"
+echo "✓ Verified sls-web-server process token matches /etc/openclaw-gateway.env"
+
+# Verify no token duplication remains in /etc/sls-web-server.env
+if [[ -f "$WEB_ENV_FILE" ]] && (grep -q '^OPENCLAW_GATEWAY_TOKEN=' "$WEB_ENV_FILE" || grep -q '^OPENCLAW_REMOTE_TOKEN=' "$WEB_ENV_FILE"); then
+    echo "ERROR: /etc/sls-web-server.env still contains gateway token entries"
+    exit 1
+fi
+echo "✓ Verified /etc/sls-web-server.env has no gateway token duplication"
 
 echo ""
 echo "============================================"
@@ -152,7 +251,8 @@ echo ""
 echo "NEXT STEPS:"
 echo "  1. Verify devices still connected: openclaw devices list"
 echo "  2. Verify host exec route: /opt/openclaw-exec.sh devices list"
-echo "  3. Run harvest to capture updated state:"
-echo "     sudo bash /home/openclaw/.openclaw/projects/sls-config/config/scripts/harvest.sh"
-echo "  4. Commit the harvest snapshot"
+echo "  3. Verify token authority files:"
+echo "     rg '^OPENCLAW_(GATEWAY|REMOTE)_TOKEN=' /etc/openclaw-gateway.env"
+echo "     rg '^OPENCLAW_(GATEWAY|REMOTE)_TOKEN=' /etc/sls-web-server.env || true"
+echo "     rg '^OPENCLAW_(GATEWAY|REMOTE)_TOKEN=' /opt/openclaw.env || true"
 echo "============================================"

@@ -9,6 +9,7 @@ Type=simple
 User=openclaw
 Group=openclaw
 WorkingDirectory=/home/openclaw
+EnvironmentFile=/etc/openclaw-gateway.env
 EnvironmentFile=/opt/openclaw.env
 Environment="HOME=/home/openclaw"
 Environment="NODE_ENV=production"

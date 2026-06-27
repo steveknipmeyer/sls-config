@@ -302,7 +302,8 @@ log "=== /opt files ==="
 # ---
 # openclaw.env — the primary runtime environment file.
 # Loaded by /etc/systemd/system/openclaw.service via EnvironmentFile=.
-# Contains ANTHROPIC_API_KEY and OPENCLAW_GATEWAY_TOKEN.
+# Contains static non-gateway service settings (for example ANTHROPIC_API_KEY
+# and OPENCLAW_SERVICE_KIND). Gateway tokens must not live in this file.
 # MUST be redacted before committing — redaction runs automatically below.
 # Origin: DigitalOcean installer (created Mar 20), modified during setup (Mar 29).
 # ---
@@ -352,11 +353,9 @@ redact_secrets "${STATE_DIR}/opt/tailscale-reauth.sh"
 
 # ---
 # rotate-openclaw-gateway.sh — rotates the OpenClaw gateway auth token.
-# REVIEWED AND CORRECTED: The original script (generated Mar 29) incorrectly
-# attempted to copy /root/.openclaw/openclaw.json to /home/openclaw/.openclaw/openclaw.json.
-# These are the same file via symlink — the copy was unnecessary and has been removed.
-# As of 2026-05-13, the script should follow the config-first policy documented
-# in extras/MAINTENANCE.md: do not keep OPENCLAW_GATEWAY_TOKEN in /opt/openclaw.env.
+# Current policy: rotate tokens in /etc/openclaw-gateway.env only, keep
+# gateway token fields in openclaw.json SecretRef-shaped, and remove token
+# duplication from /opt/openclaw.env and /etc/sls-web-server.env.
 # Origin: Created during setup (Mar 29), reviewed and corrected.
 # ---
 harvest_file "/opt/rotate-openclaw-gateway.sh" "${STATE_DIR}/opt/rotate-openclaw-gateway.sh"
@@ -540,13 +539,14 @@ harvest_file "/home/openclaw/.openclaw/openclaw.code-workspace" "${STATE_DIR}/ho
 # a safe, intentionally-committed redacted snapshot.
 #
 # MUST be redacted — contains gateway.auth.token, gateway.remote.token,
-# and hooks.token. On sls, openclaw.json is the canonical gateway auth source.
+# and hooks.token. On sls, /etc/openclaw-gateway.env is the canonical
+# gateway auth source while openclaw.json should keep SecretRef pointers.
 # Redaction uses jq to target exact JSON paths.
 harvest_file "/home/openclaw/.openclaw/openclaw.json" "${STATE_DIR}/home/openclaw/dot-openclaw/openclaw.json"
 jq '
-    .gateway.auth.token = "REDACTED" |
-    .gateway.remote.token = "REDACTED" |
-    .hooks.token = "REDACTED" |
+    .gateway.auth.token |= (if type == "string" then "REDACTED" else . end) |
+    .gateway.remote.token |= (if type == "string" then "REDACTED" else . end) |
+    .hooks.token |= (if type == "string" then "REDACTED" else . end) |
     if .skills.entries then
         .skills.entries |= with_entries(
             if .value.env then
@@ -990,11 +990,11 @@ harvest time.
 ### Secrets
 The following secrets are NOT included in this snapshot and must be configured manually:
 - \`ANTHROPIC_API_KEY\` — set in \`/opt/openclaw.env\`
-- Gateway \`auth.token\` — set in \`~/.openclaw/openclaw.json\`
-- Gateway \`remote.token\` — set in \`~/.openclaw/openclaw.json\`
+- \`OPENCLAW_GATEWAY_TOKEN\` — set in \`/etc/openclaw-gateway.env\`
+- \`OPENCLAW_REMOTE_TOKEN\` — set in \`/etc/openclaw-gateway.env\`
+- Gateway token fields in \`~/.openclaw/openclaw.json\` must stay SecretRef-shaped
 - \`OPENCLAW_SERVICE_KIND=gateway\` — set in \`/opt/openclaw.env\` (not a secret, but required for consistent local gateway auth precedence)
 - Webhook hooks \`token\` — only if hooks are re-enabled later. When used, set in \`~/.openclaw/openclaw.json\` and \`/opt/openclaw.env\` as \`OPENCLAW_HOOKS_TOKEN\`. Must be different from the gateway auth token.
-- \`~/.openclaw/gateway-token.txt\` — optional legacy convenience file, if you intentionally keep it
 - Tailscale pre-auth key — used in \`/opt/tailscale-reauth.sh\`
 - SSH private keys — must be generated fresh for each deployment
 

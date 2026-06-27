@@ -1,7 +1,7 @@
 {
   "meta": {
     "lastTouchedVersion": "2026.6.9",
-    "lastTouchedAt": "2026-06-26T20:01:09.569Z"
+    "lastTouchedAt": "2026-06-27T10:11:43.525Z"
   },
   "agents": {
     "defaults": {
@@ -123,7 +123,11 @@
       "dangerouslyDisableDeviceAuth": false
     },
     "auth": {
-      "token": "REDACTED",
+      "token": {
+        "source": "env",
+        "provider": "default",
+        "id": "OPENCLAW_GATEWAY_TOKEN"
+      },
       "mode": "token"
     },
     "trustedProxies": [
@@ -134,7 +138,11 @@
       "resetOnExit": false
     },
     "remote": {
-      "token": "REDACTED"
+      "token": {
+        "source": "env",
+        "provider": "default",
+        "id": "OPENCLAW_REMOTE_TOKEN"
+      }
     },
     "port": 18789,
     "bind": "loopback"
@@ -144,7 +152,7 @@
     "allowedAgentIds": [
       "main"
     ],
-    "token": "REDACTED"
+    "token": null
   },
   "plugins": {
     "entries": {
@@ -166,7 +174,7 @@
     }
   },
   "wizard": {
-    "lastRunAt": "2026-06-23T20:22:28.554Z",
+    "lastRunAt": "2026-06-26T22:15:21.515Z",
     "lastRunVersion": "2026.6.9",
     "lastRunCommand": "doctor",
     "lastRunMode": "local"

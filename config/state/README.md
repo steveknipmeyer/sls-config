@@ -1,6 +1,6 @@
 # OpenClaw Environment Snapshot
 
-**Generated:** 2026-06-26T22:14:48Z
+**Generated:** 2026-06-27T10:20:58Z
 **OpenClaw Version:** 2026.6.9
 **Host:** sls (DigitalOcean Droplet, NYC1, 2vCPU/4GB)
 **Tailscale URL:** https://sls.tail1cd974.ts.net
@@ -175,11 +175,11 @@ harvest time.
 ### Secrets
 The following secrets are NOT included in this snapshot and must be configured manually:
 - `ANTHROPIC_API_KEY` — set in `/opt/openclaw.env`
-- Gateway `auth.token` — set in `~/.openclaw/openclaw.json`
-- Gateway `remote.token` — set in `~/.openclaw/openclaw.json`
+- `OPENCLAW_GATEWAY_TOKEN` — set in `/etc/openclaw-gateway.env`
+- `OPENCLAW_REMOTE_TOKEN` — set in `/etc/openclaw-gateway.env`
+- Gateway token fields in `~/.openclaw/openclaw.json` must stay SecretRef-shaped
 - `OPENCLAW_SERVICE_KIND=gateway` — set in `/opt/openclaw.env` (not a secret, but required for consistent local gateway auth precedence)
 - Webhook hooks `token` — only if hooks are re-enabled later. When used, set in `~/.openclaw/openclaw.json` and `/opt/openclaw.env` as `OPENCLAW_HOOKS_TOKEN`. Must be different from the gateway auth token.
-- `~/.openclaw/gateway-token.txt` — optional legacy convenience file, if you intentionally keep it
 - Tailscale pre-auth key — used in `/opt/tailscale-reauth.sh`
 - SSH private keys — must be generated fresh for each deployment
 
