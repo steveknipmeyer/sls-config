@@ -32,7 +32,7 @@
 # [7:17] shell snapshots: enforce restrictive permissions and prune old shell-state snapshots.
 # Keeps agents/main/agent/codex-home/shell_snapshots at 700/600 and deletes
 # *.sh files older than 3 days. Host-side enforcement only; Ada skills do not run this.
-17 7 * * * bash /home/openclaw/.openclaw/workspace/.agents/skills/sls-system/scripts/prune-shell-snapshots.sh
+17 7 * * * bash /home/openclaw/.openclaw/workspace/.agents/skills/sls-openclaw-system/scripts/prune-shell-snapshots.sh
 
 # [7:25] Pre-create today's brief runs + fragments directories as openclaw.
 # Guarantees both daily-brief staging directories are openclaw-owned before

@@ -44,7 +44,7 @@
 │
 ◇  State integrity ────────────────────────────────────────────────────╮
 │                                                                      │
-│  - Found 748 orphan transcript files in                              │
+│  - Found 926 orphan transcript files in                              │
 │    ~/.openclaw/agents/main/sessions.                                 │
 │    These .jsonl files are no longer referenced by sessions.json, so  │
 │    they are not part of any active session history.                  │
@@ -52,7 +52,7 @@
 │    *.deleted.<timestamp>.                                            │
 │    Examples: 0103e56b-6658-4c7f-b432-ca574621a822.jsonl,             │
 │    0160c6ea-ea3e-4e47-b1b0-c87858d7c579.jsonl,                       │
-│    0170d87b-db53-43eb-a1e8-137f2a9d1c8b.jsonl, and 745 more          │
+│    0170d87b-db53-43eb-a1e8-137f2a9d1c8b.jsonl, and 923 more          │
 │                                                                      │
 ├──────────────────────────────────────────────────────────────────────╯
 │

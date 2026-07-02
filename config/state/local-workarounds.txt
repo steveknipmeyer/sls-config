@@ -1,5 +1,5 @@
 # Local workaround state
-# Generated: 2026-06-27T10:20:58Z
+# Generated: 2026-07-02T10:24:41Z
 #
 # This report records compatibility shims that are not fully preserved by the
 # normal git-tracked repos. Host files should still be harvested separately

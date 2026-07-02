@@ -1,7 +1,7 @@
 {
   "meta": {
     "lastTouchedVersion": "2026.6.9",
-    "lastTouchedAt": "2026-06-27T10:11:43.525Z"
+    "lastTouchedAt": "2026-06-27T10:21:28.455Z"
   },
   "agents": {
     "defaults": {
@@ -79,7 +79,15 @@
       "ask": "on-miss"
     },
     "elevated": {
-      "enabled": true
+      "enabled": true,
+      "allowFrom": {
+        "telegram": [
+          "agent:main:telegram:direct:*"
+        ],
+        "webchat": [
+          "agent:main:webchat:*"
+        ]
+      }
     },
     "profile": "coding",
     "sandbox": {
@@ -174,7 +182,7 @@
     }
   },
   "wizard": {
-    "lastRunAt": "2026-06-26T22:15:21.515Z",
+    "lastRunAt": "2026-06-27T10:21:28.267Z",
     "lastRunVersion": "2026.6.9",
     "lastRunCommand": "doctor",
     "lastRunMode": "local"

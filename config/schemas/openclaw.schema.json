@@ -56778,7 +56778,7 @@
                     "routes": {
                       "type": "object",
                       "additionalProperties": {
-                        "$ref": "#/properties/plugins/properties/entries/properties/webhooks/properties/config/$defs/route"
+                        "$ref": "#/$defs/route"
                       }
                     }
                   }

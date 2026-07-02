@@ -1,10 +1,10 @@
 {
 	"folders": [
 		{ "name": "sls-root", "path": "." },
-		{ "name": "sls-config", "path": "projects/sls-config" },
-		{ "name": "sls-dev", "path": "projects/sls-dev" },
-		{ "name": "sls-web-server", "path": "projects/sls-web-server" },
-		{ "name": "sls-ada-workspace", "path": "workspace" }
+		// { "name": "sls-config", "path": "projects/sls-config" },
+		// { "name": "sls-dev", "path": "projects/sls-dev" },
+		// { "name": "sls-web-server", "path": "projects/sls-web-server" },
+		// { "name": "sls-ada-workspace", "path": "workspace" }
 	],
 	"settings": {
 		"git.repositoryScanMaxDepth": 2,
