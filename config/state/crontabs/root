@@ -72,6 +72,15 @@
 # Ada's sls-inbox cron (7:55 AM UTC) reads pre-fetched data; makes no live IMAP calls.
 30 7 * * * bash /home/openclaw/.openclaw/workspace/.agents/skills/sls-inbox/scripts/fetch-inbox.sh >> /home/openclaw/.openclaw/workspace/working/sls-inbox/fetch-inbox.log 2>&1
 
+# [7:32] sls-inbox heroes: fetch OG hero images for newsletter toc cards.
+# Runs 2 minutes after fetch-inbox.sh so envelope exports are ready.
+# Reads the pre-fetched envelopes/exports, fetches og:image from each source's
+# canonical web URL, downloads the image, and writes:
+#   working/sls-inbox/heroes-DATE.json  (per-source outcome manifest)
+#   public/assets/images/newsletter-heroes/DATE-<slug>.<ext>  (images, git-ignored)
+# Ada's sls-inbox cron reads the manifest offline; missing manifest = no hero banners.
+32 7 * * * python3 /home/openclaw/.openclaw/workspace/.agents/skills/sls-inbox/scripts/fetch_heroes.py >> /home/openclaw/.openclaw/workspace/working/sls-inbox/fetch-heroes.log 2>&1
+
 # [7:30] sls-images: fetch Unsplash photos for the gallery section of the daily brief.
 # Reads UNSPLASH_API_KEY from /opt/openclaw.env.
 # Writes fragments/DATE/sls-images.html.
