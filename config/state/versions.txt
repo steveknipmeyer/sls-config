@@ -1,17 +1,17 @@
 # OpenClaw Environment — Version Snapshot
-# Generated: 2026-07-02T10:24:41Z
+# Generated: 2026-07-07T20:35:25Z
 
 ## OpenClaw
 OpenClaw 2026.6.9 (c645ec4)
 
 ## Node.js
-v22.22.3
+v22.23.1
 
 ## npm
 10.9.8
 
 ## Operating System
-Linux sls 6.8.0-124-generic #124-Ubuntu SMP PREEMPT_DYNAMIC Tue May 26 13:00:45 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
+Linux sls 6.8.0-134-generic #134-Ubuntu SMP PREEMPT_DYNAMIC Fri Jun 26 18:43:11 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
 Distributor ID:	Ubuntu
 Description:	Ubuntu 24.04.4 LTS
 Release:	24.04
@@ -21,8 +21,8 @@ Codename:	noble
 Docker version 29.1.3, build 29.1.3-0ubuntu3~24.04.2
 
 ## Tailscale
-1.98.4
-  tailscale commit: 9e69045b291a7cb1edc714442d68e83b95d05e6b
-  long version: 1.98.4-t9e69045b2-ged3a62f14
-  other commit: ed3a62f143dd73c8aae368d9c639ea49de878f9b
+1.98.8
+  tailscale commit: 1241b225bc798707d02db3570992625d3a16594f
+  long version: 1.98.8-t1241b225b-g0520dfda5
+  other commit: 0520dfda5d034816c38a15a8661160eb9a6d5ac4
   go version: go1.26.3 (tailscale/go e877d97384)

@@ -88,6 +88,10 @@
 			{
 				"filePath": "/home/openclaw/.openclaw/workspace/working",
 				"group": "Default"
+			},
+			{
+				"filePath": "projects/sls-dev/docs/features",
+				"group": "Default"
 			}
 		],
 		"chat.tools.terminal.autoApprove": {
