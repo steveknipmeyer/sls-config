@@ -27,6 +27,12 @@
 │                                                  │
 ├──────────────────────────────────────────────────╯
 │
+◇  Doctor changes ──────────────────────────────────────────────────╮
+│                                                                   │
+│  Refreshed stale configured plugin "codex" from @openclaw/codex.  │
+│                                                                   │
+├───────────────────────────────────────────────────────────────────╯
+│
 ◇  Gateway auth ─────────────────────────────────────────────────────────╮
 │                                                                        │
 │  Gateway token SecretRef could not be resolved: gateway.auth.token     │
@@ -36,23 +42,29 @@
 │                                                                        │
 ├────────────────────────────────────────────────────────────────────────╯
 │
+◇  Doctor changes ──────────────────────────────────────────────────╮
+│                                                                   │
+│  Refreshed stale configured plugin "codex" from @openclaw/codex.  │
+│                                                                   │
+├───────────────────────────────────────────────────────────────────╯
+│
 ◇  Plugin registry ───────────────────────────────────────────╮
 │                                                             │
-│  Plugin registry refreshed: 55/78 enabled plugins indexed.  │
+│  Plugin registry refreshed: 51/68 enabled plugins indexed.  │
 │                                                             │
 ├─────────────────────────────────────────────────────────────╯
 │
 ◇  State integrity ────────────────────────────────────────────────────╮
 │                                                                      │
-│  - Found 75 orphan transcript files in                               │
+│  - Found 523 orphan transcript files in                              │
 │    ~/.openclaw/agents/main/sessions.                                 │
 │    These .jsonl files are no longer referenced by sessions.json, so  │
 │    they are not part of any active session history.                  │
 │    Doctor can archive them safely by renaming each file to           │
 │    *.deleted.<timestamp>.                                            │
-│    Examples: 07735886-f360-44cc-a7ed-9fc2bc773fc4.jsonl,             │
-│    0886ec0e-f94e-4aeb-8d4a-d0fdce55927d.jsonl,                       │
-│    104602f7-8da3-43c9-9f02-01d4e276e5c2.jsonl, and 72 more           │
+│    Examples: 0058fefa-a30f-455e-a6a0-23e7fe1fc648.jsonl,             │
+│    0076b626-01d2-410e-80e8-018090c27654.jsonl,                       │
+│    01ff1a10-e765-40eb-9bc5-5a6728a2325e.jsonl, and 520 more          │
 │                                                                      │
 ├──────────────────────────────────────────────────────────────────────╯
 │
@@ -61,13 +73,13 @@
 │  Cron model overrides detected at ~/.openclaw/cron/jobs.json.            │
 │  - 11 jobs set `payload.model` and will not inherit                      │
 │    `agents.defaults.model` (openai/gpt-5.4)                              │
-│  - Provider namespaces: codex=11                                         │
-│  - 11 jobs use a different model than `agents.defaults.model`            │
+│  - Provider namespaces: openai=11                                        │
+│  - 7 jobs use a different model than `agents.defaults.model`             │
 │    (openai/gpt-5.4)                                                      │
 │  - Examples: 4dce6b51-6028-4a50-8433-db0e9c28cf89 ->                     │
-│    codex/gpt-5.4-mini, 2a7aa4d3-f6dd-489e-a56e-b90cd4f96c3a ->           │
-│    codex/gpt-5.4-mini, db2c95ec-6ed7-4e97-8ad8-10ebfd51a449 ->           │
-│    codex/gpt-5.4-mini                                                    │
+│    openai/gpt-5.4-mini, 2a7aa4d3-f6dd-489e-a56e-b90cd4f96c3a ->          │
+│    openai/gpt-5.4-mini, db2c95ec-6ed7-4e97-8ad8-10ebfd51a449 ->          │
+│    openai/gpt-5.4-mini                                                   │
 │  Review with openclaw cron list and openclaw cron show <job-id>; remove  │
 │  `payload.model` from jobs that should inherit the default.              │
 │                                                                          │
@@ -115,9 +127,9 @@
 │
 ◇  Plugins ──────╮
 │                │
-│  Loaded: 55    │
+│  Loaded: 51    │
 │  Imported: 0   │
-│  Disabled: 23  │
+│  Disabled: 17  │
 │  Errors: 0     │
 │                │
 ├────────────────╯

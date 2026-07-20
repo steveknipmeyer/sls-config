@@ -184,6 +184,12 @@ EOF
 EOF
 }
 
+restore_artifact_ownership() {
+    if [[ $EUID -eq 0 && -f "$ARTIFACT" ]]; then
+        chown openclaw:openclaw "$ARTIFACT"
+    fi
+}
+
 # ---------------------------------------------------------------------------
 # main dispatch
 # ---------------------------------------------------------------------------
@@ -221,6 +227,7 @@ case "$cmd" in
 
         if [[ $mutable_count -eq 0 ]]; then
                         write_artifact "ok" "ok" "$total/$total immutable" "warning" "Protected file is writable"
+            restore_artifact_ownership
             echo "All $total protected files are immutable."
             exit 0
         fi
@@ -231,6 +238,7 @@ case "$cmd" in
                         "$immutable_count/$total immutable — $mutable_count writable" \
                         "critical" \
                         "Protected file is writable"
+                restore_artifact_ownership
         echo "VIOLATION: $mutable_count/$total protected files are writable." >&2
         exit 1
         ;;
@@ -241,6 +249,7 @@ case "$cmd" in
                 audit_protection_state
                 if [[ $mutable_count -eq 0 ]]; then
                         write_artifact "ok" "ok" "$total/$total immutable" "warning" "Protected file is writable"
+                    restore_artifact_ownership
                         echo "All $total protected files are immutable."
                         exit 0
                 fi
@@ -263,6 +272,7 @@ case "$cmd" in
                                 "$original_total/$original_total immutable — auto-restored after finding $original_mutable_count writable" \
                                 "warning" \
                                 "Protected file was writable before auto-restore"
+                            restore_artifact_ownership
                         echo "AUTO-RESTORED: protection was re-enabled after finding $original_mutable_count writable file(s)." >&2
                         exit 0
                 fi
@@ -273,6 +283,7 @@ case "$cmd" in
                         "$immutable_count/$total immutable — auto-restore failed; $mutable_count still writable" \
                         "critical" \
                         "Protected file remained writable after auto-restore"
+                    restore_artifact_ownership
                 echo "VIOLATION: auto-restore failed; $mutable_count/$total protected files are still writable." >&2
                 exit 1
                 ;;

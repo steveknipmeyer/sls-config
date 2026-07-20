@@ -728,12 +728,8 @@ capture_command "${STATE_DIR}/ufw-status.txt" ufw status verbose 2>/dev/null || 
 # health of the installation across versions and identifying configuration
 # drift over time.
 #
-# Known issue note:
-#   If doctor fails with:
-#     EACCES: permission denied, mkdir
-#     '/home/openclaw/.openclaw/npm/node_modules/@openclaw/codex/node_modules'
-#   then codex package ownership drifted to root. One-time host fix:
-#     sudo chown -R openclaw:openclaw /home/openclaw/.openclaw/npm/node_modules/@openclaw/codex
+# Generation-scoped plugin paths are resolved through `plugins inspect`; do not
+# hard-code an npm generation path when diagnosing ownership or peer state.
 # =============================================================================
 
 log ""
@@ -743,11 +739,6 @@ log "=== OpenClaw doctor ==="
 # block waiting for input or attempt on-host repair writes during harvest.
 capture_command "${STATE_DIR}/openclaw-doctor.txt" \
     run_openclaw_as_openclaw doctor --non-interactive --yes
-
-if grep -q "EACCES: permission denied, mkdir '/home/openclaw/.openclaw/npm/node_modules/@openclaw/codex/node_modules'" "${STATE_DIR}/openclaw-doctor.txt"; then
-    log_warn "  ⚠ Detected known doctor permission issue in codex npm tree"
-    log_warn "    One-time fix: sudo chown -R openclaw:openclaw /home/openclaw/.openclaw/npm/node_modules/@openclaw/codex"
-fi
 
 # =============================================================================
 # SECTION 8a: Local workaround state
@@ -777,7 +768,13 @@ cat >> "${STATE_DIR}/local-workarounds.txt" << 'EOF'
 ## Ignored runtime-tree artifacts
 EOF
 
-append_path_state "${STATE_DIR}/local-workarounds.txt" "/home/openclaw/.openclaw/npm/node_modules/@openclaw/codex/node_modules/openclaw"
+CODEX_ROOT=$(run_openclaw_as_openclaw plugins inspect codex --json 2>/dev/null \
+    | jq -r '.plugin.rootDir // empty' 2>/dev/null || true)
+if [[ -n "$CODEX_ROOT" ]]; then
+    append_path_state "${STATE_DIR}/local-workarounds.txt" "$CODEX_ROOT/node_modules/openclaw"
+else
+    printf -- "- active Codex plugin root: unavailable\n" >> "${STATE_DIR}/local-workarounds.txt"
+fi
 
 legacy_shim_found=0
 for shim_path in /home/openclaw/.openclaw/workspace/skills/sls-*/SKILL.md; do

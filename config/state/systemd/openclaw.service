@@ -21,6 +21,7 @@ ExecStart=/usr/bin/openclaw gateway --port ${OPENCLAW_GATEWAY_PORT} --allow-unco
 # Restart policy
 Restart=always
 RestartSec=10
+RestartPreventExitStatus=78
 StandardOutput=journal
 StandardError=journal
 
