@@ -20,4 +20,7 @@ if grep -q 'append_path_state.*npm/node_modules/@openclaw/codex' "$HARVEST_SCRIP
     fail "harvest must not report only the retired top-level Codex path"
 fi
 
+grep -Fq "\\d{4}\\.\\d+\\.\\d+(-\\d+)?" "$HARVEST_SCRIPT" || \
+    fail "harvest README version parsing must preserve npm correction suffixes"
+
 printf 'PASS: harvest resolves generation-scoped Codex state\n'

@@ -807,7 +807,7 @@ log "  ✓ local-workarounds.txt"
 log ""
 log "=== Generating README.md ==="
 
-OPENCLAW_VERSION=$(run_openclaw_as_openclaw --version 2>/dev/null | grep -oP '\d{4}\.\d+\.\d+' || echo "unknown")
+OPENCLAW_VERSION=$(run_openclaw_as_openclaw --version 2>/dev/null | grep -oP '\d{4}\.\d+\.\d+(-\d+)?' || echo "unknown")
 
 cat > "${STATE_DIR}/README.md" << EOF
 # OpenClaw Environment Snapshot
