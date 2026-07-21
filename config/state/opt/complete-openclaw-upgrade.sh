@@ -97,6 +97,7 @@ echo "  7. Update /opt/openclaw.env"
 echo "  8. Start the gateway"
 echo "  9. Verify the version and plugin compatibility"
 echo " 10. Verify workspace file protection"
+echo " 11. Replay the live morning pipeline"
 echo ""
 read -p "Proceed? (y/n) " -n 1 -r
 echo
@@ -280,8 +281,18 @@ else
     echo "⚠️  /opt/protect-workspace.sh not found. Skipping workspace protection check."
 fi
 
+# Step 11: Exercise the real scheduler and agent execution path. Static health
+# checks cannot detect interactive plugin approvals or other cron-only failures.
 echo ""
-echo "✅ Upgrade complete!"
+echo "--- Step 11: Replaying live morning pipeline ---"
+PIPELINE_REPLAY_STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+/home/openclaw/.openclaw/cron/run-morning-pipeline.sh
+
+echo ""
+echo "✅ Live upgrade validation complete."
+echo "Scheduled proof remains pending until the next normal weather, Oura, and calendar runs."
+echo "Then verify those non-manual runs with:"
+echo "  sudo /home/openclaw/.openclaw/cron/verify-scheduled-cron-success.sh --since-iso ${PIPELINE_REPLAY_STARTED_AT}"
 echo ""
 echo "--- Control UI Note ---"
 echo "If the browser shows 'Auth required' after this upgrade, the gateway is usually reachable but your tab does not have a fresh credential."

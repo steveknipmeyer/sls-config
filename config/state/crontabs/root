@@ -49,6 +49,11 @@
 # Ada's sls-openclaw cron (7:47 AM UTC) reads this file to build the brief fragment.
 30 7 * * * mkdir -p /home/openclaw/.openclaw/workspace/working/sls-openclaw && bash /home/openclaw/.openclaw/workspace/.agents/skills/sls-openclaw/scripts/openclaw-health.sh > /home/openclaw/.openclaw/workspace/working/sls-openclaw/health.json 2>/home/openclaw/.openclaw/workspace/working/sls-openclaw/health.err
 
+# [7:30] sls-calendar: collect Google Calendar data outside the model sandbox.
+# The wrapper runs the fetcher as openclaw so refreshed OAuth tokens and output
+# artifacts retain openclaw ownership. The 7:53 agent only verifies the result.
+30 7 * * * mkdir -p /home/openclaw/.openclaw/workspace/working/sls-calendar && bash /home/openclaw/.openclaw/workspace/.agents/skills/sls-calendar/scripts/fetch-calendar-host.sh >> /home/openclaw/.openclaw/workspace/working/sls-calendar/fetch-calendar.log 2>&1
+
 # [7:30] sls-costs: fetch AI provider cost data from Anthropic, GitHub, Google Cloud, and DigitalOcean APIs.
 # Reads ANTHROPIC_ADMIN_KEY, GITHUB_TOKEN, DIGITALOCEAN_TOKEN, GOOGLE_BILLING_SERVICE_ACCOUNT_KEY from /opt/openclaw.env.
 # Writes working/sls-costs/YYYY-MM-DD.json.
@@ -74,7 +79,7 @@
 #   working/sls-inbox/heroes-DATE.json  (per-source outcome manifest)
 #   public/assets/images/newsletter-heroes/DATE-<slug>.<ext>  (images, git-ignored)
 # Ada's sls-inbox cron reads the manifest offline; missing manifest = no hero banners.
-32 7 * * * python3 /home/openclaw/.openclaw/workspace/.agents/skills/sls-inbox/scripts/fetch_heroes.py >> /home/openclaw/.openclaw/workspace/working/sls-inbox/fetch-heroes.log 2>&1
+32 7 * * * runuser -u openclaw -- env OPENCLAW_WORKSPACE=/home/openclaw/.openclaw/workspace python3 /home/openclaw/.openclaw/workspace/.agents/skills/sls-inbox/scripts/fetch_heroes.py >> /home/openclaw/.openclaw/workspace/working/sls-inbox/fetch-heroes.log 2>&1
 
 # [7:30] sls-images: fetch Unsplash photos for the gallery section of the daily brief.
 # Reads UNSPLASH_API_KEY from /opt/openclaw.env.
