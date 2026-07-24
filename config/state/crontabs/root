@@ -54,6 +54,11 @@
 # artifacts retain openclaw ownership. The 7:53 agent only verifies the result.
 30 7 * * * mkdir -p /home/openclaw/.openclaw/workspace/working/sls-calendar && bash /home/openclaw/.openclaw/workspace/.agents/skills/sls-calendar/scripts/fetch-calendar-host.sh >> /home/openclaw/.openclaw/workspace/working/sls-calendar/fetch-calendar.log 2>&1
 
+# [7:30] sls-weather: collect NWS data outside the model sandbox.
+# Runs as openclaw so the brief fragment and run marker retain openclaw ownership.
+# The 7:50 agent only verifies the result offline.
+30 7 * * * mkdir -p /home/openclaw/.openclaw/workspace/working/sls-weather && runuser -u openclaw -- env OPENCLAW_WORKSPACE=/home/openclaw/.openclaw/workspace python3 /home/openclaw/.openclaw/workspace/.agents/skills/sls-weather/scripts/fetch_weather.py >> /home/openclaw/.openclaw/workspace/working/sls-weather/fetch-weather.log 2>&1
+
 # [7:30] sls-costs: fetch AI provider cost data from Anthropic, GitHub, Google Cloud, and DigitalOcean APIs.
 # Reads ANTHROPIC_ADMIN_KEY, GITHUB_TOKEN, DIGITALOCEAN_TOKEN, GOOGLE_BILLING_SERVICE_ACCOUNT_KEY from /opt/openclaw.env.
 # Writes working/sls-costs/YYYY-MM-DD.json.
