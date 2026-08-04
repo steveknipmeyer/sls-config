@@ -22,7 +22,8 @@
 #
 # m h  dom mon dow   command
 
-# N.B. All times are UTC. Ada's OpenClaw crons run at 7:45–8:00 AM UTC (3:45–4:00 AM ET).
+# N.B. Times are UTC unless a later CRON_TZ assignment overrides them.
+#      Ada's OpenClaw crons run at 7:45–8:00 AM UTC (3:45–4:00 AM EDT).
 #      Root scripts at 7:25 and 7:30 must complete before Ada's crons start.
 #
 # ORDERING MATTERS for the daily-brief staging directories:
@@ -99,3 +100,9 @@
 # Runs after the 7:30 fetch wave so nothing written today is touched.
 # Edit cron/prune-workspace.sh to adjust targets or retention — no crontab change needed.
 35 7 * * * bash /home/openclaw/.openclaw/cron/prune-workspace.sh >> /var/log/sls-workspace-prune.log 2>&1
+
+# [4:15 ET] sls-alerts: deliver the daily summary outside the model sandbox.
+# The wrapper validates today's brief, runs the immutable sender as openclaw,
+# removes unrelated gateway tokens, and requires receipts from both channels.
+CRON_TZ=America/New_York
+15 4 * * * runuser -u openclaw -- env -u OPENCLAW_GATEWAY_TOKEN -u OPENCLAW_REMOTE_TOKEN python3 /opt/deliver-daily-alerts.py >> /var/log/sls-alerts-delivery.log 2>&1
