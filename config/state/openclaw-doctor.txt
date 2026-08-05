@@ -35,7 +35,7 @@
 │
 ◇  Model auth ───────────────────────────────────────────────────────────╮
 │                                                                        │
-│  - openai:steve@knipmeyer.org: expiring (21h) — Re-auth via `openclaw  │
+│  - openai:steve@knipmeyer.org: expiring (19h) — Re-auth via `openclaw  │
 │    models auth login --provider openai` or `openclaw configure`.       │
 │                                                                        │
 ├────────────────────────────────────────────────────────────────────────╯
@@ -72,7 +72,7 @@
 │    Prune missing entries: openclaw sessions cleanup --store          │
 │    "/home/openclaw/.openclaw/agents/main/sessions/sessions.json"     │
 │    --enforce --fix-missing                                           │
-│  - Found 1110 orphan transcript files in                             │
+│  - Found 1112 orphan transcript files in                             │
 │    ~/.openclaw/agents/main/sessions.                                 │
 │    These .jsonl files are no longer referenced by sessions.json, so  │
 │    they are not part of any active session history.                  │
@@ -80,7 +80,7 @@
 │    *.deleted.<timestamp>.                                            │
 │    Examples: 0058fefa-a30f-455e-a6a0-23e7fe1fc648.jsonl,             │
 │    0076b626-01d2-410e-80e8-018090c27654.jsonl,                       │
-│    008a2d98-e5b1-4867-805f-0ea6da8dda12.jsonl, and 1107 more         │
+│    008a2d98-e5b1-4867-805f-0ea6da8dda12.jsonl, and 1109 more         │
 │                                                                      │
 ├──────────────────────────────────────────────────────────────────────╯
 │
