@@ -1,7 +1,7 @@
 {
   "meta": {
     "lastTouchedVersion": "2026.7.1-2",
-    "lastTouchedAt": "2026-07-21T12:23:20.493Z"
+    "lastTouchedAt": "2026-08-05T10:28:47.586Z"
   },
   "agents": {
     "defaults": {
@@ -61,7 +61,8 @@
           "agentRuntime": {
             "id": "codex"
           }
-        }
+        },
+        "openai/gpt-5.6-sol": {}
       },
       "workspace": "/home/openclaw/.openclaw/workspace",
       "imageModel": {
@@ -181,7 +182,7 @@
     }
   },
   "wizard": {
-    "lastRunAt": "2026-07-21T12:23:20.320Z",
+    "lastRunAt": "2026-08-05T10:28:47.219Z",
     "lastRunVersion": "2026.7.1-2",
     "lastRunCommand": "doctor",
     "lastRunMode": "local"

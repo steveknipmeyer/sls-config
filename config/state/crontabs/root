@@ -22,7 +22,7 @@
 #
 # m h  dom mon dow   command
 
-# N.B. Times are UTC unless a later CRON_TZ assignment overrides them.
+# N.B. Times are UTC. Ubuntu's cron does not support CRON_TZ schedule directives.
 #      Ada's OpenClaw crons run at 7:45–8:00 AM UTC (3:45–4:00 AM EDT).
 #      Root scripts at 7:25 and 7:30 must complete before Ada's crons start.
 #
@@ -61,7 +61,7 @@
 30 7 * * * mkdir -p /home/openclaw/.openclaw/workspace/working/sls-weather && runuser -u openclaw -- env OPENCLAW_WORKSPACE=/home/openclaw/.openclaw/workspace python3 /home/openclaw/.openclaw/workspace/.agents/skills/sls-weather/scripts/fetch_weather.py >> /home/openclaw/.openclaw/workspace/working/sls-weather/fetch-weather.log 2>&1
 
 # [7:30] sls-costs: fetch AI provider cost data from Anthropic, GitHub, Google Cloud, and DigitalOcean APIs.
-# Reads ANTHROPIC_ADMIN_KEY, GITHUB_TOKEN, DIGITALOCEAN_TOKEN, GOOGLE_BILLING_SERVICE_ACCOUNT_KEY from /opt/openclaw.env.
+# Reads active provider credentials from /opt/openclaw.env.
 # Writes working/sls-costs/YYYY-MM-DD.json.
 # Ada's sls-costs cron (7:58 AM UTC) reads this artifact to render the "AI Costs" brief section.
 30 7 * * * bash /home/openclaw/.openclaw/workspace/.agents/skills/sls-costs/scripts/fetch-costs.sh
@@ -102,7 +102,6 @@
 35 7 * * * bash /home/openclaw/.openclaw/cron/prune-workspace.sh >> /var/log/sls-workspace-prune.log 2>&1
 
 # [4:15 ET] sls-alerts: deliver the daily summary outside the model sandbox.
-# The wrapper validates today's brief, runs the immutable sender as openclaw,
-# removes unrelated gateway tokens, and requires receipts from both channels.
-CRON_TZ=America/New_York
-15 4 * * * runuser -u openclaw -- env -u OPENCLAW_GATEWAY_TOKEN -u OPENCLAW_REMOTE_TOKEN python3 /opt/deliver-daily-alerts.py >> /var/log/sls-alerts-delivery.log 2>&1
+# Ubuntu cron schedules in UTC and does not support CRON_TZ. Run at both UTC
+# equivalents; --scheduled sends only when the current Eastern hour is 4.
+15 8,9 * * * runuser -u openclaw -- env -u OPENCLAW_GATEWAY_TOKEN -u OPENCLAW_REMOTE_TOKEN python3 /usr/local/libexec/sls/deliver-daily-alerts.py --scheduled >> /var/log/sls-alerts-delivery.log 2>&1

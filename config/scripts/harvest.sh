@@ -21,24 +21,6 @@
 #   NOT commit to git — that is a separate step, allowing you to review
 #   changes before committing.
 #
-# USAGE:
-#   Run as root for full access to all root-owned files:
-#   sudo bash /home/openclaw/.openclaw/projects/sls-config/config/scripts/harvest.sh
-#
-#   Then commit as the openclaw user:
-#   git -C /home/openclaw/.openclaw/projects/sls-config add config/
-#   git -C /home/openclaw/.openclaw/projects/sls-config commit -m "harvest snapshot $(date +%Y-%m-%d)"
-#   git -C /home/openclaw/.openclaw/projects/sls-config push
-#
-# OUTPUT STRUCTURE:
-#   projects/sls-config/config/
-#     schemas/
-#       openclaw.schema.json            — OpenClaw config JSON schema (for VS Code IntelliSense)
-#     scripts/
-#       harvest.sh                      — this script
-#     state/
-#       README.md                       — auto-generated index with timestamp + versions
-#       opt/
 #         openclaw.env                  — REDACTED: secrets replaced with placeholders
 #         restart-openclaw.sh           — Service restart helper (DigitalOcean installer)
 #         tailscale-reauth.sh           — Tailscale pre-auth key renewal (custom)
@@ -48,8 +30,9 @@
 #         setup-openclaw-domain.sh      — Caddy domain setup (DigitalOcean installer, DISABLED)
 #         openclaw-cli.sh               — CLI launcher helper (DigitalOcean installer)
 #         openclaw-exec.sh              — Host-routed OpenClaw exec wrapper/forwarder
-#         deliver-daily-alerts.py        — Host-owned daily Telegram/email delivery wrapper
 #         openclaw-tui.sh               — TUI launcher helper (DigitalOcean installer, see WARNING)
+#       usr/local/libexec/sls/
+#         deliver-daily-alerts.py        — Host-owned daily Telegram/email delivery wrapper
 #       etc/
 #         apparmor.d/
 #           openclaw-codex-bwrap       — Local Codex bwrap AppArmor profile (or absence note)
@@ -73,6 +56,9 @@
 #         openclaw.service              — Root-level systemd service definition
 #         sls-web-server.service        — Express web server systemd service
 #       versions.txt                    — Runtime version snapshot (node, npm, openclaw)
+#       apt-manual.txt                   — Manually selected apt packages
+#       dpkg-packages.txt                — Installed dpkg name/version/architecture inventory
+#       pipx-tools.json                  — Structured openclaw-user pipx inventory
 #       docker-images.txt               — Docker images present on the host
 #       ufw-status.txt                  — Firewall rules
 #       openclaw-doctor.txt             — Output of `openclaw doctor` at harvest time
@@ -287,7 +273,8 @@ mkdir -p \
     "${STATE_DIR}/home/openclaw/dot-openclaw" \
     "${STATE_DIR}/systemd" \
     "${STATE_DIR}/crontabs" \
-    "${STATE_DIR}/usr/local/bin"
+    "${STATE_DIR}/usr/local/bin" \
+    "${STATE_DIR}/usr/local/libexec/sls"
 
 # =============================================================================
 # SECTION 1: /opt files
@@ -296,38 +283,6 @@ mkdir -p \
 # These are all root-owned. Some were installed by DigitalOcean, some were
 # created or modified during our setup. All are documented below.
 # =============================================================================
-
-log ""
-log "=== /opt files ==="
-
-# ---
-# openclaw.env — the primary runtime environment file.
-# Loaded by /etc/systemd/system/openclaw.service via EnvironmentFile=.
-# Contains static non-gateway service settings (for example ANTHROPIC_API_KEY
-# and OPENCLAW_SERVICE_KIND). Gateway tokens must not live in this file.
-# MUST be redacted before committing — redaction runs automatically below.
-# Origin: DigitalOcean installer (created Mar 20), modified during setup (Mar 29).
-# ---
-harvest_file "/opt/openclaw.env" "${STATE_DIR}/opt/openclaw.env"
-redact_secrets "${STATE_DIR}/opt/openclaw.env"
-
-# ---
-# sls-billing-reader.json — Google Cloud service account key for the sls-costs
-# billing reader. Grants billing.viewer access to billing account 01330B-687892-E43BAA
-# so the sls-costs root fetch script can query Gemini API spend via the Cloud Billing API.
-# The private_key field is a multi-line RSA key — redacted via jq.
-# Reference: projects/sls-dev/docs/architecture/sls-costs.md, Credential Setup Guide
-# Created: 2026-05-23.
-# ---
-if [ -f "/opt/sls-billing-reader.json" ]; then
-    harvest_file "/opt/sls-billing-reader.json" "${STATE_DIR}/opt/sls-billing-reader.json"
-    jq '.private_key = "REDACTED" | .private_key_id = "REDACTED"' \
-        "${STATE_DIR}/opt/sls-billing-reader.json" > /tmp/sls-billing-reader.json.redacted \
-    && mv /tmp/sls-billing-reader.json.redacted "${STATE_DIR}/opt/sls-billing-reader.json"
-    log "  → Redacted private_key + private_key_id in sls-billing-reader.json (jq)"
-else
-    log "  ✗ /opt/sls-billing-reader.json absent — skipping"
-fi
 
 # ---
 # restart-openclaw.sh — helper to restart the OpenClaw service.
@@ -413,7 +368,8 @@ harvest_file "/opt/openclaw-exec.sh" "${STATE_DIR}/opt/openclaw-exec.sh"
 # deliver-daily-alerts.py — deterministic host-owned daily notification wrapper.
 # Validates today's artifacts, runs the immutable sender, and verifies receipts.
 # ---
-harvest_file "/opt/deliver-daily-alerts.py" "${STATE_DIR}/opt/deliver-daily-alerts.py"
+harvest_file "/usr/local/libexec/sls/deliver-daily-alerts.py" \
+    "${STATE_DIR}/usr/local/libexec/sls/deliver-daily-alerts.py"
 
 # ---
 # openclaw-tui.sh — launches the OpenClaw TUI as the openclaw user.
@@ -682,6 +638,18 @@ log "=== Version snapshot ==="
     echo "## npm"
     npm --version 2>/dev/null || echo "npm: not found"
     echo ""
+    echo "## Python"
+    python3 --version 2>/dev/null || echo "python3: not found"
+    echo ""
+    echo "## pipx"
+    pipx --version 2>/dev/null || echo "pipx: not found"
+    echo ""
+    echo "## Ruff"
+    /home/openclaw/.local/bin/ruff --version 2>/dev/null || echo "ruff: not found"
+    echo ""
+    echo "## Black"
+    /home/openclaw/.local/bin/black --version 2>/dev/null || echo "black: not found"
+    echo ""
     echo "## Operating System"
     uname -a 2>/dev/null || echo "uname: not available"
     lsb_release -a 2>/dev/null || echo "lsb_release: not available"
@@ -695,7 +663,35 @@ log "=== Version snapshot ==="
 log "  ✓ versions.txt"
 
 # =============================================================================
-# SECTION 6: Docker images
+# SECTION 6: Package inventory
+#
+# These files describe observed state for audit and drift analysis. They are
+# not installation manifests and must not be replayed as one.
+# =============================================================================
+
+log ""
+log "=== Package inventory ==="
+
+apt-mark showmanual | LC_ALL=C sort > "${STATE_DIR}/apt-manual.txt"
+log "  ✓ apt-manual.txt"
+
+dpkg-query -W -f='${binary:Package}\t${Version}\t${Architecture}\n' \
+    | LC_ALL=C sort > "${STATE_DIR}/dpkg-packages.txt"
+log "  ✓ dpkg-packages.txt"
+
+if command -v pipx >/dev/null 2>&1; then
+    runuser -u openclaw -- env \
+        HOME=/home/openclaw \
+        PIPX_HOME=/home/openclaw/.local/pipx \
+        PIPX_BIN_DIR=/home/openclaw/.local/bin \
+        pipx list --json > "${STATE_DIR}/pipx-tools.json"
+else
+    printf '{"error":"pipx is not installed"}\n' > "${STATE_DIR}/pipx-tools.json"
+fi
+log "  ✓ pipx-tools.json"
+
+# =============================================================================
+# SECTION 7: Docker images
 #
 # Lists all Docker images on the host. The sandbox images are built locally
 # (not pulled from a registry) and must be rebuilt on a new host using:
@@ -844,7 +840,6 @@ environment on a fresh Ubuntu box. It is generated by
 | \`state/opt/setup-openclaw-domain.sh\` | DO installer | Caddy setup (DISABLED — do not run) |
 | \`state/opt/openclaw-cli.sh\` | DO installer | CLI launcher helper |
 | \`state/opt/openclaw-exec.sh\` | Custom | Host-routed OpenClaw exec wrapper/forwarder |
-| \`state/opt/deliver-daily-alerts.py\` | Custom | Host-owned daily Telegram/email delivery wrapper |
 | \`state/opt/openclaw-tui.sh\` | DO installer | TUI launcher (WARNING: exposes token in ps aux) |
 | \`state/etc/apparmor.d/openclaw-codex-bwrap\` | Local workaround or absence note | Codex bwrap AppArmor profile snapshot |
 | \`state/etc/openclaw-gateway.env\` | Custom | Shared gateway token env for OpenClaw + web server (REDACTED secrets) |
@@ -858,11 +853,14 @@ environment on a fresh Ubuntu box. It is generated by
 | \`state/home/openclaw/.ssh/config\` | Custom | SSH client config (deploy key stanza) |
 | \`state/home/openclaw/dot-openclaw/openclaw.json\` | Custom | Primary OpenClaw runtime config (REDACTED secrets) |
 | \`state/home/openclaw/dot-openclaw/exec-approvals.json\` | Custom | Host-local exec approvals policy (REDACTED socket token) |
-| \`state/opt/sls-billing-reader.json\` | Custom | Google Cloud service account key for sls-costs billing reader (REDACTED private_key) |
 | \`state/usr/local/bin/openclaw\` | Custom | Root guard stub — blocks openclaw CLI as root |
+| \`state/usr/local/libexec/sls/deliver-daily-alerts.py\` | Custom | Host-owned daily Telegram/email delivery wrapper |
 | \`state/systemd/openclaw.service\` | DO installer | Root-level systemd service definition |
 | \`state/systemd/sls-web-server.service\` | Custom | Express web server systemd service |
 | \`state/versions.txt\` | Generated | Runtime version snapshot |
+| \`state/apt-manual.txt\` | Generated | Manually selected apt packages for drift review |
+| \`state/dpkg-packages.txt\` | Generated | Complete dpkg name/version/architecture inventory |
+| \`state/pipx-tools.json\` | Generated | Structured openclaw-user pipx inventory |
 | \`state/docker-images.txt\` | Generated | Docker images present on host |
 | \`state/ufw-status.txt\` | Generated | Firewall rules |
 | \`state/openclaw-doctor.txt\` | Generated | openclaw doctor output at harvest time |
@@ -1195,9 +1193,12 @@ find "${STATE_DIR}" -type f | sed "s|${CONFIG_ROOT}/||" | sort > /tmp/harvest-ac
 
 cat << 'EXPECTED' | sort > /tmp/harvest-expected.txt
 config/state/README.md
+config/state/apt-manual.txt
 config/state/docker-images.txt
+config/state/dpkg-packages.txt
 config/state/local-workarounds.txt
 config/state/openclaw-doctor.txt
+config/state/pipx-tools.json
 config/state/ufw-status.txt
 config/state/versions.txt
 config/state/etc/apparmor.d/openclaw-codex-bwrap
@@ -1219,10 +1220,8 @@ config/state/opt/protect-workspace.sh
 config/state/opt/deprecated/setup-openclaw-domain.sh
 config/state/opt/deprecated/update-openclaw.sh
 config/state/opt/openclaw.env
-config/state/opt/sls-billing-reader.json
 config/state/opt/openclaw-cli.sh
 config/state/opt/openclaw-exec.sh
-config/state/opt/deliver-daily-alerts.py
 config/state/opt/openclaw-tui.sh
 config/state/opt/restart-openclaw.sh
 config/state/opt/rotate-openclaw-gateway.sh
@@ -1230,6 +1229,7 @@ config/state/opt/setup-openclaw-domain.sh
 config/state/opt/status-openclaw.sh
 config/state/opt/tailscale-reauth.sh
 config/state/opt/update-openclaw.sh
+config/state/usr/local/libexec/sls/deliver-daily-alerts.py
 config/state/systemd/openclaw.service
 config/state/systemd/sls-web-server.service
 config/schemas/openclaw.schema.json

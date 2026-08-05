@@ -1,0 +1,3 @@
+# Python command-line tools installed in isolated openclaw-user environments.
+black==26.5.1
+ruff==0.16.1

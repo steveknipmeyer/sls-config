@@ -37,7 +37,9 @@ def validate_inputs(workspace: Path, today: str) -> None:
     if not brief_path.is_file() or brief_path.stat().st_size == 0:
         raise ValueError(f"missing published daily brief: {brief_path}")
 
-    marker_path = workspace / f"working/sls-daily-brief/runs/{today}/sls-daily-brief.json"
+    marker_path = (
+        workspace / f"working/sls-daily-brief/runs/{today}/sls-daily-brief.json"
+    )
     marker = read_json(marker_path)
     if (
         not isinstance(marker, dict)
@@ -109,6 +111,11 @@ def require_openclaw_user() -> None:
         raise RuntimeError("daily alert delivery must run as openclaw")
 
 
+def is_scheduled_delivery_window(now: datetime) -> bool:
+    """Return whether a cron invocation falls in the 4 AM Eastern hour."""
+    return now.astimezone(ET).hour == 4
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Deliver today's daily summary and verify both channel receipts."
@@ -119,13 +126,23 @@ def parse_args() -> argparse.Namespace:
         default=Path(os.environ.get("OPENCLAW_WORKSPACE", DEFAULT_WORKSPACE)),
         help="OpenClaw workspace root",
     )
+    parser.add_argument(
+        "--scheduled",
+        action="store_true",
+        help="Send only during the 4 AM America/New_York hour",
+    )
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
     workspace = args.workspace.resolve()
-    today = datetime.now(ET).strftime("%Y-%m-%d")
+    now = datetime.now(ET)
+    if args.scheduled and not is_scheduled_delivery_window(now):
+        print(f"Skipping scheduled delivery outside 4 AM Eastern: {now.isoformat()}")
+        return 0
+
+    today = now.strftime("%Y-%m-%d")
     sender = workspace / ".agents/skills/sls-alerts/scripts/send_alerts.py"
 
     require_openclaw_user()
@@ -147,7 +164,9 @@ def main() -> int:
     if completed.stderr:
         print(completed.stderr, end="", file=sys.stderr)
     if completed.returncode != 0:
-        raise RuntimeError(f"daily alert sender exited with status {completed.returncode}")
+        raise RuntimeError(
+            f"daily alert sender exited with status {completed.returncode}"
+        )
 
     validate_sender_output(completed.stdout, completed.stderr)
     validate_receipts(workspace, today)

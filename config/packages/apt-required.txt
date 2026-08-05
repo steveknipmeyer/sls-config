@@ -1,0 +1,18 @@
+# Required host packages supplied by the Ubuntu archive.
+auditd
+audispd-plugins
+bubblewrap
+build-essential
+ca-certificates
+curl
+fail2ban
+file
+git
+gnupg
+jq
+pipx
+python3-venv
+ripgrep
+unattended-upgrades
+unzip
+zip

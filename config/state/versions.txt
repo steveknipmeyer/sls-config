@@ -1,5 +1,5 @@
 # OpenClaw Environment — Version Snapshot
-# Generated: 2026-07-21T12:35:01Z
+# Generated: 2026-08-05T10:33:00Z
 
 ## OpenClaw
 OpenClaw 2026.7.1-2 (0790d9f)
@@ -9,6 +9,19 @@ v22.23.1
 
 ## npm
 10.9.8
+
+## Python
+Python 3.12.3
+
+## pipx
+1.4.3
+
+## Ruff
+ruff 0.16.1
+
+## Black
+black, 26.5.1 (compiled: yes)
+Python (CPython) 3.12.3
 
 ## Operating System
 Linux sls 6.8.0-134-generic #134-Ubuntu SMP PREEMPT_DYNAMIC Fri Jun 26 18:43:11 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
