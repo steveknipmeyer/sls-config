@@ -1,0 +1,2 @@
+# External OpenClaw plugins pinned to versions compatible with the host core.
+@openclaw/codex@2026.7.1-1

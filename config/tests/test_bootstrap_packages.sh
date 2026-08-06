@@ -6,8 +6,11 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 CONFIG_DIR=$(cd -- "$SCRIPT_DIR/.." && pwd)
 APT_MANIFEST="$CONFIG_DIR/packages/apt-required.txt"
 PIPX_MANIFEST="$CONFIG_DIR/packages/pipx-tools.txt"
+OPENCLAW_PLUGIN_MANIFEST="$CONFIG_DIR/packages/openclaw-plugins.txt"
 BOOTSTRAP_SCRIPT="$CONFIG_DIR/scripts/bootstrap-packages.sh"
+OPENCLAW_PLUGIN_BOOTSTRAP="$CONFIG_DIR/scripts/bootstrap-openclaw-plugins.sh"
 HARVEST_SCRIPT="$CONFIG_DIR/scripts/harvest.sh"
+README="$CONFIG_DIR/README.md"
 BASHRC_SNAPSHOT="$CONFIG_DIR/state/home/openclaw/.bashrc"
 PROFILE_SNAPSHOT="$CONFIG_DIR/state/home/openclaw/.profile"
 
@@ -16,7 +19,12 @@ fail() {
     exit 1
 }
 
-for path in "$APT_MANIFEST" "$PIPX_MANIFEST" "$BOOTSTRAP_SCRIPT"; do
+for path in \
+    "$APT_MANIFEST" \
+    "$PIPX_MANIFEST" \
+    "$OPENCLAW_PLUGIN_MANIFEST" \
+    "$BOOTSTRAP_SCRIPT" \
+    "$OPENCLAW_PLUGIN_BOOTSTRAP"; do
     [[ -f "$path" ]] || fail "missing ${path#"$CONFIG_DIR/"}"
 done
 
@@ -43,6 +51,13 @@ if grep -Ev '^(#.*|[[:space:]]*|[a-zA-Z0-9_.-]+==[a-zA-Z0-9_.+-]+)$' \
     fail "pipx manifest entries must use exact name==version pins"
 fi
 
+grep -Fxq '@openclaw/codex@2026.7.1-1' "$OPENCLAW_PLUGIN_MANIFEST" || \
+    fail "Codex plugin must be pinned to the installed compatible version"
+if grep -Ev '^(#.*|[[:space:]]*|@[a-z0-9._-]+/[a-z0-9._-]+@[0-9][a-zA-Z0-9._+-]*)$' \
+    "$OPENCLAW_PLUGIN_MANIFEST"; then
+    fail "OpenClaw plugin manifest entries must use exact scoped npm specs"
+fi
+
 grep -Fq '[[ ${EUID} -eq 0 ]]' "$BOOTSTRAP_SCRIPT" || \
     fail "bootstrap must require root"
 grep -Fq 'runuser -u openclaw --' "$BOOTSTRAP_SCRIPT" || \
@@ -59,6 +74,14 @@ grep -Fq 'read -r requirement || [[ -n "$requirement" ]]' "$BOOTSTRAP_SCRIPT" ||
 if grep -Fq 'run_pipx ensurepath' "$BOOTSTRAP_SCRIPT"; then
     fail "bootstrap must not let pipx modify shell startup files"
 fi
+grep -Fq '[[ ${EUID} -ne 0 ]]' "$OPENCLAW_PLUGIN_BOOTSTRAP" || \
+    fail "OpenClaw plugin bootstrap must reject root execution"
+grep -Fq 'plugins install "$requirement" --force --pin' \
+    "$OPENCLAW_PLUGIN_BOOTSTRAP" || \
+    fail "OpenClaw plugin bootstrap must persist exact pinned specs"
+grep -Fq 'plugins inspect "$plugin_name" --json' \
+    "$OPENCLAW_PLUGIN_BOOTSTRAP" || \
+    fail "OpenClaw plugin bootstrap must inspect existing records"
 grep -Fq 'PATH="$HOME/.local/bin:$PATH"' "$PROFILE_SNAPSHOT" || \
     fail "profile must configure the openclaw user-local binary directory"
 if grep -Fq '/home/openclaw/.local/bin' "$BASHRC_SNAPSHOT"; then
@@ -80,5 +103,8 @@ for snapshot in apt-manual.txt dpkg-packages.txt pipx-tools.json; do
     grep -Fq "config/state/$snapshot" "$HARVEST_SCRIPT" || \
         fail "harvest expected-file audit must include $snapshot"
 done
+
+grep -Fq 'scripts/bootstrap-openclaw-plugins.sh' "$README" || \
+    fail "fresh-host documentation must include OpenClaw plugin bootstrap"
 
 printf 'PASS: package bootstrap contract is valid\n'
