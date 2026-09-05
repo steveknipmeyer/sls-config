@@ -19,3 +19,7 @@ config/state/home/openclaw/dot-openclaw/gateway-token.txt
 # Python virtual environments
 .venv/
 venv/
+
+# Python bytecode caches
+__pycache__/
+*.py[cod]
