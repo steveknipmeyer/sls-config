@@ -57,10 +57,12 @@ def build_sender_environment(workspace: Path, source: dict[str, str]) -> dict[st
     return environment
 
 
-def validate_sender_output(stdout: str, stderr: str) -> None:
+def validate_sender_output(
+    stdout: str, stderr: str, telegram_label: str = "brief-summary"
+) -> None:
     telegram_ok = (
-        "Telegram brief-summary sent via host service." in stdout
-        or "Telegram brief-summary deduped via host service." in stdout
+        f"Telegram {telegram_label} sent via host service." in stdout
+        or f"Telegram {telegram_label} deduped via host service." in stdout
     )
     if not telegram_ok:
         detail = stderr.strip() or "sender did not report Telegram success"
@@ -93,8 +95,10 @@ def has_receipt(directory: Path, prefix: str, telegram: bool = False) -> bool:
     return False
 
 
-def validate_receipts(workspace: Path, today: str) -> None:
-    telegram_prefix = f"sls-alerts:{today}:brief-summary:"
+def validate_receipts(
+    workspace: Path, today: str, telegram_label: str = "brief-summary"
+) -> None:
+    telegram_prefix = f"sls-alerts:{today}:{telegram_label}:"
     telegram_dir = workspace / "working/sls-alerts/telegram-deliveries"
     if not has_receipt(telegram_dir, telegram_prefix, telegram=True):
         raise RuntimeError(f"missing Telegram delivery receipt for {today}")
@@ -146,12 +150,23 @@ def main() -> int:
     sender = workspace / ".agents/skills/sls-alerts/scripts/send_alerts.py"
 
     require_openclaw_user()
-    validate_inputs(workspace, today)
     if not sender.is_file():
         raise ValueError(f"missing immutable alert sender: {sender}")
 
+    validation_error = None
+    try:
+        validate_inputs(workspace, today)
+    except ValueError as exc:
+        validation_error = exc
+        print(f"ERROR: {exc}", file=sys.stderr)
+
+    telegram_label = "publication-failure" if validation_error else "brief-summary"
+    sender_command = [sys.executable, str(sender)]
+    if validation_error:
+        sender_command.append("--publication-failed")
+
     completed = subprocess.run(
-        [sys.executable, str(sender)],
+        sender_command,
         cwd=workspace,
         env=build_sender_environment(workspace, os.environ),
         capture_output=True,
@@ -168,8 +183,13 @@ def main() -> int:
             f"daily alert sender exited with status {completed.returncode}"
         )
 
-    validate_sender_output(completed.stdout, completed.stderr)
-    validate_receipts(workspace, today)
+    validate_sender_output(
+        completed.stdout, completed.stderr, telegram_label=telegram_label
+    )
+    validate_receipts(workspace, today, telegram_label=telegram_label)
+    if validation_error:
+        print(f"Verified Telegram and email publication-failure receipts for {today}.")
+        return 1
     print(f"Verified Telegram and email delivery receipts for {today}.")
     return 0
 
