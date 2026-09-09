@@ -29,8 +29,7 @@ for path in \
 done
 
 first_harvest_command=$(
-    sed '1d' "$HARVEST_SCRIPT" |
-        sed -n '/^[[:space:]]*\(#.*\)\?$/!{p;q;}'
+    awk 'NR > 1 && $0 !~ /^[[:space:]]*(#.*)?$/ { print; exit }' "$HARVEST_SCRIPT"
 )
 [[ "$first_harvest_command" == 'set -euo pipefail' ]] || \
     fail "harvest must not execute commands from its documentation header"

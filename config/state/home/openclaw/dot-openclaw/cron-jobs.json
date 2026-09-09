@@ -1,0 +1,215 @@
+{
+  "version": 1,
+  "jobs": [
+    {
+      "id": "9a4e4cb2-4f03-48d7-8924-b1a6417c1667",
+      "name": "sls-calendar",
+      "enabled": true,
+      "schedule": {
+        "kind": "cron",
+        "expr": "53 3 * * *",
+        "tz": "America/New_York"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "Use the sls-calendar skill.",
+        "model": "openai/gpt-5.6-luna"
+      },
+      "delivery": {
+        "mode": "none",
+        "channel": "last"
+      }
+    },
+    {
+      "id": "6a42be22-99d5-47fb-9085-7effeb57ef66",
+      "name": "sls-costs",
+      "enabled": true,
+      "schedule": {
+        "kind": "cron",
+        "expr": "58 3 * * *",
+        "tz": "America/New_York"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "Use the sls-costs skill.",
+        "model": "openai/gpt-5.6-luna"
+      },
+      "delivery": {
+        "mode": "none",
+        "channel": "last"
+      }
+    },
+    {
+      "id": "2ce70d44-1066-44b5-9586-aa3a97600af5",
+      "name": "sls-daily-brief",
+      "enabled": true,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 4 * * *",
+        "tz": "America/New_York"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "Use the sls-daily-brief skill.",
+        "model": "openai/gpt-5.6-sol"
+      },
+      "delivery": {
+        "mode": "none",
+        "channel": "last"
+      }
+    },
+    {
+      "id": "d20b230c-18b1-4440-95d0-6f8eafdfc508",
+      "name": "sls-daily-brief-late",
+      "enabled": true,
+      "schedule": {
+        "kind": "cron",
+        "expr": "20 9 * * *",
+        "tz": "America/New_York"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "Use the sls-daily-brief-late skill.",
+        "model": "openai/gpt-5.6-sol"
+      },
+      "delivery": {
+        "mode": "none",
+        "channel": "last"
+      }
+    },
+    {
+      "id": "9cbf9f04-cc16-4e8e-acbf-63fb8324bef4",
+      "name": "sls-images",
+      "enabled": true,
+      "schedule": {
+        "kind": "cron",
+        "expr": "57 3 * * *",
+        "tz": "America/New_York"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "Use the sls-images skill.",
+        "model": "openai/gpt-5.6-luna"
+      },
+      "delivery": {
+        "mode": "none",
+        "channel": "last"
+      }
+    },
+    {
+      "id": "6ef139fa-2005-46e6-a27d-5fcea0259ebd",
+      "name": "sls-inbox",
+      "enabled": true,
+      "schedule": {
+        "kind": "cron",
+        "expr": "55 3 * * *",
+        "tz": "America/New_York"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "Use the sls-inbox skill.",
+        "model": "openai/gpt-5.6-sol"
+      },
+      "delivery": {
+        "mode": "none",
+        "channel": "last"
+      }
+    },
+    {
+      "id": "2a7aa4d3-f6dd-489e-a56e-b90cd4f96c3a",
+      "name": "sls-openclaw",
+      "enabled": true,
+      "schedule": {
+        "kind": "cron",
+        "expr": "47 3 * * *",
+        "tz": "America/New_York"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "Use the sls-openclaw skill.",
+        "model": "openai/gpt-5.6-luna"
+      },
+      "delivery": {
+        "mode": "none",
+        "channel": "last"
+      }
+    },
+    {
+      "id": "73370639-36fb-426e-82dd-9a51eb8e3ec9",
+      "name": "sls-oura",
+      "enabled": true,
+      "schedule": {
+        "kind": "cron",
+        "expr": "51 3 * * *",
+        "tz": "America/New_York"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "Use the sls-oura skill.",
+        "model": "openai/gpt-5.6-sol"
+      },
+      "delivery": {
+        "mode": "none",
+        "channel": "last"
+      }
+    },
+    {
+      "id": "4dce6b51-6028-4a50-8433-db0e9c28cf89",
+      "name": "sls-system",
+      "enabled": true,
+      "schedule": {
+        "kind": "cron",
+        "expr": "45 3 * * *",
+        "tz": "America/New_York"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "Use the sls-system skill.",
+        "model": "openai/gpt-5.6-luna"
+      },
+      "delivery": {
+        "mode": "none",
+        "channel": "last"
+      }
+    },
+    {
+      "id": "db2c95ec-6ed7-4e97-8ad8-10ebfd51a449",
+      "name": "sls-weather",
+      "enabled": true,
+      "schedule": {
+        "kind": "cron",
+        "expr": "50 3 * * *",
+        "tz": "America/New_York"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "Use the sls-weather skill.",
+        "model": "openai/gpt-5.6-luna"
+      },
+      "delivery": {
+        "mode": "none",
+        "channel": "last"
+      }
+    }
+  ]
+}

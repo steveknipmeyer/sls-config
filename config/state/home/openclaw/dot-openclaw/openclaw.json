@@ -1,7 +1,7 @@
 {
   "meta": {
     "lastTouchedVersion": "2026.7.1-2",
-    "lastTouchedAt": "2026-08-05T12:25:05.587Z"
+    "lastTouchedAt": "2026-09-09T12:20:49.075Z"
   },
   "agents": {
     "defaults": {
@@ -62,7 +62,8 @@
             "id": "codex"
           }
         },
-        "openai/gpt-5.6-sol": {}
+        "openai/gpt-5.6-sol": {},
+        "openai/gpt-5.6-luna": {}
       },
       "workspace": "/home/openclaw/.openclaw/workspace",
       "imageModel": {
@@ -71,7 +72,13 @@
           "google/gemini-3-pro-image-preview"
         ]
       }
-    }
+    },
+    "list": [
+      {
+        "id": "main",
+        "model": "openai/gpt-5.6-sol"
+      }
+    ]
   },
   "tools": {
     "exec": {
@@ -182,7 +189,7 @@
     }
   },
   "wizard": {
-    "lastRunAt": "2026-08-05T12:25:05.247Z",
+    "lastRunAt": "2026-09-09T12:20:48.700Z",
     "lastRunVersion": "2026.7.1-2",
     "lastRunCommand": "doctor",
     "lastRunMode": "local"

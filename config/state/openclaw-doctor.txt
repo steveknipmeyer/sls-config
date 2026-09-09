@@ -33,13 +33,6 @@
 │                                                                   │
 ├───────────────────────────────────────────────────────────────────╯
 │
-◇  Model auth ───────────────────────────────────────────────────────────╮
-│                                                                        │
-│  - openai:steve@knipmeyer.org: expiring (19h) — Re-auth via `openclaw  │
-│    models auth login --provider openai` or `openclaw configure`.       │
-│                                                                        │
-├────────────────────────────────────────────────────────────────────────╯
-│
 ◇  Gateway auth ─────────────────────────────────────────────────────────╮
 │                                                                        │
 │  Gateway token SecretRef could not be resolved: gateway.auth.token     │
@@ -72,15 +65,15 @@
 │    Prune missing entries: openclaw sessions cleanup --store          │
 │    "/home/openclaw/.openclaw/agents/main/sessions/sessions.json"     │
 │    --enforce --fix-missing                                           │
-│  - Found 1112 orphan transcript files in                             │
+│  - Found 2325 orphan transcript files in                             │
 │    ~/.openclaw/agents/main/sessions.                                 │
 │    These .jsonl files are no longer referenced by sessions.json, so  │
 │    they are not part of any active session history.                  │
 │    Doctor can archive them safely by renaming each file to           │
 │    *.deleted.<timestamp>.                                            │
-│    Examples: 0058fefa-a30f-455e-a6a0-23e7fe1fc648.jsonl,             │
-│    0076b626-01d2-410e-80e8-018090c27654.jsonl,                       │
-│    008a2d98-e5b1-4867-805f-0ea6da8dda12.jsonl, and 1109 more         │
+│    Examples: 0012e8d8-13e6-4800-b847-7ac0bb8dc081.jsonl,             │
+│    0018d52f-1e3b-4ea0-a110-7b9247413ec8.jsonl,                       │
+│    001fed04-2634-411f-9e82-564832273691.jsonl, and 2322 more         │
 │                                                                      │
 ├──────────────────────────────────────────────────────────────────────╯
 │
@@ -90,12 +83,12 @@
 │  - 11 jobs set `payload.model` and will not inherit                      │
 │    `agents.defaults.model` (openai/gpt-5.4)                              │
 │  - Provider namespaces: openai=11                                        │
-│  - 7 jobs use a different model than `agents.defaults.model`             │
+│  - 11 jobs use a different model than `agents.defaults.model`            │
 │    (openai/gpt-5.4)                                                      │
 │  - Examples: 4dce6b51-6028-4a50-8433-db0e9c28cf89 ->                     │
-│    openai/gpt-5.4-mini, 2a7aa4d3-f6dd-489e-a56e-b90cd4f96c3a ->          │
-│    openai/gpt-5.4-mini, db2c95ec-6ed7-4e97-8ad8-10ebfd51a449 ->          │
-│    openai/gpt-5.4-mini                                                   │
+│    openai/gpt-5.6-luna, 2a7aa4d3-f6dd-489e-a56e-b90cd4f96c3a ->          │
+│    openai/gpt-5.6-luna, db2c95ec-6ed7-4e97-8ad8-10ebfd51a449 ->          │
+│    openai/gpt-5.6-luna                                                   │
 │  Review with openclaw cron list and openclaw cron show <job-id>; remove  │
 │  `payload.model` from jobs that should inherit the default.              │
 │                                                                          │

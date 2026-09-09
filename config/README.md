@@ -13,7 +13,11 @@ those roles distinct when rebuilding or reviewing drift.
    versions compatible with the pinned host core.
 4. `state/` is a harvested snapshot of configuration and observed state. Its
    package inventories support audit and comparison; they are not installers.
-5. Secrets, external account enrollment, cloud controls, and third-party apt
+5. `state/home/openclaw/dot-openclaw/cron-jobs.json` is a sanitized snapshot of
+   managed `sls-*` OpenClaw scheduler definitions. It excludes runtime state
+   and unrelated personal jobs and is a reconstruction reference, not a
+   database backup.
+6. Secrets, external account enrollment, cloud controls, and third-party apt
    repositories require deliberate manual provisioning.
 
 ## Dependency Bootstrap
@@ -89,11 +93,13 @@ are useful for comparison but are not all desired dependencies.
 5. Review `state/README.md`, then restore each tracked system file with its
    documented owner, mode, and service context. Do not copy the entire snapshot
    blindly.
-6. Provision new secrets directly on the host and complete OAuth, Telegram,
+6. Recreate managed OpenClaw cron jobs from the sanitized cron snapshot through
+   the OpenClaw CLI. Do not restore scheduler SQLite files directly.
+7. Provision new secrets directly on the host and complete OAuth, Telegram,
    email, GitHub SSH, Tailscale, and other external enrollment flows.
-7. Recreate and verify DigitalOcean firewall policy, UFW rules, systemd units,
+8. Recreate and verify DigitalOcean firewall policy, UFW rules, systemd units,
    cron, sandbox images, and service health.
-8. Run `harvest.sh` and compare the new observed state with the tracked
+9. Run `harvest.sh` and compare the new observed state with the tracked
    snapshot. Resolve unexplained drift before treating the rebuild as complete.
 
 ## Boundaries
