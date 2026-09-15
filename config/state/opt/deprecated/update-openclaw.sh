@@ -11,9 +11,12 @@ REASON:
   latest version and does not verify axios for known compromised versions.
 
 SAFE ALTERNATIVE:
-  Use the complete upgrade script instead:
+  Prepare a reviewed exact stage with the complete upgrade script:
 
-    sudo bash /opt/complete-openclaw-upgrade.sh
+    sudo /opt/complete-openclaw-upgrade.sh --prepare <target-version>
+
+  Copy the printed archive off-host and follow MAINTENANCE.md before using
+  --execute. The old one-command upgrade path is intentionally unavailable.
 
 DOCUMENTATION:
   See MAINTENANCE.md -> "Update OpenClaw" -> "Quick path"
