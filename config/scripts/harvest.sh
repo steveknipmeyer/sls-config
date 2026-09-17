@@ -397,6 +397,13 @@ harvest_file "/usr/local/libexec/sls/deliver-daily-alerts.py" \
     "${STATE_DIR}/usr/local/libexec/sls/deliver-daily-alerts.py"
 
 # ---
+# transition-node-runtime.sh — independent, pinned Node runtime transition.
+# Verifies signed NodeSource artifacts and backup proof before mutation.
+# ---
+harvest_file "/usr/local/libexec/sls/transition-node-runtime.sh" \
+    "${STATE_DIR}/usr/local/libexec/sls/transition-node-runtime.sh"
+
+# ---
 # openclaw-tui.sh — launches the OpenClaw TUI as the openclaw user.
 # Simplified in session 54: no longer reads openclaw.json or passes --token
 # (the TUI authenticates automatically via local gateway connection).
