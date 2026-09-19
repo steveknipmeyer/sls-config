@@ -61,6 +61,7 @@ fi
 backup_line=$(line_number 'openclaw backup create .*--verify' "$UPGRADE_SCRIPT")
 stop_line=$(line_number 'systemctl stop openclaw' "$UPGRADE_SCRIPT")
 install_line=$(line_number 'npm install -g' "$UPGRADE_SCRIPT")
+update_repair_line=$(line_number 'openclaw update repair --yes --no-restart' "$UPGRADE_SCRIPT")
 doctor_fix_line=$(line_number 'openclaw doctor --fix' "$UPGRADE_SCRIPT")
 posture_line=$(line_number 'Applying approved security posture' "$UPGRADE_SCRIPT")
 posture_validate_line=$(line_number 'openclaw config validate' "$UPGRADE_SCRIPT")
@@ -73,6 +74,7 @@ complete_line=$(line_number 'Live upgrade validation complete' "$UPGRADE_SCRIPT"
 [[ -n "$backup_line" ]] || fail "upgrade must create a backup"
 [[ -n "$stop_line" ]] || fail "upgrade must stop the gateway"
 [[ -n "$install_line" ]] || fail "upgrade must install the target package"
+[[ -n "$update_repair_line" ]] || fail "upgrade must run supported post-core update repair"
 [[ -n "$doctor_fix_line" ]] || fail "upgrade must run offline Doctor repairs"
 [[ -n "$posture_line" ]] || fail "upgrade must preserve the approved security posture"
 [[ -n "$posture_validate_line" ]] || fail "upgrade must validate config after preserving security posture"
@@ -84,6 +86,8 @@ complete_line=$(line_number 'Live upgrade validation complete' "$UPGRADE_SCRIPT"
 
 (( backup_line < stop_line )) || fail "backup must finish before gateway shutdown"
 (( stop_line < install_line )) || fail "gateway must stop before package replacement"
+(( install_line < update_repair_line )) || fail "update repair must use the new package"
+(( update_repair_line < doctor_fix_line )) || fail "update repair must precede standalone Doctor fallback"
 (( install_line < doctor_fix_line )) || fail "Doctor repairs must use the new package"
 (( doctor_fix_line < start_line )) || fail "Doctor repairs must finish before gateway startup"
 (( doctor_fix_line < posture_line )) || fail "security posture must use the upgraded config schema"
@@ -100,6 +104,16 @@ fi
 
 grep -q 'openclaw doctor --post-upgrade' "$UPGRADE_SCRIPT" || \
     fail "upgrade must run post-upgrade plugin compatibility checks"
+
+grep -Fq 'run_openclaw update repair --yes --no-restart' "$UPGRADE_SCRIPT" || \
+    fail "post-core repair must preserve external activation ownership"
+
+grep -Fq "grep -Fq '[config] warnings: plugins.entries.codex:'" "$UPGRADE_SCRIPT" || \
+    fail "update repair detection must require an active Codex migration warning"
+
+if grep -q 'Update repair is still required' "$UPGRADE_SCRIPT"; then
+    fail "successful update repair must not be rejected by historical Doctor warnings"
+fi
 
 grep -Fq '{"path":"tools.swarm","value":false}' "$UPGRADE_SCRIPT" || \
     fail "upgrade must explicitly disable default-on Swarm"
@@ -177,6 +191,9 @@ grep -q 'systemctl is-active --quiet openclaw' "$UPGRADE_SCRIPT" || \
 grep -q 'stop_gateway_on_validation_error' "$UPGRADE_SCRIPT" || \
     fail "post-start validation failures must stop the gateway"
 
+grep -Fq '/opt/protect-workspace.sh check-reset' "$UPGRADE_SCRIPT" || \
+    fail "upgrade acceptance must restore workspace immutable protection"
+
 protection_failure_block=$(sed -n '/WORKSPACE FILE PROTECTION CHECK FAILED/,/^[[:space:]]*fi$/p' "$UPGRADE_SCRIPT")
 grep -q 'stop_gateway_on_validation_error' <<<"$protection_failure_block" || \
     fail "workspace protection failure must explicitly stop the gateway"
@@ -198,8 +215,8 @@ grep -Fq "[0-9]+(-[0-9]+)?'" "$UPGRADE_SCRIPT" || \
 grep -q '2026\.9\.2.*v22\.23\.2' "$UPGRADE_SCRIPT" || \
     fail "2026.9.2 upgrade must require the approved Node 22 baseline"
 
-grep -q '2026\.9\.4.*v26\.' "$UPGRADE_SCRIPT" || \
-    fail "2026.9.4 upgrade must require Node 26"
+grep -q '2026\.9\.5.*v26\.' "$UPGRADE_SCRIPT" || \
+    fail "2026.9.5 upgrade must require Node 26"
 
 if grep -q "TARGET_VERSION.*latest\|latest).*TARGET_VERSION" "$UPGRADE_SCRIPT"; then
     fail "staged upgrades must reject the unpinned latest target"
@@ -214,19 +231,22 @@ source "$stage_validator"
 
 validate_stage_combination --prepare 2026.9.2 v22.23.2 2026.7.1-2 || \
     fail "approved 2026.9.2 preparation boundary was rejected"
-validate_stage_combination --execute 2026.9.4 v26.1.0 2026.9.2 || \
-    fail "approved 2026.9.4 execution boundary was rejected"
+validate_stage_combination --execute 2026.9.5 v26.1.0 2026.9.2 || \
+    fail "approved 2026.9.5 execution boundary was rejected"
 validate_stage_combination --resume-after-install 2026.9.2 v22.23.2 2026.9.2 || \
     fail "approved 2026.9.2 resume boundary was rejected"
 
 if validate_stage_combination --execute 2026.9.2 v26.1.0 2026.7.1-2; then
     fail "2026.9.2 must be rejected on Node 26"
 fi
-if validate_stage_combination --execute 2026.9.4 v22.23.2 2026.9.2; then
-    fail "2026.9.4 must be rejected on Node 22"
+if validate_stage_combination --execute 2026.9.5 v22.23.2 2026.9.2; then
+    fail "2026.9.5 must be rejected on Node 22"
 fi
-if validate_stage_combination --prepare 2026.9.4 v26.1.0 2026.7.1-2; then
-    fail "2026.9.4 must reject the wrong predecessor core"
+if validate_stage_combination --prepare 2026.9.5 v26.1.0 2026.7.1-2; then
+    fail "2026.9.5 must reject the wrong predecessor core"
+fi
+if validate_stage_combination --prepare 2026.9.4 v26.1.0 2026.9.2; then
+    fail "superseded 2026.9.4 target must be rejected"
 fi
 if validate_stage_combination --resume-after-install 2026.9.2 v22.23.2 2026.7.1-2; then
     fail "resume must reject a package that has not reached the target"

@@ -26,7 +26,7 @@ validate_stage_combination() {
         2026.9.2:v22.23.2)
             expected_current_version="2026.7.1-2"
             ;;
-        2026.9.4:v26.*)
+        2026.9.5:v26.*)
             expected_current_version="2026.9.2"
             ;;
         *)
@@ -267,7 +267,7 @@ case "$TARGET_VERSION" in
     2026.9.2)
         EXPECTED_PREDECESSOR_VERSION="2026.7.1-2"
         ;;
-    2026.9.4)
+    2026.9.5)
         EXPECTED_PREDECESSOR_VERSION="2026.9.2"
         ;;
 esac
@@ -399,6 +399,24 @@ echo "--- Step 5: Previewing Doctor repairs ---"
 DOCTOR_OUTPUT=$(run_openclaw doctor --non-interactive 2>&1 || true)
 echo "$DOCTOR_OUTPUT"
 
+if echo "$DOCTOR_OUTPUT" | grep -Fq '[config] warnings: plugins.entries.codex:' &&
+    echo "$DOCTOR_OUTPUT" | grep -Fq "openclaw update repair"; then
+    echo ""
+    read -p "Run supported post-core update repair while the gateway is stopped? (y/n) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "Aborted before update finalization. The gateway remains stopped for review."
+        exit 1
+    fi
+
+    run_openclaw update repair --yes --no-restart
+
+    echo ""
+    echo "--- Rechecking Doctor after update repair ---"
+    DOCTOR_OUTPUT=$(run_openclaw doctor --non-interactive 2>&1 || true)
+    echo "$DOCTOR_OUTPUT"
+fi
+
 if echo "$DOCTOR_OUTPUT" | grep -q "doctor --fix"; then
     echo ""
     read -p "Apply the Doctor repairs shown above while the gateway is stopped? (y/n) " -n 1 -r
@@ -519,7 +537,7 @@ echo ""
 echo "--- Step 11: Verifying workspace file protection ---"
 VALIDATION_PHASE="workspace protection"
 if [[ -x /opt/protect-workspace.sh ]]; then
-    if /opt/protect-workspace.sh check; then
+    if /opt/protect-workspace.sh check-reset; then
         echo "Workspace file protection verified."
     else
         echo "❌ WORKSPACE FILE PROTECTION CHECK FAILED."
