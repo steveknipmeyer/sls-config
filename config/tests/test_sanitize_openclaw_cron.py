@@ -124,6 +124,42 @@ class SanitizeOpenClawCronTests(unittest.TestCase):
             },
         )
 
+    def test_ignores_snapshot_revision_metadata(self) -> None:
+        sanitizer = load_module()
+        source = {"snapshotRevision": "revision-123", "jobs": []}
+
+        self.assertEqual(
+            sanitizer.sanitize_snapshot(source), {"version": 1, "jobs": []}
+        )
+
+    def test_ignores_managed_job_revision_and_resolved_agent(self) -> None:
+        sanitizer = load_module()
+        source = {
+            "jobs": [
+                {
+                    "id": "job-1",
+                    "name": "sls-system",
+                    "agentId": "configured-agent",
+                    "configRevision": "revision-123",
+                    "effectiveAgentId": "resolved-agent",
+                }
+            ]
+        }
+
+        self.assertEqual(
+            sanitizer.sanitize_snapshot(source),
+            {
+                "version": 1,
+                "jobs": [
+                    {
+                        "id": "job-1",
+                        "name": "sls-system",
+                        "agentId": "configured-agent",
+                    }
+                ],
+            },
+        )
+
     def test_rejects_unknown_managed_job_fields(self) -> None:
         sanitizer = load_module()
         source = {

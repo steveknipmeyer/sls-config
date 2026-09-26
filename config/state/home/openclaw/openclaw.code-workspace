@@ -92,6 +92,10 @@
 			{
 				"filePath": "projects/sls-dev/docs/features",
 				"group": "Default"
+			},
+			{
+				"filePath": "projects/sls-dev/docs/features/active/staged-openclaw-upgrade",
+				"group": "Default"
 			}
 		],
 		"chat.tools.terminal.autoApprove": {

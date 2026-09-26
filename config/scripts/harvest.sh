@@ -47,7 +47,6 @@
 #             config                    — SSH client config (deploy key stanza etc.)
 #           dot-openclaw/
 #             openclaw.json             — REDACTED: primary OpenClaw runtime config
-#             exec-approvals.json       — REDACTED: local exec approvals policy + socket token
 #             cron-jobs.json             — Sanitized managed OpenClaw cron definitions
 #       usr/
 #         local/
@@ -76,9 +75,9 @@
 #   the snapshot (not ".openclaw") to prevent it from being caught by the
 #   .openclaw entry in .gitignore.
 #
-#   exec-approvals.json contains the local approvals socket token. This must
-#   also be redacted before committing. Only the socket path and approval
-#   policy should remain visible in the snapshot.
+#   Exec approvals now live in the shared SQLite state database. The legacy
+#   exec-approvals.json file is not harvested. Back up SQLite with OpenClaw's
+#   supported backup workflow; never copy the raw database into this repo.
 #
 #   IMPORTANT: Always review config/state/ before committing to git.
 #   Run: git -C /home/openclaw/.openclaw/projects/sls-config diff config/state/
@@ -151,6 +150,30 @@ harvest_file() {
         log "  ✗ $src (permission denied — skipping)"
         echo "# HARVEST ERROR: Could not read $src" > "$dest"
     fi
+}
+
+# Redact JSON before replacing a tracked snapshot. A missing or malformed
+# source must leave the last good snapshot intact.
+redact_json_snapshot() {
+    local src="$1"
+    local dest="$2"
+    local filter="$3"
+    local tmp_file
+
+    if [ ! -f "$src" ] || [ ! -r "$src" ]; then
+        log_warn "  ✗ Required JSON source missing or unreadable: $src"
+        return 1
+    fi
+
+    mkdir -p "$(dirname "$dest")"
+    tmp_file=$(mktemp "${dest}.tmp.XXXXXX")
+    if ! jq "$filter" "$src" > "$tmp_file" || [ ! -s "$tmp_file" ]; then
+        rm -f "$tmp_file"
+        log_warn "  ✗ Failed to redact JSON source: $src"
+        return 1
+    fi
+
+    mv "$tmp_file" "$dest"
 }
 
 # Redact known secret patterns in a file (in-place).
@@ -560,11 +583,17 @@ harvest_file "/home/openclaw/.openclaw/openclaw.code-workspace" "${STATE_DIR}/ho
 # and hooks.token. On sls, /etc/openclaw-gateway.env is the canonical
 # gateway auth source while openclaw.json should keep SecretRef pointers.
 # Redaction uses jq to target exact JSON paths.
-harvest_file "/home/openclaw/.openclaw/openclaw.json" "${STATE_DIR}/home/openclaw/dot-openclaw/openclaw.json"
-jq '
-    .gateway.auth.token |= (if type == "string" then "REDACTED" else . end) |
-    .gateway.remote.token |= (if type == "string" then "REDACTED" else . end) |
-    .hooks.token |= (if type == "string" then "REDACTED" else . end) |
+redact_json_snapshot "/home/openclaw/.openclaw/openclaw.json" \
+    "${STATE_DIR}/home/openclaw/dot-openclaw/openclaw.json" '
+    if ((.gateway.auth | type) == "object" and (.gateway.auth | has("token")))
+    then .gateway.auth.token |= (if type == "string" then "REDACTED" else . end)
+    else . end |
+    if ((.gateway.remote | type) == "object" and (.gateway.remote | has("token")))
+    then .gateway.remote.token |= (if type == "string" then "REDACTED" else . end)
+    else . end |
+    if ((.hooks | type) == "object" and (.hooks | has("token")))
+    then .hooks.token |= (if type == "string" then "REDACTED" else . end)
+    else . end |
     if .skills.entries then
         .skills.entries |= with_entries(
             if .value.env then
@@ -582,23 +611,8 @@ jq '
             else . end
         )
     else . end
-' "${STATE_DIR}/home/openclaw/dot-openclaw/openclaw.json" > /tmp/openclaw.json.redacted \
-&& mv /tmp/openclaw.json.redacted "${STATE_DIR}/home/openclaw/dot-openclaw/openclaw.json"
+'
 log "  → Redacted secrets in openclaw.json (jq)"
-
-# exec-approvals.json — local host exec-approval policy.
-# Captures the host-local approvals layer that combines with tools.exec.* in
-# openclaw.json. This is part of the effective security posture and must be
-# reconstructable alongside the main runtime config.
-#
-# MUST be redacted — contains the local approvals socket token. Redaction uses
-# jq to replace only .socket.token, preserving the policy structure.
-harvest_file "/home/openclaw/.openclaw/exec-approvals.json" "${STATE_DIR}/home/openclaw/dot-openclaw/exec-approvals.json"
-jq '
-    .socket.token = "REDACTED"
-' "${STATE_DIR}/home/openclaw/dot-openclaw/exec-approvals.json" > /tmp/exec-approvals.json.redacted \
-&& mv /tmp/exec-approvals.json.redacted "${STATE_DIR}/home/openclaw/dot-openclaw/exec-approvals.json"
-log "  → Redacted secrets in exec-approvals.json (jq)"
 
 # openclaw root guard stub — prevents accidental openclaw CLI usage as root.
 # Installed at /usr/local/bin/openclaw, intercepts openclaw commands run as
@@ -793,10 +807,10 @@ capture_command "${STATE_DIR}/ufw-status.txt" ufw status verbose 2>/dev/null || 
 log ""
 log "=== OpenClaw doctor ==="
 
-# Run in read-only mode with explicit non-interactive flags so doctor cannot
-# block waiting for input or attempt on-host repair writes during harvest.
+# Advisory JSON is read-only and can run while the Gateway owns shared state.
+# Do not use --yes or --non-interactive here; those modes may enter repair.
 capture_command "${STATE_DIR}/openclaw-doctor.txt" \
-    run_openclaw_as_openclaw doctor --non-interactive --yes
+    run_openclaw_as_openclaw doctor --json
 
 # =============================================================================
 # SECTION 8a: Local workaround state
@@ -907,10 +921,10 @@ environment on a fresh Ubuntu box. It is generated by
 | \`state/home/openclaw/.gitconfig\` | Custom | Git identity (Ada's name, email, defaultBranch) |
 | \`state/home/openclaw/.ssh/config\` | Custom | SSH client config (deploy key stanza) |
 | \`state/home/openclaw/dot-openclaw/openclaw.json\` | Custom | Primary OpenClaw runtime config (REDACTED secrets) |
-| \`state/home/openclaw/dot-openclaw/exec-approvals.json\` | Custom | Host-local exec approvals policy (REDACTED socket token) |
 | \`state/home/openclaw/dot-openclaw/cron-jobs.json\` | Generated | Sanitized managed OpenClaw cron definitions for reconstruction |
 | \`state/usr/local/bin/openclaw\` | Custom | Root guard stub — blocks openclaw CLI as root |
 | \`state/usr/local/libexec/sls/deliver-daily-alerts.py\` | Custom | Host-owned daily Telegram/email delivery wrapper |
+| \`state/usr/local/libexec/sls/transition-node-runtime.sh\` | Custom | Pinned Node runtime transition and rollback helper |
 | \`state/systemd/openclaw.service\` | DO installer | Root-level systemd service definition |
 | \`state/systemd/sls-web-server.service\` | Custom | Express web server systemd service |
 | \`state/versions.txt\` | Generated | Runtime version snapshot |
@@ -922,6 +936,11 @@ environment on a fresh Ubuntu box. It is generated by
 | \`state/openclaw-doctor.txt\` | Generated | openclaw doctor output at harvest time |
 | \`state/local-workarounds.txt\` | Generated | Compatibility shim inventory for ignored/runtime artifacts |
 | \`schemas/openclaw.schema.json\` | Generated | OpenClaw config JSON schema (for VS Code IntelliSense) |
+
+Exec approvals are stored in OpenClaw's shared SQLite state database. The
+legacy approvals JSON file is retired and is not part of this Git snapshot.
+Use OpenClaw's verified backup workflow to preserve that database; do not
+commit the raw database or a policy export containing its socket token.
 
 ## Reproduction Notes
 
@@ -1278,7 +1297,6 @@ config/state/home/openclaw/.gitconfig
 config/state/home/openclaw/.ssh/config
 config/state/home/openclaw/dot-openclaw/cron-jobs.json
 config/state/home/openclaw/dot-openclaw/openclaw.json
-config/state/home/openclaw/dot-openclaw/exec-approvals.json
 config/state/home/openclaw/openclaw.code-workspace
 config/state/usr/local/bin/openclaw
 config/state/opt/complete-openclaw-upgrade.sh
@@ -1296,6 +1314,7 @@ config/state/opt/status-openclaw.sh
 config/state/opt/tailscale-reauth.sh
 config/state/opt/update-openclaw.sh
 config/state/usr/local/libexec/sls/deliver-daily-alerts.py
+config/state/usr/local/libexec/sls/transition-node-runtime.sh
 config/state/systemd/openclaw.service
 config/state/systemd/sls-web-server.service
 config/schemas/openclaw.schema.json
@@ -1336,8 +1355,21 @@ log "=== Scanning for unredacted secrets ==="
 SECRET_PATTERN='[0-9a-f]{64}|tskey-'
 SECRETS_FOUND=0
 
+contains_secret_pattern() {
+    local file="$1"
+
+    if [ "$file" = "${STATE_DIR}/usr/local/libexec/sls/transition-node-runtime.sh" ]; then
+        # These two exact assignments are pinned package SHA-256 digests.
+        # Continue scanning every other line, including any extra hex value.
+        sed -E '/^[[:space:]]*(TARGET_PACKAGE_SHA256|ROLLBACK_PACKAGE_SHA256)="[0-9a-f]{64}"[[:space:]]*$/d' "$file" |
+            grep -P "${SECRET_PATTERN}" > /dev/null
+    else
+        grep -P "${SECRET_PATTERN}" "$file" > /dev/null
+    fi
+}
+
 while IFS= read -r file; do
-    if grep -Pq "${SECRET_PATTERN}" "$file" 2>/dev/null; then
+    if contains_secret_pattern "$file"; then
         log_warn "  ✗ POSSIBLE SECRET in: ${file#${CONFIG_ROOT}/}"
         SECRETS_FOUND=$((SECRETS_FOUND + 1))
     fi
@@ -1382,7 +1414,6 @@ log "     grep -r 'REDACTED' ${STATE_DIR}/opt/openclaw.env"
 log "     grep -r 'REDACTED' ${STATE_DIR}/etc/openclaw-gateway.env"
 log "     grep -r 'REDACTED' ${STATE_DIR}/etc/sls-web-server.env"
 log "     grep -r 'REDACTED' ${STATE_DIR}/home/openclaw/dot-openclaw/openclaw.json"
-log "     grep -r 'REDACTED' ${STATE_DIR}/home/openclaw/dot-openclaw/exec-approvals.json"
 log "  3. Commit:"
 log "     git -C ${CONFIG_ROOT} add config/"
 log "     git -C ${CONFIG_ROOT} commit -m 'harvest snapshot ${DATE_ONLY}'"

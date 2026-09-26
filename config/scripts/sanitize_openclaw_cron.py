@@ -12,6 +12,7 @@ TOP_LEVEL_METADATA_FIELDS = {
     "limit",
     "nextOffset",
     "offset",
+    "snapshotRevision",
     "total",
     "version",
 }
@@ -29,7 +30,9 @@ JOB_FIELDS = {
     "wakeMode",
 }
 VOLATILE_JOB_FIELDS = {
+    "configRevision",
     "createdAtMs",
+    "effectiveAgentId",
     "lastDelivered",
     "lastDeliveryError",
     "lastDeliveryStatus",

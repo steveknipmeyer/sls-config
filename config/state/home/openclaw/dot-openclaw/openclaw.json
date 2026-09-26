@@ -1,19 +1,19 @@
 {
   "meta": {
-    "lastTouchedVersion": "2026.7.1-2",
-    "lastTouchedAt": "2026-09-10T14:33:40.341Z"
+    "lastTouchedVersion": "2026.9.5",
+    "migrations": {
+      "modelPolicyAllowlist": true,
+      "utilityModelSeparation": true
+    }
   },
   "agents": {
     "defaults": {
       "model": {
-        "primary": "openai/gpt-5.4"
-      },
-      "memorySearch": {
-        "enabled": false
+        "primary": "openai/gpt-5.6-terra"
       },
       "heartbeat": {
         "every": "1h",
-        "model": "codex/gpt-5.4-mini",
+        "model": "openai/gpt-5.6-luna",
         "lightContext": true,
         "isolatedSession": true
       },
@@ -27,12 +27,6 @@
           "binds": [],
           "env": {}
         }
-      },
-      "imageGenerationModel": {
-        "primary": "openai/gpt-image-2",
-        "fallbacks": [
-          "google/gemini-3-pro-image-preview"
-        ]
       },
       "models": {
         "anthropic/claude-sonnet-4-6": {},
@@ -52,18 +46,17 @@
             "id": "codex"
           }
         },
-        "codex/gpt-5.4": {
-          "agentRuntime": {
-            "id": "codex"
-          }
-        },
-        "codex/gpt-5.4-mini": {
-          "agentRuntime": {
-            "id": "codex"
-          }
-        },
         "openai/gpt-5.6-sol": {},
-        "openai/gpt-5.6-luna": {}
+        "openai/gpt-5.6-luna": {
+          "agentRuntime": {
+            "id": "codex"
+          }
+        },
+        "openai/gpt-5.6-terra": {
+          "agentRuntime": {
+            "id": "codex"
+          }
+        }
       },
       "workspace": "/home/openclaw/.openclaw/workspace",
       "imageModel": {
@@ -71,14 +64,48 @@
         "fallbacks": [
           "google/gemini-3-pro-image-preview"
         ]
+      },
+      "modelPolicy": {
+        "allow": [
+          "anthropic/claude-sonnet-4-6",
+          "google/gemini-3-pro-image-preview",
+          "openai/gpt-5.4",
+          "openai/gpt-5.6-terra",
+          "openai/gpt-5.4-mini",
+          "openai/gpt-5.5",
+          "openai/gpt-5.6-sol",
+          "openai/gpt-5.6-luna"
+        ]
+      },
+      "mediaModels": {
+        "image": {
+          "primary": "openai/gpt-image-2",
+          "fallbacks": [
+            "google/gemini-3-pro-image-preview"
+          ]
+        }
       }
     },
-    "list": [
-      {
-        "id": "main",
-        "model": "openai/gpt-5.6-sol"
+    "entries": {
+      "main": {
+        "model": "openai/gpt-5.6-sol",
+        "models": {
+          "openai/gpt-5.6-terra": {
+            "agentRuntime": {
+              "id": "codex"
+            }
+          },
+          "openai/gpt-5.6-luna": {
+            "agentRuntime": {
+              "id": "codex"
+            }
+          }
+        },
+        "tools": {
+          "profile": "full"
+        }
       }
-    ]
+    }
   },
   "tools": {
     "exec": {
@@ -105,13 +132,19 @@
           "web_search"
         ]
       }
+    },
+    "swarm": false,
+    "sessions": {
+      "visibility": "agent"
+    },
+    "agentToAgent": {
+      "enabled": false
     }
   },
   "commands": {
     "native": "auto",
     "nativeSkills": "auto",
     "restart": true,
-    "ownerDisplay": "raw",
     "ownerAllowFrom": [
       "telegram:8226581034"
     ]
@@ -134,8 +167,7 @@
     "controlUi": {
       "allowedOrigins": [
         "https://sls.tail1cd974.ts.net"
-      ],
-      "dangerouslyDisableDeviceAuth": false
+      ]
     },
     "auth": {
       "token": {
@@ -149,8 +181,7 @@
       "127.0.0.1"
     ],
     "tailscale": {
-      "mode": "off",
-      "resetOnExit": false
+      "mode": "off"
     },
     "remote": {
       "token": {
@@ -166,8 +197,7 @@
     "enabled": false,
     "allowedAgentIds": [
       "main"
-    ],
-    "token": null
+    ]
   },
   "plugins": {
     "entries": {
@@ -189,8 +219,8 @@
     }
   },
   "wizard": {
-    "lastRunAt": "2026-09-09T12:52:30.789Z",
-    "lastRunVersion": "2026.7.1-2",
+    "lastRunAt": "2026-09-19T12:03:42.025Z",
+    "lastRunVersion": "2026.9.5",
     "lastRunCommand": "doctor",
     "lastRunMode": "local"
   },
@@ -366,5 +396,10 @@
   },
   "browser": {
     "enabled": false
+  },
+  "memory": {
+    "search": {
+      "enabled": false
+    }
   }
 }
