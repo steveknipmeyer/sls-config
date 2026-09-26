@@ -217,6 +217,8 @@ grep -q '2026\.9\.2.*v22\.23\.2' "$UPGRADE_SCRIPT" || \
 
 grep -q '2026\.9\.5.*v26\.' "$UPGRADE_SCRIPT" || \
     fail "2026.9.5 upgrade must require Node 26"
+grep -q '2026\.9\.6.*v26\.' "$UPGRADE_SCRIPT" || \
+    fail "2026.9.6 upgrade must require Node 26"
 
 if grep -q "TARGET_VERSION.*latest\|latest).*TARGET_VERSION" "$UPGRADE_SCRIPT"; then
     fail "staged upgrades must reject the unpinned latest target"
@@ -233,6 +235,12 @@ validate_stage_combination --prepare 2026.9.2 v22.23.2 2026.7.1-2 || \
     fail "approved 2026.9.2 preparation boundary was rejected"
 validate_stage_combination --execute 2026.9.5 v26.1.0 2026.9.2 || \
     fail "approved 2026.9.5 execution boundary was rejected"
+validate_stage_combination --prepare 2026.9.6 v26.1.0 2026.9.5 || \
+    fail "approved 2026.9.6 preparation boundary was rejected"
+validate_stage_combination --execute 2026.9.6 v26.1.0 2026.9.5 || \
+    fail "approved 2026.9.6 execution boundary was rejected"
+validate_stage_combination --resume-after-install 2026.9.6 v26.1.0 2026.9.6 || \
+    fail "approved 2026.9.6 resume boundary was rejected"
 validate_stage_combination --resume-after-install 2026.9.2 v22.23.2 2026.9.2 || \
     fail "approved 2026.9.2 resume boundary was rejected"
 
@@ -244,6 +252,12 @@ if validate_stage_combination --execute 2026.9.5 v22.23.2 2026.9.2; then
 fi
 if validate_stage_combination --prepare 2026.9.5 v26.1.0 2026.7.1-2; then
     fail "2026.9.5 must reject the wrong predecessor core"
+fi
+if validate_stage_combination --prepare 2026.9.6 v22.23.2 2026.9.5; then
+    fail "2026.9.6 must be rejected on Node 22"
+fi
+if validate_stage_combination --prepare 2026.9.6 v26.1.0 2026.9.2; then
+    fail "2026.9.6 must reject the wrong predecessor core"
 fi
 if validate_stage_combination --prepare 2026.9.4 v26.1.0 2026.9.2; then
     fail "superseded 2026.9.4 target must be rejected"

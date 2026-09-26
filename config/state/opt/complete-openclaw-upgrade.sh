@@ -29,6 +29,9 @@ validate_stage_combination() {
         2026.9.5:v26.*)
             expected_current_version="2026.9.2"
             ;;
+        2026.9.6:v26.*)
+            expected_current_version="2026.9.5"
+            ;;
         *)
             echo "Unsupported staged target/runtime combination: openclaw@${target_version} on ${node_version:-unknown}." >&2
             return 1
@@ -269,6 +272,9 @@ case "$TARGET_VERSION" in
         ;;
     2026.9.5)
         EXPECTED_PREDECESSOR_VERSION="2026.9.2"
+        ;;
+    2026.9.6)
+        EXPECTED_PREDECESSOR_VERSION="2026.9.5"
         ;;
 esac
 

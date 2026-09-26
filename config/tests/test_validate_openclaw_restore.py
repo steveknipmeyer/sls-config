@@ -28,7 +28,15 @@ class StagedRestoreValidatorTests(unittest.TestCase):
         self.bin_dir = self.root / "bin"
         self.bin_dir.mkdir()
         fake_openclaw = self.bin_dir / "openclaw"
-        fake_openclaw.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+        fake_openclaw.write_text(
+            "#!/bin/sh\n"
+            'case "$3" in\n'
+            '  /proc/self/fd/*) exit 1 ;;\n'
+            '  /proc/*/fd/*) test -r "$3" ;;\n'
+            '  *) exit 1 ;;\n'
+            'esac\n',
+            encoding="utf-8",
+        )
         fake_openclaw.chmod(0o755)
         self.package_root = self.root / "system-openclaw-package"
         (self.package_root / "dist").mkdir(parents=True)

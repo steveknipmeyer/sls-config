@@ -60,13 +60,13 @@ def parse_args() -> argparse.Namespace:
 
 def run_vendor_verification(archive_fd: int, openclaw_bin: str) -> None:
     """Require OpenClaw's manifest and archive-layout verification to pass."""
+    verifier_path = f"/proc/{os.getpid()}/fd/{archive_fd}"
     try:
         result = subprocess.run(
-            [openclaw_bin, "backup", "verify", f"/proc/self/fd/{archive_fd}"],
+            [openclaw_bin, "backup", "verify", verifier_path],
             check=False,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
-            pass_fds=(archive_fd,),
         )
     except OSError as exc:
         raise ValidationError("OpenClaw backup verifier could not be executed") from exc
